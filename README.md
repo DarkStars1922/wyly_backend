@@ -4,7 +4,31 @@
 
 ## 项目结构
 
-null（）
+```
+├── manage.py
+├── music_h
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── music_h_app
+    ├── __init__.py
+    ├── admin.py
+    ├── api   (api的类视图)
+    │   └── auth_view.py
+    │   └── music_generator_view.py
+    |   └── stu_view.py
+    |   └── ...
+    ├── utils.py   (封装好的组件)
+    ├── apps.py
+    ├── migrations
+    ├── models.py   (实体类定义)
+    ├── serializers.py   (序列化器)
+    ├── tests.py
+    └── views.py
+```
 
 todos：
 
