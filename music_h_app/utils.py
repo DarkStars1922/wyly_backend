@@ -13,17 +13,22 @@ from music_h import settings
 
 load_dotenv()
 
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
 # 加载预训练模型
 MODEL_NAME = os.getenv('AUDIOCRAFT_MODEL', 'facebook/musicgen-small')
 MODEL_CACHE_DIR = os.getenv('MODEL_CACHE_DIR', './model_cache')
 
 class MusicGenerator:
     _instance = None
+    _model_loaded = False  # 新增加载状态标志
     
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(MusicGenerator, cls).__new__(cls)
-            cls._instance._initialize_model()
+            if not cls._model_loaded:  # 仅当未加载时初始化
+                cls._instance._initialize_model()
+                cls._model_loaded = True
         return cls._instance
     
     def _initialize_model(self):

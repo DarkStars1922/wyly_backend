@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五音疗法冥想音乐 - 星璇律动</title>
+  <!-- 引入 Bootstrap -->
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <!-- 引入自定义样式 -->
+  <link rel="stylesheet" href="/static/css/xingxuanlvdong.css">
+  <!-- 音频可视化需要的样式 -->
+  <style>
+    .meditation-hero {
+      background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(26, 26, 46, 0.8)), url('https://images.unsplash.com/photo-1591848478625-de43268e6fb8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80');
+      background-size: cover;
+      background-position: center;
+      height: 500px;
+      display: flex;
+      align-items: center;
+      text-align: center;
+    }
+
+    .tone-selector {
+      margin-bottom: 30px;
+    }
+
+    .tone-card {
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .tone-card:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+      z-index: -1;
+      transition: opacity 0.4s ease;
+      opacity: 0;
+    }
+
+    .tone-card:hover {
+      transform: translateY(-8px) scale(1.03);
+    }
+
+    .tone-card:hover:before {
+      opacity: 1;
+    }
+
+    .tone-card.active {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 五音卡片的独特样式 */
+    .tone-gong {
+      background: linear-gradient(135deg, #eeb868 0%, #c9a050 100%);
+      border-color: #f0c07a;
+    }
+    .tone-gong.active {
+      box-shadow: 0 10px 25px rgba(238, 184, 104, 0.5);
+    }
+    .tone-gong .tone-symbol {
+      color: #eeb868;
+    }
+
+    .tone-shang {
+      background: linear-gradient(135deg, #e0e0e0 0%, #b0b0c0 100%);
+      border-color: #d0d0e0;
+    }
+    .tone-shang.active {
+      box-shadow: 0 10px 25px rgba(208, 208, 224, 0.5);
+    }
+    .tone-shang .tone-symbol {
+      color: #c0c0d0;
+    }
+
+    .tone-jue {
+      background: linear-gradient(135deg, #6ab04c 0%, #4a7d38 100%);
+      border-color: #6ab04c;
+    }
+    .tone-jue.active {
+      box-shadow: 0 10px 25px rgba(106, 176, 76, 0.5);
+    }
+    .tone-jue .tone-symbol {
+      color: #6ab04c;
+    }
+
+    .tone-zhi {
+      background: linear-gradient(135deg, #eb4d4b 0%, #b83227 100%);
+      border-color: #eb4d4b;
+    }
+    .tone-zhi.active {
+      box-shadow: 0 10px 25px rgba(235, 77, 75, 0.5);
+    }
+    .tone-zhi .tone-symbol {
+      color: #eb4d4b;
+    }
+
+    .tone-yu {
+      background: linear-gradient(135deg, #4884ee 0%, #22609e 100%);
+      border-color: #4884ee;
+    }
+    .tone-yu.active {
+      box-shadow: 0 10px 25px rgba(72, 132, 238, 0.5);
+    }
+    .tone-yu .tone-symbol {
+      color: #4884ee;
+    }
+
+    .tone-symbol {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      display: inline-block;
+      width: 60px;
+      height: 60px;
+      line-height: 60px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .tone-title {
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+      margin-bottom: 10px;
+    }
+
+    .tone-attributes {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .tone-effect {
+      background: rgba(0, 0, 0, 0.2);
+      color: rgba(255, 255, 255, 0.95);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      display: inline-block;
+      margin-top: 5px;
+    }
+
+    #audioWaveform {
+      width: 100%;
+      height: 120px;
+      background: rgba(40, 40, 60, 0.5);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .control-btn {
+      background: rgba(106, 13, 173, 0.8);
+      color: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin: 0 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      background: rgba(138, 43, 226, 0.9);
+      transform: scale(1.1);
+    }
+
+    .control-btn.play-btn {
+      width: 60px;
+      height: 60px;
+    }
+
+    .demo-container {
+      background: rgba(30, 30, 50, 0.7);
+      border-radius: 15px;
+      padding: 30px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      margin-bottom: 15px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .section-title:after {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(to right, #6a0dad, rgba(106, 13, 173, 0.3));
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 3px;
+    }
+    
+    .tech-icon {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: #6a0dad;
+    }
+
+    .benefits-card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .benefits-card .icon-container {
+      margin-bottom: 15px;
+    }
+
+    .benefits-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .benefits-list li {
+      margin-bottom: 10px;
+      padding-left: 25px;
+      position: relative;
+    }
+
+    .benefits-list li:before {
+      content: "\f0eb";
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      position: absolute;
+      left: 0;
+      color: #6a0dad;
+    }
+
+    .custom-input {
+      background: rgba(40, 40, 60, 0.7);
+      border: 1px solid rgba(106, 13, 173, 0.5);
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 15px;
+      transition: all 0.3s ease;
+      padding: 6px 30px 6px 12px !important;
+    }
+
+    .custom-input:focus {
+      background: rgba(50, 50, 70, 0.7);
+      border-color: #6a0dad;
+      box-shadow: 0 0 0 0.2rem rgba(106, 13, 173, 0.25);
+      color: #fff;
+    }
+
+    .form-label {
+      color: #d0d0ff;
+      font-weight: 500;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .generate-btn {
+      background: linear-gradient(135deg, #6a0dad 0%, #9b59b6 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 15px 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      color: white;
+      box-shadow: 0 4px 15px rgba(106, 13, 173, 0.3);
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 20px rgba(106, 13, 173, 0.4);
+    }
+
+    .generate-btn:active {
+      transform: translateY(1px);
+    }
+
+    .tips-card {
+      background: linear-gradient(135deg, rgba(55, 55, 80, 0.7) 0%, rgba(40, 40, 60, 0.7) 100%);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .tips-card .card-title {
+      color: #a29bfe;
+      font-size: 1.25rem;
+      border-bottom: 1px solid rgba(162, 155, 254, 0.3);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+
+    .tips-list {
+      padding-left: 0;
+      list-style-type: none;
+    }
+
+    .tips-list li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .tips-list li:before {
+      content: "\f0a9";
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      position: absolute;
+      left: 0;
+      color: #a29bfe;
+    }
+
+    /* 波形动画 */
+    @keyframes waveform {
+      0% {
+        height: 15%;
+      }
+      50% {
+        height: 85%;
+      }
+      100% {
+        height: 15%;
+      }
+    }
+
+    .waveform-bar {
+      display: inline-block;
+      width: 3px;
+      margin: 0 2px;
+      border-radius: 2px;
+      background: linear-gradient(to top, rgba(106, 13, 173, 0.7), rgba(138, 43, 226, 0.9));
+      animation: waveform 1.5s ease-in-out infinite;
+      animation-play-state: paused;
+    }
+
+    .waveform-playing .waveform-bar {
+      animation-play-state: running;
+    }
+
+    /* 为每个波形条设置不同的延迟，创造波浪效果 */
+    .waveform-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    /* 添加人群和情绪选择器的样式 */
+    .user-group-selector, .emotion-selector {
+      margin-bottom: 30px;
+      background: rgba(30, 30, 50, 0.7);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(106, 13, 173, 0.2);
+    }
+    
+    .selector-title {
+      color: #fff;
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+    
+    .selector-title i {
+      margin-right: 10px;
+      color: #6a0dad;
+    }
+    
+    .selector-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    
+    .user-group-btn, .emotion-btn {
+      margin: 0;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      border: 1px solid rgba(106, 13, 173, 0.3);
+      background: rgba(40, 40, 60, 0.5);
+      color: #fff;
+      padding: 10px 15px;
+      font-weight: 500;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .user-group-btn:before, .emotion-btn:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(106, 13, 173, 0.1), rgba(106, 13, 173, 0.05));
+      z-index: -1;
+      transition: opacity 0.4s ease;
+      opacity: 0;
+    }
+    
+    .user-group-btn:hover, .emotion-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 14px rgba(0, 0, 0, 0.2);
+      border-color: rgba(106, 13, 173, 0.5);
+    }
+    
+    .user-group-btn:hover:before, .emotion-btn:hover:before {
+      opacity: 1;
+    }
+    
+    .user-group-btn.active, .emotion-btn.active {
+      background: linear-gradient(135deg, rgba(106, 13, 173, 0.8) 0%, rgba(138, 43, 226, 0.8) 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(106, 13, 173, 0.4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* 人群分类按钮样式 */
+    .user-group-btn {
+      flex: 0 0 calc(25% - 10px);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80px;
+    }
+    
+    .user-group-btn i {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.7);
+      transition: all 0.3s ease;
+    }
+    
+    .user-group-btn.active i {
+      color: white;
+    }
+    
+    .user-group-btn:nth-child(1) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.05s; opacity: 0; }
+    .user-group-btn:nth-child(2) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.1s; opacity: 0; }
+    .user-group-btn:nth-child(3) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.15s; opacity: 0; }
+    .user-group-btn:nth-child(4) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.2s; opacity: 0; }
+    .user-group-btn:nth-child(5) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.25s; opacity: 0; }
+    .user-group-btn:nth-child(6) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.3s; opacity: 0; }
+    .user-group-btn:nth-child(7) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.35s; opacity: 0; }
+    .user-group-btn:nth-child(8) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.4s; opacity: 0; }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* 情绪按钮改进样式 */
+    .emotion-btn {
+      flex: 0 0 calc(25% - 10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80px;
+      text-align: center;
+      padding: 10px;
+    }
+    
+    .emotion-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+    
+    .emotion-btn.active .emotion-icon {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+    
+    .emotion-btn.anger .emotion-icon {
+      background-color: rgba(235, 77, 75, 0.2);
+      border: 1px solid rgba(235, 77, 75, 0.5);
+    }
+    
+    .emotion-btn.anxiety .emotion-icon {
+      background-color: rgba(106, 176, 76, 0.2);
+      border: 1px solid rgba(106, 176, 76, 0.5);
+    }
+    
+    .emotion-btn.depression .emotion-icon {
+      background-color: rgba(72, 132, 238, 0.2);
+      border: 1px solid rgba(72, 132, 238, 0.5);
+    }
+    
+    .emotion-btn.sadness .emotion-icon {
+      background-color: rgba(162, 155, 254, 0.2);
+      border: 1px solid rgba(162, 155, 254, 0.5);
+    }
+    
+    .emotion-btn.stress .emotion-icon {
+      background-color: rgba(253, 203, 110, 0.2);
+      border: 1px solid rgba(253, 203, 110, 0.5);
+    }
+    
+    .emotion-btn.tired .emotion-icon {
+      background-color: rgba(99, 110, 114, 0.2);
+      border: 1px solid rgba(99, 110, 114, 0.5);
+    }
+    
+    .emotion-btn.excited .emotion-icon {
+      background-color: rgba(232, 67, 147, 0.2);
+      border: 1px solid rgba(232, 67, 147, 0.5);
+    }
+    
+    .emotion-btn.insecure .emotion-icon {
+      background-color: rgba(0, 206, 201, 0.2);
+      border: 1px solid rgba(0, 206, 201, 0.5);
+    }
+    
+    .emotion-btn.anger.active {
+      background: linear-gradient(135deg, rgba(235, 77, 75, 0.8) 0%, rgba(214, 48, 49, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(235, 77, 75, 0.4);
+    }
+    
+    .emotion-btn.anxiety.active {
+      background: linear-gradient(135deg, rgba(106, 176, 76, 0.8) 0%, rgba(85, 139, 47, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(106, 176, 76, 0.4);
+    }
+    
+    .emotion-btn.depression.active {
+      background: linear-gradient(135deg, rgba(72, 132, 238, 0.8) 0%, rgba(56, 103, 214, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(72, 132, 238, 0.4);
+    }
+    
+    .emotion-btn.sadness.active {
+      background: linear-gradient(135deg, rgba(162, 155, 254, 0.8) 0%, rgba(116, 112, 237, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(162, 155, 254, 0.4);
+    }
+    
+    .emotion-btn.stress.active {
+      background: linear-gradient(135deg, rgba(253, 203, 110, 0.8) 0%, rgba(225, 177, 44, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(253, 203, 110, 0.4);
+    }
+    
+    .emotion-btn.tired.active {
+      background: linear-gradient(135deg, rgba(99, 110, 114, 0.8) 0%, rgba(45, 52, 54, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(99, 110, 114, 0.4);
+    }
+    
+    .emotion-btn.excited.active {
+      background: linear-gradient(135deg, rgba(232, 67, 147, 0.8) 0%, rgba(194, 54, 122, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(232, 67, 147, 0.4);
+    }
+    
+    .emotion-btn.insecure.active {
+      background: linear-gradient(135deg, rgba(0, 206, 201, 0.8) 0%, rgba(0, 153, 153, 0.8) 100%);
+      box-shadow: 0 5px 15px rgba(0, 206, 201, 0.4);
+    }
+    
+    .emotion-btn:nth-child(1) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.05s; opacity: 0; }
+    .emotion-btn:nth-child(2) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.1s; opacity: 0; }
+    .emotion-btn:nth-child(3) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.15s; opacity: 0; }
+    .emotion-btn:nth-child(4) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.2s; opacity: 0; }
+    .emotion-btn:nth-child(5) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.25s; opacity: 0; }
+    .emotion-btn:nth-child(6) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.3s; opacity: 0; }
+    .emotion-btn:nth-child(7) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.35s; opacity: 0; }
+    .emotion-btn:nth-child(8) { animation: fadeInUp 0.3s ease forwards; animation-delay: 0.4s; opacity: 0; }
+    
+    /* 提示词示例卡片样式增强 */
+    .prompt-examples-container {
+      background: rgba(30, 30, 50, 0.7);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(106, 13, 173, 0.2);
+    }
+    
+    .prompt-examples-title {
+      color: #fff;
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 15px;
+    }
+    
+    .prompt-examples-title i {
+      margin-right: 10px;
+      color: #6a0dad;
+    }
+    
+    .prompt-examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .prompt-example-card {
+      border-radius: 12px;
+      background: rgba(40, 40, 60, 0.6);
+      padding: 18px;
+      height: 100%;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(106, 13, 173, 0.2);
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .prompt-example-card:hover {
+      transform: translateY(-5px);
+      background: rgba(50, 50, 80, 0.7);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+      border-color: rgba(106, 13, 173, 0.4);
+    }
+    
+    .prompt-example-card:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(to bottom, #6a0dad, rgba(106, 13, 173, 0.3));
+    }
+    
+    .prompt-example-header {
+      margin-bottom: 12px;
+    }
+    
+    .prompt-example-content {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.5;
+      flex-grow: 1;
+    }
+    
+    .prompt-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 15px;
+      gap: 5px;
+    }
+    
+    .prompt-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .prompt-tag i {
+      margin-right: 5px;
+      font-size: 0.7rem;
+    }
+    
+    .prompt-tag.group {
+      background: rgba(106, 13, 173, 0.15);
+      color: #a29bfe;
+      border: 1px solid rgba(106, 13, 173, 0.3);
+    }
+    
+    .prompt-tag.emotion {
+      background: rgba(235, 77, 75, 0.15);
+      color: #eb4d4b;
+      border: 1px solid rgba(235, 77, 75, 0.3);
+    }
+    
+    .prompt-tag.english {
+      background: rgba(0, 184, 148, 0.15);
+      color: #00b894;
+      border: 1px solid rgba(0, 184, 148, 0.3);
+    }
+    
+    /* 添加语言切换开关样式 */
+    .language-switch {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 15px;
+    }
+    
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+      margin: 0 10px;
+    }
+    
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(40, 40, 60, 0.6);
+      transition: .4s;
+      border-radius: 24px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #6a0dad;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    .language-label {
+      font-size: 0.9rem;
+      color: #eee;
+    }
+
+    /* 加载遮罩样式 */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+      backdrop-filter: blur(5px);
+      display: none;
+    }
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #6a0dad;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 播放按钮样式 */
+    .play-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 2;
+      color: white;
+      border: none;
+    }
+
+  .play-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+
+  .tone-card.playing .play-button {
+    background: rgba(106, 13, 173, 0.7);
+  }
+
+  .tone-card.playing .play-button i {
+    color: white;
+  }
+
+  /* 播放状态样式 */
+  .playing {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .playing::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(106, 13, 173, 0.3) 0%, rgba(106, 13, 173, 0) 70%);
+    z-index: -1;
+    animation: pulse 3s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 0.3;
+    }
+  }
+  </style>
+</head>
+
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <img src="../images/logo.jpg" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;">
+        星璇律动
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">首页</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#about-wu-yin">五音疗法</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#tech">技术原理</a>
+          </li>
+          <li class="nav-item active">
+            <a class="nav-link" href="#demo">冥想体验 <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#benefits">健康益处</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 英雄区域 -->
+  <div class="meditation-hero">
+    <div class="container">
+      <h1 class="display-4" style="color: #fff; text-shadow: 2px 2px 4px #000;">五音疗法冥想音乐</h1>
+      <p class="lead" style="color: #eee; text-shadow: 1px 1px 2px #000;">融合千年中医五音理论与尖端AI技术，为您定制心灵疗愈体验</p>
+      <a href="#demo" class="btn btn-primary btn-lg mt-3">开始冥想体验</a>
+    </div>
+  </div>
+
+  <!-- 主要内容区域 -->
+  <div class="container" style="margin-top: 60px;">
+
+    <!-- 五音疗法介绍 -->
+    <section id="about-wu-yin" class="content-section">
+      <h2 class="text-center mb-5">五音疗法的古今智慧</h2>
+      
+      <!-- 重新设计布局：创建水平卡片，图片和文字并排 -->
+      <div class="feature-card mb-5" style="border-radius: 15px; overflow: hidden; box-shadow: 0 15px 30px rgba(0,0,0,0.3);">
+        <div class="row no-gutters align-items-stretch">
+          <!-- 左侧图片，设置高度100%确保填充整个卡片高度 -->
+          <div class="col-lg-5 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(106, 13, 173, 0.1), rgba(106, 13, 173, 0.05));">
+            <div class="position-relative h-100 w-100 d-flex align-items-center justify-content-center p-4">
+              <img src="../images/黄帝内经.jpg" alt="古代医籍" class="img-fluid" style="max-height: 400px; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid rgba(106, 13, 173, 0.3); transition: all 0.3s ease;">
+            </div>
+          </div>
+          
+          <!-- 右侧文字内容 -->
+          <div class="col-lg-7">
+            <div class="card-body p-4 p-lg-5">
+              <h4 class="mb-3" style="color: #a29bfe; border-bottom: 1px solid rgba(162, 155, 254, 0.3); padding-bottom: 10px;">
+                <i class="fas fa-history mr-2"></i>
+                源自五千年的传统医学智慧
+              </h4>
+              <p>五音疗法源自中国古代的《黄帝内经》等经典医籍，是中医整体观念的重要组成部分。古人认为，五音（宫、商、角、徵、羽）与五行（土、金、木、火、水）、五脏（脾、肺、肝、心、肾）、五志（思、忧、怒、喜、恐）密切相关，音乐能够直接影响人体脏腑功能与情志状态。</p>
+              <p>传统五音疗法通过特定的音阶、节奏与乐器，调节人体气血运行、平衡阴阳、疏通经络，达到"以乐治病"的效果。历代名医如孙思邈、李时珍等都有关于音乐疗法的深入研究与实践。</p>
+              <div class="text-right">
+                <span class="badge badge-pill" style="background: rgba(106, 13, 173, 0.1); color: #a29bfe; padding: 8px 15px; font-size: 0.9rem;">传统智慧</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第二个卡片，反向布局 -->
+      <div class="feature-card" style="border-radius: 15px; overflow: hidden; box-shadow: 0 15px 30px rgba(0,0,0,0.3);">
+        <div class="row no-gutters align-items-stretch">
+          <!-- 左侧文字内容 -->
+          <div class="col-lg-7 order-lg-1 order-2">
+            <div class="card-body p-4 p-lg-5">
+              <h4 class="mb-3" style="color: #74b9ff; border-bottom: 1px solid rgba(116, 185, 255, 0.3); padding-bottom: 10px;">
+                <i class="fas fa-brain mr-2"></i>
+                现代神经科学的验证
+              </h4>
+              <p>现代研究表明，特定频率的音乐能直接影响大脑波动。α波（8-12Hz）与冥想、放松状态高度相关；θ波（4-8Hz）则与深度冥想和创造性思维相关。我们的五音疗法冥想音乐经过傅里叶分析，精确调整至这些有益频段。</p>
+              <p>神经影像学研究证实，五音疗法音乐可调节杏仁核（情绪中枢）、海马体（记忆中枢）的活动，显著降低皮质醇（压力激素）水平，增加内啡肽与血清素分泌，形成科学可量化的身心健康效益。</p>
+              <p>星璇律动将这一古老智慧与现代技术完美结合，创造出真正能触及心灵的疗愈音乐体验。</p>
+              <div class="text-right">
+                <span class="badge badge-pill" style="background: rgba(116, 185, 255, 0.1); color: #74b9ff; padding: 8px 15px; font-size: 0.9rem;">现代科学</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 右侧图片，但在移动设备上显示在上方 -->
+          <div class="col-lg-5 d-flex align-items-center order-lg-2 order-1" style="background: linear-gradient(135deg, rgba(116, 185, 255, 0.1), rgba(116, 185, 255, 0.05));">
+            <div class="position-relative h-100 w-100 d-flex align-items-center justify-content-center p-4">
+              <img src="../images/神经科学.jpg" alt="神经科学" class="img-fluid" style="max-height: 400px; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid rgba(116, 185, 255, 0.3); transition: all 0.3s ease;">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 添加过渡线 -->
+      <div class="text-center mt-5 mb-3">
+        <div style="height: 2px; background: linear-gradient(to right, transparent, rgba(106, 13, 173, 0.3), transparent); width: 80%; margin: 0 auto;"></div>
+      </div>
+    </section>
+
+    <!-- 技术原理 -->
+    <section id="tech" class="content-section">
+      <h2 class="text-center mb-5">领先科技，匠心打造</h2>
+      <div class="row mb-4">
+        <div class="col-md-4 text-center">
+          <div class="feature-card">
+            <div class="tech-icon">
+              <i class="fas fa-brain"></i>
+            </div>
+            <h4>生成对抗网络技术</h4>
+            <p>采用Spectrogram-GAN技术，通过生成器和判别器的对抗训练，生成高保真频谱图，完美复现古琴、琵琶等民族乐器的音色特性。</p>
+            <p>突破传统音乐AI数据限制，即使在稀疏数据集条件下，也能生成音色纯正、技法地道的中国传统音乐。</p>
+          </div>
+        </div>
+        <div class="col-md-4 text-center">
+          <div class="feature-card">
+            <div class="tech-icon">
+              <i class="fas fa-wave-square"></i>
+            </div>
+            <h4>五声调式约束算法</h4>
+            <p>创新性地引入五声调式规则引导生成过程，确保音乐严格符合宫、商、角、徵、羽五音体系。</p>
+            <p>通过多尺度小波变换提取传统民乐特征，捕捉不同乐器的演奏技法（如古琴滑音、揉弦），生成地道的中国音乐特性。</p>
+          </div>
+        </div>
+        <div class="col-md-4 text-center">
+          <div class="feature-card">
+            <div class="tech-icon">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <h4>生理反馈与个性化调节</h4>
+            <p>通过Fitbit API等设备采集用户心率、呼吸等生理数据，AI算法实时优化音乐参数。</p>
+            <p>当检测到心率降低时，系统自动调整音乐节奏与和声，形成闭环反馈，显著增强冥想效果，帮助用户更快进入理想状态。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 冥想体验互动区域 -->
+    <section id="demo" class="content-section">
+      <h2 class="text-center mb-4">定制您的冥想体验</h2>
+      <p class="text-center lead mb-5">选择符合您当前情绪与需求的五音，让AI为您创作专属冥想音乐</p>
+      
+      <div class="demo-container">
+        <div class="row mb-5">
+          <div class="col-12 text-center mb-4">
+            <h4 class="section-title" style="font-size: 1.8rem;">选择您需要的五音</h4>
+            <p class="text-muted mb-4">每种五音对应不同脏腑与情志，选择最符合您当前需求的音调</p>
+          </div>
+          <div class="col-12">
+            <div class="row tone-selector">
+              <div class="col-md-15th">
+                <div class="tone-card feature-card tone-gong" data-tone="gong">
+                  <button class="play-button" data-tone="gong">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <div class="tone-symbol">宫</div>
+                  <h5 class="tone-title">宫音</h5>
+                  <div class="tone-attributes">脾 · 土 · 思</div>
+                  <div class="tone-effect">平衡思虑，增强专注</div>
+                </div>
+              </div>
+              <div class="col-md-15th">
+                <div class="tone-card feature-card tone-shang" data-tone="shang">
+                  <button class="play-button" data-tone="shang">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <div class="tone-symbol">商</div>
+                  <h5 class="tone-title">商音</h5>
+                  <div class="tone-attributes">肺 · 金 · 忧</div>
+                  <div class="tone-effect">舒缓忧愁，净化肺气</div>
+                </div>
+              </div>
+              <div class="col-md-15th">
+                <div class="tone-card feature-card tone-jue" data-tone="jue">
+                  <button class="play-button" data-tone="jue">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <div class="tone-symbol">角</div>
+                  <h5 class="tone-title">角音</h5>
+                  <div class="tone-attributes">肝 · 木 · 怒</div>
+                  <div class="tone-effect">化解怒气，疏肝理气</div>
+                </div>
+              </div>
+              <div class="col-md-15th">
+                <div class="tone-card feature-card tone-zhi" data-tone="zhi">
+                  <button class="play-button" data-tone="zhi">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <div class="tone-symbol">徵</div>
+                  <h5 class="tone-title">徵音</h5>
+                  <div class="tone-attributes">心 · 火 · 喜</div>
+                  <div class="tone-effect">调和情绪，安神定志</div>
+                </div>
+              </div>
+              <div class="col-md-15th">
+                <div class="tone-card feature-card tone-yu" data-tone="yu">
+                  <button class="play-button" data-tone="yu">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <div class="tone-symbol">羽</div>
+                  <h5 class="tone-title">羽音</h5>
+                  <div class="tone-attributes">肾 · 水 · 恐</div>
+                  <div class="tone-effect">消除恐惧，滋养肾精</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 人群与情绪选择 - 并排显示 -->
+        <div class="row mb-5">
+          <!-- 人群选择 -->
+          <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="text-center mb-4">
+              <h4 class="section-title" style="font-size: 1.8rem;">您属于哪一类人群？</h4>
+              <p class="text-muted mb-4">我们将为不同疗愈需求的人群提供个性化的音乐体验</p>
+            </div>
+            <div class="user-group-selector">
+              <div class="selector-title"><i class="fas fa-users"></i> 选择您的人群类型</div>
+              <div class="selector-container">
+                <button class="btn user-group-btn" data-group="insomnia">
+                  <i class="fas fa-moon"></i>
+                  失眠人士
+                </button>
+                <button class="btn user-group-btn" data-group="anxiety">
+                  <i class="fas fa-brain"></i>
+                  焦虑症人士
+                </button>
+                <button class="btn user-group-btn" data-group="depression">
+                  <i class="fas fa-cloud-rain"></i>
+                  抑郁症人士
+                </button>
+                <button class="btn user-group-btn" data-group="stress">
+                  <i class="fas fa-bolt"></i>
+                  高压工作者
+                </button>
+                <button class="btn user-group-btn" data-group="autism">
+                  <i class="fas fa-puzzle-piece"></i>
+                  自闭症人士
+                </button>
+                <button class="btn user-group-btn" data-group="alzheimer">
+                  <i class="fas fa-memory"></i>
+                  认知障碍人士
+                </button>
+                <button class="btn user-group-btn" data-group="pregnant">
+                  <i class="fas fa-baby"></i>
+                  孕期人士
+                </button>
+                <button class="btn user-group-btn" data-group="elderly">
+                  <i class="fas fa-walking"></i>
+                  老年人
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 情绪状态选择 -->
+          <div class="col-lg-6">
+            <div class="text-center mb-4">
+              <h4 class="section-title" style="font-size: 1.8rem;">您当前的情绪状态是？</h4>
+              <p class="text-muted mb-4">我们将根据您的情绪状态定制适合的五音疗法</p>
+            </div>
+            <div class="emotion-selector">
+              <div class="selector-title"><i class="fas fa-heartbeat"></i> 选择您的情绪状态</div>
+              <div class="selector-container">
+                <button class="btn emotion-btn anger" data-emotion="anger">
+                  <div class="emotion-icon"><i class="fas fa-fire"></i></div>
+                  愤怒
+                </button>
+                <button class="btn emotion-btn anxiety" data-emotion="anxiety">
+                  <div class="emotion-icon"><i class="fas fa-wind"></i></div>
+                  焦虑
+                </button>
+                <button class="btn emotion-btn depression" data-emotion="depression">
+                  <div class="emotion-icon"><i class="fas fa-cloud"></i></div>
+                  抑郁
+                </button>
+                <button class="btn emotion-btn sadness" data-emotion="sadness">
+                  <div class="emotion-icon"><i class="fas fa-tint"></i></div>
+                  悲伤
+                </button>
+                <button class="btn emotion-btn stress" data-emotion="stress">
+                  <div class="emotion-icon"><i class="fas fa-compress-alt"></i></div>
+                  压力大
+                </button>
+                <button class="btn emotion-btn tired" data-emotion="tired">
+                  <div class="emotion-icon"><i class="fas fa-battery-quarter"></i></div>
+                  疲惫
+                </button>
+                <button class="btn emotion-btn excited" data-emotion="excited">
+                  <div class="emotion-icon"><i class="fas fa-star"></i></div>
+                  兴奋
+                </button>
+                <button class="btn emotion-btn insecure" data-emotion="insecure">
+                  <div class="emotion-icon"><i class="fas fa-question"></i></div>
+                  不安
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-7">
+            <div class="form-group mb-4">
+              <label for="meditationDescription" class="form-label">
+                <i class="fas fa-pen-fancy mr-2" style="color: #a29bfe;"></i>
+                描述您想要的冥想音乐氛围
+              </label>
+              <textarea class="form-control custom-input" id="meditationDescription" rows="3" placeholder="例如：宁静的古琴音乐，伴随着小溪流水声，帮助我放松心情..."></textarea>
+            </div>
+            
+            <div class="mb-4">
+              <div class="row">
+                <div class="col-6">
+                  <label for="duration" class="form-label d-block mb-2">
+                    <i class="fas fa-clock mr-2" style="color: #a29bfe;"></i>
+                    冥想时长
+                  </label>
+                  <select class="form-control custom-input" id="duration">
+                    <option value="5">5 分钟</option>
+                    <option value="10" selected>10 分钟</option>
+                    <option value="15">15 分钟</option>
+                    <option value="30">30 分钟</option>
+                    <option value="60">60 分钟</option>
+                  </select>
+                </div>
+                <div class="col-6">
+                  <label for="heartRate" class="form-label">
+                    <i class="fas fa-heartbeat mr-2" style="color: #a29bfe;"></i>
+                    心率 (可选)
+                  </label>
+                  <input type="number" class="form-control custom-input" id="heartRate" placeholder="例如: 75 次/分">
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary generate-btn" id="generateButton">
+              <i class="fas fa-magic mr-2"></i> 生成冥想音乐
+            </button>
+          </div>
+          <div class="col-md-5">
+            <div class="prompt-examples-container">
+              <div class="prompt-examples-title">
+                <i class="fas fa-lightbulb"></i>
+                提示词示例
+                <small class="ml-2 text-muted">点击卡片使用示例</small>
+              </div>
+              <div class="prompt-examples-grid" id="promptExamples">
+                <div class="prompt-example-card" data-prompt="Tranquil meditation music played on traditional Chinese guqin, featuring gentle water sounds and bamboo forest ambience, helping anxious office workers find inner peace and reduce work stress">
+                  <div class="prompt-example-header">
+                    <div class="prompt-tags-container">
+                      <span class="prompt-tag group"><i class="fas fa-users"></i> 上班族</span>
+                      <span class="prompt-tag emotion"><i class="fas fa-wind"></i> 焦虑</span>
+                      <span class="prompt-tag english"><i class="fas fa-language"></i> 英文</span>
+                    </div>
+                  </div>
+                  <div class="prompt-example-content">
+                    宁静的古琴冥想音乐，包含流水声和竹林环境音，帮助焦虑的上班族寻找内心平静，减轻工作压力
+                  </div>
+                </div>
+                
+                <div class="prompt-example-card" data-prompt="Soft piano melody with subtle ocean waves, designed for students under pressure, enhancing focus, reducing study fatigue, and improving memory retention and learning efficiency">
+                  <div class="prompt-example-header">
+                    <div class="prompt-tags-container">
+                      <span class="prompt-tag group"><i class="fas fa-graduation-cap"></i> 学生</span>
+                      <span class="prompt-tag emotion"><i class="fas fa-compress-alt"></i> 压力大</span>
+                      <span class="prompt-tag english"><i class="fas fa-language"></i> 英文</span>
+                    </div>
+                  </div>
+                  <div class="prompt-example-content">
+                    温柔的钢琴曲配合轻微海浪声，为压力大的学生设计，帮助集中注意力，减轻学习疲劳，提升记忆力和学习效率
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-5" id="musicPlayerSection" style="display: none;">
+          <div class="col-12 text-center mb-3">
+            <h4 class="section-title" style="font-size: 1.8rem;">您的个性化冥想音乐</h4>
+          </div>
+          <div class="col-12">
+            <div id="audioWaveform">
+              <div class="waveform-container">
+                <div class="waveform-bar" style="animation-delay: 0.1s; height: 40%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.2s; height: 60%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.3s; height: 30%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.4s; height: 80%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.5s; height: 50%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.6s; height: 70%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.7s; height: 40%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.8s; height: 60%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.9s; height: 30%;"></div>
+                <div class="waveform-bar" style="animation-delay: 1.0s; height: 50%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.9s; height: 70%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.8s; height: 40%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.7s; height: 20%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.6s; height: 60%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.5s; height: 80%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.4s; height: 60%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.3s; height: 40%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.2s; height: 30%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.1s; height: 50%;"></div>
+                <div class="waveform-bar" style="animation-delay: 0.0s; height: 70%;"></div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <button class="control-btn" id="rewindBtn">
+                <i class="fas fa-step-backward"></i>
+              </button>
+              <button class="control-btn play-btn" id="playBtn">
+                <i class="fas fa-play"></i>
+              </button>
+              <button class="control-btn" id="forwardBtn">
+                <i class="fas fa-step-forward"></i>
+              </button>
+            </div>
+
+            <audio id="musicPlayer" style="display: none;"></audio>
+
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="volumeSlider" class="form-label d-flex justify-content-between">
+                    <span><i class="fas fa-volume-down mr-2"></i> 音量</span>
+                    <span id="volumeValue">80%</span>
+                  </label>
+                  <input type="range" class="custom-range" id="volumeSlider" min="0" max="100" value="80">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mt-4 text-right">
+                  <button class="btn btn-sm btn-outline-light mr-2" id="downloadBtn">
+                    <i class="fas fa-download mr-1"></i> 保存
+                  </button>
+                  <button class="btn btn-sm btn-outline-light mr-2" id="shareBtn">
+                    <i class="fas fa-share-alt mr-1"></i> 分享
+                  </button>
+                  <button class="btn btn-sm btn-outline-light" id="favoriteBtn">
+                    <i class="fas fa-heart mr-1"></i> 收藏
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 健康益处 -->
+    <section id="benefits" class="content-section">
+      <h2 class="section-title">五音疗法的健康益处</h2>
+      <div class="row">
+        <div class="col-md-4 mb-4">
+          <div class="feature-card benefits-card">
+            <div class="icon-container text-center">
+              <i class="fas fa-brain fa-3x" style="color: #a29bfe;"></i>
+            </div>
+            <h4 class="text-center mb-3">神经系统调节</h4>
+            <ul class="benefits-list">
+              <li>促进α脑波产生，提升注意力与创造力</li>
+              <li>降低杏仁核活跃度，减轻焦虑与压力反应</li>
+              <li>刺激迷走神经，增强副交感神经系统功能</li>
+              <li>平衡左右脑活动，提升整体大脑健康</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card benefits-card">
+            <div class="icon-container text-center">
+              <i class="fas fa-heartbeat fa-3x" style="color: #ff6b6b;"></i>
+            </div>
+            <h4 class="text-center mb-3">身体机能优化</h4>
+            <ul class="benefits-list">
+              <li>调节心率变异性，改善心血管健康</li>
+              <li>降低皮质醇水平，减轻慢性炎症反应</li>
+              <li>促进内啡肽分泌，自然缓解疼痛感</li>
+              <li>改善睡眠质量，加速身体修复过程</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card benefits-card">
+            <div class="icon-container text-center">
+              <i class="fas fa-smile-beam fa-3x" style="color: #ffeaa7;"></i>
+            </div>
+            <h4 class="text-center mb-3">情绪与心理健康</h4>
+            <ul class="benefits-list">
+              <li>增强情绪调节能力，平衡五志情感</li>
+              <li>提升血清素与多巴胺水平，促进幸福感</li>
+              <li>降低反刍思维，减轻抑郁症状</li>
+              <li>培养正念觉察，增强心理韧性</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 研究背景 -->
+    <section class="content-section">
+      <h2 class="text-center mb-5">科学研究支持</h2>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="feature-card">
+            <h4>五音疗法的科学基础</h4>
+            <p>五音疗法作为传统中医理论的一部分，近年来受到现代科学的关注与研究。现有的科学研究表明：</p>
+            <ul>
+              <li>特定频率的音乐确实能影响大脑波动及情绪状态</li>
+              <li>音乐干预可有效降低焦虑水平和压力激素浓度</li>
+              <li>特定音乐频率与大脑α脑波产生存在相关性</li>
+              <li>音乐疗法可作为辅助手段改善睡眠质量</li>
+            </ul>
+            <p class="mt-3"><em>注：星璇律动的五音疗法AI模块目前仍处于研发阶段，尚未进行临床验证。</em></p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="feature-card">
+            <h4>相关领域科研进展</h4>
+            <p>全球范围内，音乐疗法与神经科学的交叉研究取得了显著进展：</p>
+            <ul>
+              <li>《自然·神经科学》期刊研究表明音乐可显著激活大脑奖赏回路</li>
+              <li>JAMA子刊报道音乐干预可降低术后患者疼痛指数达25%</li>
+              <li>神经影像学研究证实古典音乐提高海马体与前额叶皮层连接强度</li>
+              <li>临床数据显示50-80Hz低频振动有助于减轻焦虑症状</li>
+            </ul>
+            <p class="mt-3">这些研究为五音疗法的科学实践提供了理论基础，星璇律动正致力于将这些科研成果应用于AI音乐创作中。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 加载中遮罩层 -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <h4 style="color: white; margin-bottom: 10px;">正在生成您的冥想音乐</h4>
+    <p style="color: #a29bfe;">这可能需要1-2分钟时间，请耐心等待...</p>
+  </div>
+
+  <!-- 页脚 -->
+  <footer>
+    <div class="container">
+      <p>© 2025 星璇律动. 保留所有权利。</p>
+      <p>AI驱动的歌词、音乐与视频一体化创作平台</p>
+    </div>
+  </footer>
+
+  <!-- 引入JS依赖 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+
+  <!-- 添加自定义JS -->
+  <script>
+    $(document).ready(function() {
+      // 添加自定义CSS类支持5等分列
+      $("<style>")
+        .prop("type", "text/css")
+        .html(`
+          .col-md-15th {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+          }
+          
+          @media (min-width: 768px) {
+            .col-md-15th {
+              flex: 0 0 20%;
+              max-width: 20%;
+            }
+          }
+        `)
+        .appendTo("head");
+
+      // 音调选择卡片交互
+      $(".tone-card").on("click", function() {
+        $(".tone-card").removeClass("active");
+        $(this).addClass("active");
+        
+        // 显示选中的五音信息
+        const toneName = $(this).data('tone');
+        console.log("Selected tone: " + toneName);
+      });
+      
+      // 五音示例音乐数据
+    const musicData = {
+      gong: {
+        title: "宫音 - 大地之息",
+        url: "../click_music/cut_土音.wav",
+        description: "土音深沉，调和脾胃，促进思考与决策"
+      },
+      shang: {
+        title: "商音 - 金石之韵",
+        url: "../click_music/cut_金音.wav",
+        description: "金音清越，调和肺气，净化心灵"
+      },
+      jue: {
+        title: "角音 - 春木之舞",
+        url: "../click_music/cut_木音.wav",
+        description: "木音生机，调和肝气，舒展情志"
+      },
+      zhi: {
+        title: "徵音 - 心火之明",
+        url: "../click_music/cut_火音.wav",
+        description: "火音温暖，调和心气，安神定志"
+      },
+      yu: {
+        title: "羽音 - 流水之智",
+        url: "../click_music/cut_水音.wav",
+        description: "水音柔润，调和肾气，增强意志"
+      }
+    };
+    
+    let currentAudio = null;
+    let currentPlayingButton = null;
+    
+    // 播放按钮点击事件
+    $('.play-button').click(function(e) {
+      e.stopPropagation(); // 阻止事件冒泡到卡片
+      const tone = $(this).data('tone');
+      const button = $(this);
+      const card = button.closest('.tone-card');
+      
+      // 如果点击的是当前正在播放的按钮
+      if (currentPlayingButton && currentPlayingButton[0] === button[0] && currentAudio && !currentAudio.paused) {
+        pauseCurrentAudio();
+        return;
+      }
+      
+      // 暂停当前正在播放的音频
+      if (currentAudio) {
+        pauseCurrentAudio();
+      }
+      
+      // 创建新的音频对象
+      const audio = new Audio(musicData[tone].url);
+      
+      // 播放音频
+      audio.play()
+        .then(() => {
+          // 更新当前播放状态
+          currentAudio = audio;
+          currentPlayingButton = button;
+          
+          // 更新UI
+          $('.tone-card').removeClass('playing');
+          card.addClass('playing');
+          button.find('i').removeClass('fa-play').addClass('fa-pause');
+          
+          // 显示播放状态
+          showPlayingIndicator(tone);
+          
+          // 监听音频结束事件
+          audio.addEventListener('ended', function() {
+            pauseCurrentAudio();
+          });
+        })
+        .catch(error => {
+          console.error("播放失败:", error);
+          alert("音乐播放失败，请检查网络连接或稍后再试");
+        });
+    });
+    
+    // 暂停当前音频的函数
+    function pauseCurrentAudio() {
+      if (currentAudio) {
+        currentAudio.pause();
+        // 更新UI
+        currentPlayingButton.closest('.tone-card').removeClass('playing');
+        currentPlayingButton.find('i').removeClass('fa-pause').addClass('fa-play');
+        hidePlayingIndicator();
+        currentAudio = null;
+        currentPlayingButton = null;
+      }
+    }
+    
+    // 显示播放状态指示器
+    function showPlayingIndicator(tone) {
+      // 移除可能存在的旧指示器
+      hidePlayingIndicator();
+      
+      // 创建播放状态指示器
+      const indicator = $(`
+        <div class="alert alert-primary d-flex align-items-center" role="alert" id="playing-indicator" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; max-width: 300px; border-radius: 15px;">
+          <i class="fas fa-music mr-2"></i>
+          <div>
+            <strong>正在播放: ${musicData[tone].title}</strong>
+            <div class="small">${musicData[tone].description}</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary ml-3" id="stop-playing">
+            <i class="fas fa-stop"></i>
+          </button>
+        </div>
+      `);
+      
+      // 添加到页面
+      $('body').append(indicator);
+      
+      // 停止按钮事件
+      $('#stop-playing').click(function() {
+        pauseCurrentAudio();
+      });
+    }
+      
+      // 隐藏播放状态指示器
+      function hidePlayingIndicator() {
+        $('#playing-indicator').remove();
+      }
+      
+      // 人群选择按钮交互
+      $(".user-group-btn").on("click", function() {
+        $(".user-group-btn").removeClass("active");
+        $(this).addClass("active");
+        
+        const userGroup = $(this).data('group');
+        console.log("Selected user group: " + userGroup);
+      });
+      
+      // 情绪选择按钮交互
+      $(".emotion-btn").on("click", function() {
+        $(".emotion-btn").removeClass("active");
+        $(this).addClass("active");
+        
+        const emotion = $(this).data('emotion');
+        console.log("Selected emotion: " + emotion);
+      });
+      
+      // 提示词示例点击事件
+      $(".prompt-example-card").on("click", function() {
+        const promptText = $(this).data('prompt');
+        $("#meditationDescription").val(promptText);
+      });
+      
+      // 生成按钮点击事件
+      $("#generateButton").on("click", function() {
+        // 检查是否有描述
+        const description = $("#meditationDescription").val().trim();
+        if (!description) {
+          alert("请描述您想要的冥想音乐氛围");
+          return;
+        }
+        
+        // 显示加载状态
+        $(this).html('<i class="fas fa-spinner fa-spin mr-2"></i> 正在生成...');
+        $("#loadingOverlay").fadeIn();
+        
+        // 模拟API调用延迟
+        setTimeout(function() {
+          // 隐藏加载状态
+          $("#loadingOverlay").fadeOut();
+          $("#generateButton").html('<i class="fas fa-magic mr-2"></i> 生成冥想音乐');
+          
+          // 显示音乐播放器
+          $("#musicPlayerSection").fadeIn();
+          
+          // 设置生成的音乐
+          const audio = document.getElementById("musicPlayer");
+          audio.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3";
+          
+          // 平滑滚动到播放器
+          $('html, body').animate({
+            'scrollTop': $("#musicPlayerSection").offset().top - 100
+          }, 800, 'swing');
+        }, 2000);
+      });
+      
+      // 播放按钮交互
+      $("#playBtn").on("click", function() {
+        const icon = $(this).find("i");
+        const audio = document.getElementById("musicPlayer");
+        
+        if (icon.hasClass("fa-play")) {
+          audio.play();
+          icon.removeClass("fa-play").addClass("fa-pause");
+          $(".waveform-container").addClass("waveform-playing");
+        } else {
+          audio.pause();
+          icon.removeClass("fa-pause").addClass("fa-play");
+          $(".waveform-container").removeClass("waveform-playing");
+        }
+      });
+      
+      // 倒退按钮
+      $("#rewindBtn").on("click", function() {
+        const audio = document.getElementById("musicPlayer");
+        audio.currentTime = Math.max(0, audio.currentTime - 10);
+      });
+      
+      // 前进按钮
+      $("#forwardBtn").on("click", function() {
+        const audio = document.getElementById("musicPlayer");
+        audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+      });
+
+      // 音量滑块更新显示值
+      $("#volumeSlider").on("input", function() {
+        const volume = $(this).val();
+        $("#volumeValue").text(volume + "%");
+        
+        const audio = document.getElementById("musicPlayer");
+        audio.volume = volume / 100;
+      });
+      
+      // 平滑滚动
+      $('a[href^="#"]').on('click', function(e) {
+        e.preventDefault();
+        
+        const target = this.hash;
+        const $target = $(target);
+        
+        $('html, body').animate({
+          'scrollTop': $target.offset().top - 80
+        }, 800, 'swing');
+      });
+    });
+  </script>
+</body>
+
+</html>

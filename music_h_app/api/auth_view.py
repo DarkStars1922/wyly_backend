@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer,JSONRenderer
@@ -8,7 +9,10 @@ from ..models import User
 
 class UserRegisterAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
-
+    template_name = 'music_h_app/register.html'
+    def get(self,request):
+        return render(request,'music_h_app/register.html')
+    
     def post(self,request):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -46,6 +50,10 @@ class UserRegisterAPIView(APIView):
         
 class UserLoginAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+    template_name = 'music_h_app/login.html'
+
+    def get(self,request):
+        return render(request,'music_h_app/login.html')
 
     def post(self,request):
         username = request.data.get('username')

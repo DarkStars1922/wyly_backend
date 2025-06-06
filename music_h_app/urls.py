@@ -1,4 +1,7 @@
 from django.urls import path
+from .api.home_view import(
+    HomeAPIView
+)
 from .api.auth_view import(
     UserLoginAPIView,
     UserRegisterAPIView,
@@ -12,6 +15,7 @@ from .api.music_generator_view import(
     GenerateMusicView
 )
 urlpatterns = [
+    path('',HomeAPIView.as_view(),name='home'),
     path('register/',UserRegisterAPIView.as_view(),name='register'),
     path('login/',UserLoginAPIView.as_view(),name='login'),
     path('logout/',UserLogoutAPIView.as_view(),name='logout'),

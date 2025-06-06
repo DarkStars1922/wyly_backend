@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星璇律动 - AI驱动的创作平台</title>
+  <!-- 参考 戏剧(新) 项目引入 Bootstrap -->
+  <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+  <!-- 引入自定义样式 -->
+  <link rel="stylesheet" href="../static/css/xingxuanlvdong.css">
+  <!-- 添加Font Awesome图标库 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- 添加自定义CSS -->
+  <style>
+    /* 整体优化 */
+    .section-title {
+      font-size: 2.2rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      display: inline-block;
+      padding-bottom: 0.5rem;
+    }
+    
+    .section-title:after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(to right, #6a0dad, rgba(106, 13, 173, 0.3));
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 3px;
+    }
+    
+    .lead-text {
+      font-size: 1.2rem;
+      max-width: 800px;
+      margin: 0 auto 2.5rem;
+      color: #d0d0ff;
+    }
+    
+    /* 按钮设计优化 */
+    .btn-cta {
+      padding: 12px 28px;
+      font-size: 1.05rem;
+      border-radius: 50px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .btn-cta:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      transition: all 0.3s ease;
+      z-index: -1;
+    }
+    
+    .btn-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    
+    .btn-cta:hover:before {
+      width: 100%;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #6a0dad, #8a2be2);
+      border: none;
+    }
+    
+    /* 特性卡片优化 */
+    .feature-card {
+      border-radius: 12px;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      overflow: hidden;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .icon-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* 五音疗法进度条和体验优化 */
+    .healing-process {
+      margin: 50px 0;
+    }
+    
+    .process-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      max-width: 800px;
+      margin: 0 auto 30px;
+    }
+    
+    .process-steps:before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-50%);
+      z-index: 1;
+    }
+    
+    .process-progress {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      height: 4px;
+      width: 25%; /* 默认第一步 */
+      background: linear-gradient(to right, #6a0dad, #8a2be2);
+      transform: translateY(-50%);
+      transition: width 0.5s ease;
+      z-index: 2;
+      border-radius: 4px;
+    }
+    
+    .step {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(40, 40, 60, 0.8);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      position: relative;
+      z-index: 3;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .step.active {
+      background: #6a0dad;
+      border-color: #fff;
+      box-shadow: 0 0 15px rgba(106, 13, 173, 0.5);
+    }
+    
+    .step-content {
+      display: none;
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    .step-content.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .tones-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .tone-card {
+      background: linear-gradient(135deg, rgba(50, 50, 70, 0.8), rgba(30, 30, 50, 0.8));
+      border-radius: 10px;
+      padding: 20px 15px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tone-card:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      transition: all 0.3s ease;
+    }
+    
+    .tone-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .tone-card.active {
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .tone-gong:before { background: linear-gradient(to right, #f0c080, #e0a050); }
+    .tone-shang:before { background: linear-gradient(to right, #e0e0e0, #c0c0d0); }
+    .tone-jue:before { background: linear-gradient(to right, #80c060, #60a040); }
+    .tone-zhi:before { background: linear-gradient(to right, #e05050, #c03030); }
+    .tone-yu:before { background: linear-gradient(to right, #6090e0, #4070c0); }
+    
+    .tone-symbol {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    
+    .tone-gong .tone-symbol { color: #f0c080; }
+    .tone-shang .tone-symbol { color: #e0e0e0; }
+    .tone-jue .tone-symbol { color: #80c060; }
+    .tone-zhi .tone-symbol { color: #e05050; }
+    .tone-yu .tone-symbol { color: #6090e0; }
+    
+    .tone-title {
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    .tone-attributes {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 10px;
+    }
+    
+    .detail-row {
+      display: flex;
+      margin-bottom: 15px;
+    }
+    
+    .detail-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+    
+    .hero-cta {
+      display: inline-block;
+      background: linear-gradient(135deg, #6a0dad, #8a2be2);
+      color: white;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      margin-top: 30px;
+      transition: all 0.3s ease;
+    }
+    
+    .hero-cta:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+    
+    /* 播放按钮样式 */
+    .play-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 2;
+      color: white;
+      border: none;
+    }
+    
+    .play-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+    
+    .tone-card.playing .play-button {
+      background: rgba(106, 13, 173, 0.7);
+    }
+    
+    .tone-card.playing .play-button i {
+      color: white;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+      .tones-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .process-steps {
+        flex-direction: column;
+        align-items: flex-start;
+        height: 250px;
+        margin-left: 25px;
+      }
+      
+      .process-steps:before {
+        left: 25px;
+        right: auto;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        height: 100%;
+      }
+      
+      .process-progress {
+        left: 25px;
+        top: 0;
+        width: 4px;
+        height: 25%;
+      }
+      
+      .step {
+        margin-bottom: 20px;
+      }
+    }
+    
+    /* 播放状态样式 */
+    .playing {
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .playing::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle, rgba(106, 13, 173, 0.3) 0%, rgba(106, 13, 173, 0) 70%);
+      z-index: -1;
+      animation: pulse 3s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 0.3;
+      }
+    }
+  </style>
+  <!-- 可以添加一个图标 -->
+  <!-- <link rel="icon" href="./img/xingxuan_logo.png"> -->
+  <!-- 添加CSRF令牌 -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <!-- 引入静态文件 -->
+  <link rel="stylesheet" href="/static/css/xingxuanlvdong.css">
+</head>
+
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <img src="/static/images/logo.jpg" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;"> <!-- 嵌入Logo并调整样式 -->
+        星璇律动
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="#">首页 <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#features">核心功能</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#meditation">五音冥想</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#about">关于平台</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#contact">联系我们</a>
+          </li>
+          <!-- 导航栏修改 -->
+            <li class="nav-item">
+              <a class="nav-link" href="login.html">登录</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="register.html">注册</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 头部区域 - 可以放一个大气的背景图或视频 -->
+  <header style="position: relative; padding-top: 120px; padding-bottom: 100px; text-align: center; overflow: hidden;">
+    <!-- 背景视频 -->
+    <video autoplay loop muted playsinline
+      src="/static/images/background.mp4"
+      style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;">
+    </video>
+    <!-- 半透明遮罩层 -->
+    <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(rgba(15,23,42,0.7), rgba(26,26,46,0.8)); z-index: 1;"></div>
+    <!-- 内容层 -->
+    <div class="container" style="position: relative; z-index: 2;">
+      <h1 class="display-4" style="color: #fff; text-shadow: 2px 2px 4px #000; font-weight: 700; margin-bottom: 25px;">星璇律动</h1>
+      <p class="lead" style="color: #eee; text-shadow: 1px 1px 2px #000; font-size: 1.4rem; max-width: 800px; margin: 0 auto 40px;">AI驱动的歌词、音乐与视频一体化创作平台，结合传统智慧与现代科技</p>
+      <a href="#features" class="hero-cta">
+        探索功能
+        <i class="fas fa-arrow-right ml-2"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- 主要内容区域 -->
+  <div class="container" style="margin-top: 80px;">
+
+    <!-- 核心功能介绍 -->
+    <section id="features" class="content-section">
+      <h2 class="text-center section-title mb-3">核心功能</h2>
+      <p class="text-center lead-text">一站式创意表达平台，融合AI技术与艺术创作</p>
+      <div class="row">
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <div class="icon-circle">
+              <i class="fas fa-pencil-alt fa-2x" style="color: #ff6b6b;"></i>
+            </div>
+            <h4 class="text-center mb-3">AI歌词创作</h4>
+            <p>基于主题、情感、风格，智能生成高质量歌词。</p>
+            <div class="text-center">
+              <a href="lyric_creator.html" class="btn btn-primary btn-cta mt-3">开始创作</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <div class="icon-circle">
+              <i class="fas fa-music fa-2x" style="color: #48dbfb;"></i>
+            </div>
+            <h4 class="text-center mb-3">AI音乐生成</h4>
+            <p>根据歌词或情绪，自动谱曲、编曲，生成多种风格音乐。</p>
+            <div class="text-center">
+              <a href="music_creation.html" class="btn btn-primary btn-cta mt-3">开始创作</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <div class="icon-circle">
+              <i class="fas fa-video fa-2x" style="color: #1dd1a1;"></i>
+            </div>
+            <h4 class="text-center mb-3">AI视频合成</h4>
+            <p>结合歌词与音乐，智能匹配素材，生成可视化音乐视频。</p>
+            <div class="text-center">
+              <a href="video_creation.html" class="btn btn-primary btn-cta mt-3">开始创作</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 offset-md-2 mb-4">
+          <div class="feature-card">
+            <div class="icon-circle">
+              <i class="fas fa-spa fa-2x" style="color: #a29bfe;"></i>
+            </div>
+            <h4 class="text-center mb-3">五音疗法冥想</h4>
+            <p>基于中医五音疗法理论，AI生成个性化冥想音乐，平衡身心。</p>
+            <div class="text-center">
+              <a href="meditation_music.html" class="btn btn-primary btn-cta mt-3">开始体验</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <div class="icon-circle">
+              <i class="fas fa-images fa-2x" style="color: #f368e0;"></i>
+            </div>
+            <h4 class="text-center mb-3">优秀作品展示</h4>
+            <p>浏览社区精选音乐与视频作品，获取灵感与创作素材。</p>
+            <div class="text-center">
+              <a href="showcase_page.html" class="btn btn-primary btn-cta mt-3">查看作品</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 五音疗法冥想音乐板块 -->
+    <section id="meditation" class="content-section">
+      <h2 class="text-center section-title mb-3">五音疗法冥想音乐</h2>
+      <p class="text-center lead-text">沉浸于传统智慧与前沿AI的融合体验，平衡身心，调和情志</p>
+      
+      <div class="row mb-5 align-items-center">
+        <div class="col-lg-6">
+          <h4 style="color: #a29bfe; border-bottom: 1px solid rgba(162, 155, 254, 0.3); padding-bottom: 10px; margin-bottom: 20px;">古老智慧与现代科技的完美结合</h4>
+          
+          <div class="detail-row">
+            <div class="detail-icon">
+              <i class="fas fa-history" style="color: #a29bfe;"></i>
+            </div>
+            <div>
+              <h6 style="color: #d0d0ff;">五千年传统医学精髓</h6>
+              <p>源自《黄帝内经》的五音疗法，结合现代神经科学，精准调节身心状态。</p>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-icon">
+              <i class="fas fa-brain" style="color: #a29bfe;"></i>
+            </div>
+            <div>
+              <h6 style="color: #d0d0ff;">α波频率精确调整</h6>
+              <p>音频通过傅里叶分析严格验证，8-12赫兹α波促进深度放松与专注状态。</p>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-icon">
+              <i class="fas fa-heart" style="color: #a29bfe;"></i>
+            </div>
+            <div>
+              <h6 style="color: #d0d0ff;">情志调节与脏腑平衡</h6>
+              <p>五音与五脏对应关系，精准平衡情绪，促进生理机能和谐。</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-6 mt-4 mt-lg-0">
+          <div class="healing-process">
+            <h4 class="text-center mb-4">五音疗法的体验流程</h4>
+            
+            <div class="process-steps">
+              <div class="process-progress" id="process-bar"></div>
+              <div class="step active" data-step="1">1</div>
+              <div class="step" data-step="2">2</div>
+              <div class="step" data-step="3">3</div>
+              <div class="step" data-step="4">4</div>
+            </div>
+            
+            <div class="step-content active" data-step="1">
+              <h5>选择适合您的五音</h5>
+              <p>根据您的情绪状态与身体需求，选择最适合的五音类型</p>
+            </div>
+            
+            <div class="step-content" data-step="2">
+              <h5>描述您的冥想偏好</h5>
+              <p>输入您期望的冥想场景、情绪和音乐元素</p>
+            </div>
+            
+            <div class="step-content" data-step="3">
+              <h5>AI生成个性化音乐</h5>
+              <p>算法根据您的选择和描述，创作专属冥想音乐</p>
+            </div>
+            
+            <div class="step-content" data-step="4">
+              <h5>沉浸式冥想体验</h5>
+              <p>舒适环境中聆听，感受身心状态的和谐转变</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-5">
+        <div class="col-12">
+          <h4 class="text-center mb-4" style="color: #a29bfe;">五音与情志的和谐共鸣</h4>
+          <div class="tones-grid">
+            <div class="tone-card tone-gong" data-tone="gong">
+              <button class="play-button" data-tone="gong">
+                <i class="fas fa-play"></i>
+              </button>
+              <div class="tone-symbol">宫</div>
+              <div class="tone-title">宫音</div>
+              <div class="tone-attributes">脾 · 土 · 思</div>
+              <div style="font-size: 0.9rem; margin-top: 5px;">沉静思考<br>增强决策力</div>
+            </div>
+            
+            <div class="tone-card tone-shang" data-tone="shang">
+              <button class="play-button" data-tone="shang">
+                <i class="fas fa-play"></i>
+              </button>
+              <div class="tone-symbol">商</div>
+              <div class="tone-title">商音</div>
+              <div class="tone-attributes">肺 · 金 · 忧</div>
+              <div style="font-size: 0.9rem; margin-top: 5px;">释放悲忧<br>净化心灵</div>
+            </div>
+            
+            <div class="tone-card tone-jue" data-tone="jue">
+              <button class="play-button" data-tone="jue">
+                <i class="fas fa-play"></i>
+              </button>
+              <div class="tone-symbol">角</div>
+              <div class="tone-title">角音</div>
+              <div class="tone-attributes">肝 · 木 · 怒</div>
+              <div style="font-size: 0.9rem; margin-top: 5px;">化解愤怒<br>舒展生机</div>
+            </div>
+            
+            <div class="tone-card tone-zhi" data-tone="zhi">
+              <button class="play-button" data-tone="zhi">
+                <i class="fas fa-play"></i>
+              </button>
+              <div class="tone-symbol">徵</div>
+              <div class="tone-title">徵音</div>
+              <div class="tone-attributes">心 · 火 · 喜</div>
+              <div style="font-size: 0.9rem; margin-top: 5px;">安神定志<br>喜悦平和</div>
+            </div>
+            
+            <div class="tone-card tone-yu" data-tone="yu">
+              <button class="play-button" data-tone="yu">
+                <i class="fas fa-play"></i>
+              </button>
+              <div class="tone-symbol">羽</div>
+              <div class="tone-title">羽音</div>
+              <div class="tone-attributes">肾 · 水 · 恐</div>
+              <div style="font-size: 0.9rem; margin-top: 5px;">消除恐惧<br>增强意志</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-5">
+        <div class="col-md-12">
+          <h4 class="text-center mb-4" style="color: #a29bfe;">核心技术创新</h4>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <i class="fas fa-brain fa-3x mb-3" style="color: #ff9ff3;"></i>
+            <h5 class="text-center">Spectrogram-GAN音乐生成</h5>
+            <p>基于生成对抗网络的频谱图生成，突破传统音乐AI数据限制，完美复现古琴、琵琶等民族乐器的音色特性与演奏技法。</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <i class="fas fa-wave-square fa-3x mb-3" style="color: #74b9ff;"></i>
+            <h5 class="text-center">多尺度小波信号处理</h5>
+            <p>通过小波变换提取中国五声调式的低频特征（节奏、音阶）和高频特征（乐器技法），实现对传统民乐细节的精准捕捉与重现。</p>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <i class="fas fa-heartbeat fa-3x mb-3" style="color: #55efc4;"></i>
+            <h5 class="text-center">生理反馈动态调节</h5>
+            <p>通过智能设备（如Fitbit API）采集心率数据，实时调整音乐参数，形成个性化冥想体验，显著增强音乐疗法效果。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-8 offset-md-2 text-center">
+          <div class="feature-card" style="background: linear-gradient(135deg, rgba(60, 60, 80, 0.8), rgba(40, 40, 60, 0.8));">
+            <h4 class="mb-4">体验五音冥想</h4>
+            <p class="mb-4">选择您的情绪状态与需求，让AI为您创作专属的冥想音乐</p>
+            <a href="meditation_music.html" class="btn btn-primary btn-cta btn-lg">
+              <i class="fas fa-headphones-alt mr-2"></i>
+              开始体验
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 关于平台 -->
+    <section id="about" class="content-section">
+      <h2 class="text-center section-title mb-3">关于星璇律动</h2>
+      <p class="text-center lead-text">探索AI在创作领域的无限可能</p>
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <p>星璇律动是一个前沿的AI驱动创作平台，致力于打破传统歌词、音乐、视频创作的壁垒。我们利用先进的人工智能技术，赋能每一位创作者，无论是专业人士还是爱好者，都能轻松实现从灵感到作品的一体化创作流程。</p>
+          <p>平台整合了自然语言处理、音乐信息检索、计算机视觉等多种AI能力，旨在提供一个智能、高效、富有创造力的工具，让艺术创作更加触手可及。</p>
+        </div>
+        <div class="col-md-6 text-center">
+          <!-- 可以放一张平台示意图或概念图 -->
+          <img src="/static/images/pingtai.jpg" alt="平台概念图" class="img-fluid rounded" style="max-width: 80%; border: 1px solid #444; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);">
+        </div>
+      </div>
+    </section>
+
+    <!-- 联系我们/占位符 -->
+    <section id="contact" class="content-section text-center">
+      <h2 class="section-title mb-3">保持联系</h2>
+      <p class="mb-4">关注我们的最新动态，或提交您的反馈建议。</p>
+      <a href="mailto:contact@xingxuanlvdong.com" class="btn btn-outline-light btn-cta">
+        <i class="fas fa-envelope mr-2"></i>
+        发送邮件
+      </a>
+    </section>
+
+  </div>
+
+  <!-- 页脚 -->
+  <footer>
+    <div class="container">
+      <p>© 2025 星璇律动. 保留所有权利。</p>
+      <p>AI驱动的歌词、音乐与视频一体化创作平台</p>
+    </div>
+  </footer>
+
+  <!-- 引入 Bootstrap JS 和依赖 (从opera项目参考) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="/static/opera/bs/js/bootstrap.bundle.min.js"></script>
+  <!-- Font Awesome 图标库 (可选, 如果需要图标) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+  
+  <!-- 自定义JS -->
+  <script>
+    $(document).ready(function() {
+      // 五音疗法进度条和步骤交互
+      $('.step').click(function() {
+        const step = $(this).data('step');
+        
+        // 更新进度条
+        $('#process-bar').css('width', (step * 25) + '%');
+        
+        // 更新步骤状态
+        $('.step').removeClass('active');
+        $('.step').each(function() {
+          if ($(this).data('step') <= step) {
+            $(this).addClass('active');
+          }
+        });
+        
+        // 显示对应内容
+        $('.step-content').removeClass('active');
+        $('.step-content[data-step="' + step + '"]').addClass('active');
+      });
+      
+      // 五音卡片交互
+      $('.tone-card').click(function() {
+        $('.tone-card').removeClass('active');
+        $(this).addClass('active');
+      });
+      
+      // 平滑滚动
+      $('a[href^="#"]').on('click', function(e) {
+        e.preventDefault();
+        
+        const target = this.hash;
+        const $target = $(target);
+        
+        $('html, body').animate({
+          'scrollTop': $target.offset().top - 80
+        }, 800, 'swing');
+      });
+      
+      // 五音示例音乐数据
+      const musicData = {
+        gong: {
+          title: "宫音 - 大地之息",
+          url: "../click_music/cut_土音.wav",
+          description: "土音深沉，调和脾胃，促进思考与决策"
+        },
+        shang: {
+          title: "商音 - 金石之韵",
+          url: "../click_music/cut_金音.wav",
+          description: "金音清越，调和肺气，净化心灵"
+        },
+        jue: {
+          title: "角音 - 春木之舞",
+          url: "../click_music/cut_木音.wav",
+          description: "木音生机，调和肝气，舒展情志"
+        },
+        zhi: {
+          title: "徵音 - 心火之明",
+          url: "../click_music/cut_火音.wav",
+          description: "火音温暖，调和心气，安神定志"
+        },
+        yu: {
+          title: "羽音 - 流水之智",
+          url: "../click_music/cut_水音.wav",
+          description: "水音柔润，调和肾气，增强意志"
+        }
+      };
+      
+      // 创建音频元素
+      let audio = new Audio();
+      let currentTone = null;
+      let isPlaying = false;
+      
+      // 播放按钮点击事件
+      $('.play-button').click(function(e) {
+        e.stopPropagation(); // 阻止事件冒泡到卡片
+        const tone = $(this).data('tone');
+        
+        // 如果点击的是当前正在播放的按钮
+        if (currentTone === tone && isPlaying) {
+          pauseMusic(tone);
+          return;
+        }
+        
+        // 停止其他音乐
+        pauseAllMusic();
+        
+        // 播放新音乐
+        playMusic(tone);
+      });
+      
+      // 播放音乐
+      function playMusic(tone) {
+        // 设置音频源
+        audio.src = musicData[tone].url;
+        audio.load();
+        
+        // 播放音乐
+        audio.play()
+          .then(() => {
+            isPlaying = true;
+            currentTone = tone;
+            
+            // 更新UI
+            $('.tone-card').removeClass('playing');
+            $(`.tone-card[data-tone="${tone}"]`).addClass('playing');
+            $(`.play-button[data-tone="${tone}"] i`).removeClass('fa-play').addClass('fa-pause');
+            
+            // 显示播放状态
+            showPlayingIndicator(tone);
+          })
+          .catch(error => {
+            console.error("播放失败:", error);
+            alert("音乐播放失败，请检查网络连接或稍后再试");
+          });
+      }
+      
+      // 暂停音乐
+      function pauseMusic(tone) {
+        audio.pause();
+        isPlaying = false;
+        
+        // 更新UI
+        $(`.tone-card[data-tone="${tone}"]`).removeClass('playing');
+        $(`.play-button[data-tone="${tone}"] i`).removeClass('fa-pause').addClass('fa-play');
+        
+        // 移除播放状态指示器
+        hidePlayingIndicator();
+      }
+      
+      // 暂停所有音乐
+      function pauseAllMusic() {
+        if (isPlaying) {
+          audio.pause();
+          isPlaying = false;
+          
+          // 更新所有UI
+          $('.tone-card').removeClass('playing');
+          $('.play-button i').removeClass('fa-pause').addClass('fa-play');
+          
+          // 移除播放状态指示器
+          hidePlayingIndicator();
+        }
+      }
+      
+      // 显示播放状态指示器
+      function showPlayingIndicator(tone) {
+        // 移除可能存在的旧指示器
+        hidePlayingIndicator();
+        
+        // 创建播放状态指示器
+        const indicator = $(`
+          <div class="alert alert-primary d-flex align-items-center" role="alert" id="playing-indicator" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; max-width: 300px;">
+            <i class="fas fa-music mr-2"></i>
+            <div>
+              <strong>正在播放: ${musicData[tone].title}</strong>
+              <div class="small">${musicData[tone].description}</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary ml-3" id="stop-playing">
+              <i class="fas fa-stop"></i>
+            </button>
+          </div>
+        `);
+        
+        // 添加到页面
+        $('body').append(indicator);
+        
+        // 停止按钮事件
+        $('#stop-playing').click(function() {
+          pauseAllMusic();
+        });
+      }
+      
+      // 隐藏播放状态指示器
+      function hidePlayingIndicator() {
+        $('#playing-indicator').remove();
+      }
+      
+      // 监听音频结束事件
+      audio.addEventListener('ended', function() {
+        pauseAllMusic();
+      });
+    });
+  </script>
+</body>
+
+</html>

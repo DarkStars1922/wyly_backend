@@ -1,0 +1,3061 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星璇律动音乐可视化 - 沉浸式音频体验</title>
+  
+  <!-- 基础库和样式 -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #1DB954;
+      --secondary-color: #66D36E;
+      --dark-bg: #1A2A44;
+      --darker-bg: #2C1B47;
+      --card-bg: rgba(15, 23, 42, 0.6);
+      --player-height: 80px;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Noto Sans SC', sans-serif;
+      color: #fff;
+      position: relative; /* Needed for pseudo-element positioning */
+    }
+
+    body::before {
+      content: '';
+      position: fixed; /* Use fixed to cover the viewport */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('background.jpg'); /* Use the provided image */
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      filter: blur(10px); /* Apply blur */
+      z-index: -2; /* Place it behind the particle canvas */
+    }
+    
+    /* 背景星星效果 */
+    .star {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      filter: blur(2px);
+    }
+    
+    /* 玻璃态卡片 */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    /* 歌词显示样式 */
+    .lyrics-container {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 800px;
+      background-color: rgba(20, 20, 20, 0.4);
+      color: white;
+      transition: all 0.5s ease;
+      border-radius: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      z-index: 20;
+    }
+    
+    .lyrics-container.bottom {
+      bottom: 100px;
+    }
+    
+    .lyrics-container.center {
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .lyrics-container.top {
+      top: 20px;
+      transform: translateX(-50%);
+    }
+    
+    /* 歌词标题栏和控制区 */
+    .lyrics-header {
+      padding: 10px 15px;
+      background-color: rgba(0, 0, 0, 0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .lyrics-title {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    
+    .lyrics-controls button {
+      background-color: rgba(100, 100, 100, 0.4);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .lyrics-controls button:hover {
+      background-color: rgba(150, 150, 150, 0.6);
+    }
+    
+    .lyrics-controls {
+      display: flex;
+    }
+    
+    /* 歌词滚动区域 */
+    .lyrics-scroll {
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 15px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+    
+    .lyrics-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .lyrics-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .lyrics-scroll::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+    
+    .lyrics-line {
+      margin: 15px 0;
+      transition: all 0.3s ease;
+      opacity: 0.5;
+      transform: scale(0.95);
+      position: relative;
+      text-align: center;
+    }
+
+    .lyrics-line.active {
+      opacity: 1;
+      transform: scale(1.05);
+      font-weight: bold;
+    }
+    
+    /* 彩色歌词样式 */
+    .lyrics-color-0 { color: #ff6b6b; }
+    .lyrics-color-1 { color: #48dbfb; }
+    .lyrics-color-2 { color: #1dd1a1; }
+    .lyrics-color-3 { color: #feca57; }
+    .lyrics-color-4 { color: #ff9ff3; }
+    .lyrics-color-5 { color: #54a0ff; }
+    .lyrics-color-6 { color: #5f27cd; }
+    .lyrics-color-7 { color: #ff9f43; }
+    .lyrics-color-8 { color: #00d2d3; }
+    .lyrics-color-9 { color: #c8d6e5; }
+    
+    /* 歌词滚动动画 */
+    @keyframes lyricsSlideUp {
+      0% { transform: translateY(20px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    
+    .lyrics-line.animate {
+      animation: lyricsSlideUp 0.3s ease forwards;
+    }
+    
+    /* 进度条样式 */
+    .progress-bar {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      border-radius: 3px;
+    }
+    
+    /* 音量滑块 */
+    .volume-slider {
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+      overflow: hidden;
+    }
+    
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      box-shadow: -100px 0 0 98px var(--primary-color);
+    }
+    
+    /* 上传区域 */
+    .upload-zone {
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      background-color: rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 12px;
+    }
+    
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: rgba(255, 255, 255, 0.5);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* 控制栏 */
+    .audio-controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--player-height);
+      background: rgba(26, 26, 26, 0.8);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 30;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* 主界面 */
+    .main-interface {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* 边栏内容区域 */
+    .sidebar-content {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 350px;
+      height: calc(100vh - var(--player-height));
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(10px);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-y: auto;
+    }
+    
+    .sidebar-collapsed .sidebar-content {
+      transform: translateX(100%);
+    }
+    
+    .sidebar-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 25;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+    
+    .sidebar-toggle:hover {
+      background: rgba(50, 50, 50, 0.7);
+    }
+    
+    .sidebar-section {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    
+    /* 粒子画布 */
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    
+    /* 通知样式 */
+    .notification {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeInOut 3s forwards;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-20px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar-content {
+        width: 100%;
+      }
+      
+      .lyrics-container {
+        width: 95%;
+        max-width: none;
+      }
+    }
+
+    /* 五音卡片样式 - 从 meditation_music.html 复制并调整 */
+    .tone-card {
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      border-radius: 12px; /* 统一圆角 */
+      padding: 15px;
+      margin-bottom: 15px;
+      color: white;
+      text-align: center;
+    }
+
+    .tone-card:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+      z-index: -1;
+      transition: opacity 0.4s ease;
+      opacity: 0;
+      border-radius: 10px; /* 匹配父元素圆角 */
+    }
+
+    .tone-card:hover {
+      transform: translateY(-5px) scale(1.02);
+    }
+
+    .tone-card:hover:before {
+      opacity: 1;
+    }
+
+    .tone-card.active {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 五音卡片的独特样式 */
+    .tone-gong {
+      background: linear-gradient(135deg, #eeb868 0%, #c9a050 100%);
+      border-color: #f0c07a;
+    }
+    .tone-gong.active {
+      box-shadow: 0 8px 20px rgba(238, 184, 104, 0.4);
+    }
+    .tone-gong .tone-symbol {
+      color: #eeb868;
+    }
+
+    .tone-shang {
+      background: linear-gradient(135deg, #e0e0e0 0%, #b0b0c0 100%);
+      border-color: #d0d0e0;
+    }
+    .tone-shang.active {
+      box-shadow: 0 8px 20px rgba(208, 208, 224, 0.4);
+    }
+    .tone-shang .tone-symbol {
+      color: #c0c0d0;
+    }
+
+    .tone-jue {
+      background: linear-gradient(135deg, #6ab04c 0%, #4a7d38 100%);
+      border-color: #6ab04c;
+    }
+    .tone-jue.active {
+      box-shadow: 0 8px 20px rgba(106, 176, 76, 0.4);
+    }
+    .tone-jue .tone-symbol {
+      color: #6ab04c;
+    }
+
+    .tone-zhi {
+      background: linear-gradient(135deg, #eb4d4b 0%, #b83227 100%);
+      border-color: #eb4d4b;
+    }
+    .tone-zhi.active {
+      box-shadow: 0 8px 20px rgba(235, 77, 75, 0.4);
+    }
+    .tone-zhi .tone-symbol {
+      color: #eb4d4b;
+    }
+
+    .tone-yu {
+      background: linear-gradient(135deg, #4884ee 0%, #22609e 100%);
+      border-color: #4884ee;
+    }
+    .tone-yu.active {
+      box-shadow: 0 8px 20px rgba(72, 132, 238, 0.4);
+    }
+    .tone-yu .tone-symbol {
+      color: #4884ee;
+    }
+
+    .tone-symbol {
+      font-size: 1.8rem; /* 调整大小以适应侧边栏 */
+      margin-bottom: 8px;
+      display: inline-block;
+      width: 45px; /* 调整大小 */
+      height: 45px; /* 调整大小 */
+      line-height: 45px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .tone-title {
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      margin-bottom: 5px;
+      font-size: 1rem; /* 调整大小 */
+    }
+
+    .tone-attributes {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      font-size: 0.85rem; /* 调整大小 */
+      margin-bottom: 5px;
+    }
+
+    .tone-effect {
+      background: rgba(0, 0, 0, 0.2);
+      color: rgba(255, 255, 255, 0.95);
+      padding: 4px 8px;
+      border-radius: 15px;
+      font-size: 0.75rem; /* 调整大小 */
+      display: inline-block;
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 粒子效果画布 -->
+  <canvas id="particle-canvas"></canvas>
+  
+  <!-- 主界面 -->
+  <div class="main-interface sidebar-collapsed">
+    <!-- 侧边栏切换按钮 -->
+    <button class="sidebar-toggle" id="sidebar-toggle">
+      <i class="ri-menu-line"></i>
+    </button>
+    
+    <!-- 侧边栏内容 -->
+    <div class="sidebar-content">
+      <div class="sidebar-header">
+        <div class="sidebar-title">音乐控制面板</div>
+        <button id="close-sidebar" class="text-white">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      
+      <!-- 上传区域 -->
+      <div class="sidebar-section">
+            <h3 class="text-lg font-bold mb-3">上传音乐</h3>
+            <div class="upload-zone p-4 rounded-lg text-center" id="upload-zone">
+              <i class="ri-music-fill text-4xl text-blue-400 mb-2"></i>
+              <p class="text-sm mb-3">点击上传或拖放音乐文件到此处</p>
+              <button id="upload-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition-all">
+                <i class="ri-upload-2-line mr-1"></i> 选择音乐文件
+              </button>
+              <p class="text-xs text-gray-400 mt-3">支持 MP3, WAV, OGG, FLAC</p>
+              <input type="file" id="audio-file-input" accept="audio/*,.mp3,.wav,.ogg,.flac" multiple class="hidden">
+            </div>
+          </div>
+          
+          <!-- 歌词上传 -->
+      <div class="sidebar-section">
+            <h3 class="text-lg font-bold mb-3">上传歌词</h3>
+            <div class="upload-zone p-4 rounded-lg text-center" id="lyrics-upload-zone">
+              <i class="ri-file-text-line text-4xl text-green-400 mb-2"></i>
+              <p class="text-sm mb-3">点击上传或拖放歌词文件到此处</p>
+              <button id="upload-lyrics-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full transition-all">
+                <i class="ri-upload-2-line mr-1"></i> 选择歌词文件
+              </button>
+              <p class="text-xs text-gray-400 mt-3">支持 LRC 格式</p>
+              <input type="file" id="lyrics-file-input" accept=".lrc,.txt" class="hidden">
+        </div>
+      </div>
+
+      <!-- 五音选择 -->
+      <div class="sidebar-section">
+        <h3 class="text-lg font-bold mb-3">五音疗愈</h3>
+        <div class="grid grid-cols-1 gap-3">
+          <div class="tone-card tone-gong" data-tone="gong">
+            <div class="tone-symbol">宫</div>
+            <div class="tone-title">宫音 (土)</div>
+            <div class="tone-attributes">平和、稳重</div>
+            <div class="tone-effect">健脾胃</div>
+          </div>
+          <div class="tone-card tone-shang" data-tone="shang">
+            <div class="tone-symbol">商</div>
+            <div class="tone-title">商音 (金)</div>
+            <div class="tone-attributes">清肃、收敛</div>
+            <div class="tone-effect">补肺气</div>
+          </div>
+          <div class="tone-card tone-jue" data-tone="jue">
+            <div class="tone-symbol">角</div>
+            <div class="tone-title">角音 (木)</div>
+            <div class="tone-attributes">生发、舒畅</div>
+            <div class="tone-effect">疏肝气</div>
+          </div>
+          <div class="tone-card tone-zhi" data-tone="zhi">
+            <div class="tone-symbol">徵</div>
+            <div class="tone-title">徵音 (火)</div>
+            <div class="tone-attributes">热烈、活跃</div>
+            <div class="tone-effect">养心血</div>
+          </div>
+          <div class="tone-card tone-yu" data-tone="yu">
+            <div class="tone-symbol">羽</div>
+            <div class="tone-title">羽音 (水)</div>
+            <div class="tone-attributes">柔和、下行</div>
+            <div class="tone-effect">补肾精</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 播放列表 -->
+      <div class="sidebar-section" style="flex-grow: 1;">
+        <h3 class="text-lg font-bold mb-3">播放列表</h3>
+        <div id="playlist" class="overflow-y-auto" style="max-height: calc(100vh - 500px);">
+          <!-- 播放列表将动态生成 -->
+          <p class="text-gray-400 text-center p-4">播放列表为空</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 歌词显示容器 -->
+    <div class="lyrics-container bottom" id="lyrics-container">
+      <div class="lyrics-header">
+        <div class="lyrics-title">当前播放的歌词</div>
+        <div class="lyrics-controls">
+          <button id="auto-scroll-btn" class="p-1 text-white bg-gray-700 rounded">
+            <i class="ri-focus-3-line"></i>
+          </button>
+          <button id="lyrics-position-btn" class="p-1 text-white bg-gray-700 rounded">
+            <i class="ri-arrow-up-down-line"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="lyrics-scroll" id="lyrics-scroll">
+        <!-- 歌词将动态生成 -->
+        <div class="lyrics-line">
+          <p class="text-center">欢迎使用星璇律动音乐可视化</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 播放控制 -->
+    <div class="audio-controls">
+      <!-- 左侧：曲目信息 -->
+      <div class="flex items-center w-1/4">
+        <div class="track-info overflow-hidden">
+          <div id="current-track-title" class="font-bold truncate">未播放</div>
+          <div id="current-track-artist" class="text-sm text-gray-400 truncate">上传音乐开始播放</div>
+        </div>
+      </div>
+      
+      <!-- 中间：播放控制和进度条 -->
+      <div class="flex-1 flex flex-col items-center">
+        <div class="flex items-center gap-4 mb-2">
+          <button id="prev-btn" class="text-white">
+            <i class="ri-skip-back-fill text-xl"></i>
+          </button>
+          <button id="play-btn" class="w-10 h-10 rounded-full bg-primary flex justify-center items-center bg-gradient-to-r from-blue-500 to-purple-500">
+            <i class="ri-play-fill text-xl" id="play-icon"></i>
+            <i class="ri-pause-fill text-xl hidden" id="pause-icon"></i>
+          </button>
+          <button id="next-btn" class="text-white">
+            <i class="ri-skip-forward-fill text-xl"></i>
+          </button>
+        </div>
+        
+        <div class="w-full flex items-center gap-2">
+          <span id="current-time" class="text-xs">00:00</span>
+          <div class="progress-bar flex-1" id="seek-bar">
+            <div class="progress-fill" id="seek-bar-fill" style="width: 0%"></div>
+          </div>
+          <span id="duration" class="text-xs">00:00</span>
+        </div>
+      </div>
+      
+      <!-- 右侧：音量控制 -->
+      <div class="w-1/4 flex justify-end items-center gap-2">
+        <i class="ri-volume-up-line"></i>
+        <input type="range" id="volume-slider" class="volume-slider w-24" min="0" max="1" step="0.01" value="1">
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('音乐可视化初始化...');
+    
+    // 格式化时间的辅助函数（定义在全局范围内可以被所有组件访问）
+    function formatTime(seconds) {
+      if (isNaN(seconds) || !isFinite(seconds)) return "00:00";
+      seconds = Math.floor(seconds);
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    // === 粒子效果系统 ===
+    class ParticleSystem {
+      constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        
+        // 画布信息
+        this.width = canvas.width;
+        this.height = canvas.height;
+        this.centerX = this.width / 2;
+        this.centerY = this.height / 2;
+        
+        // 环形区域设置 - 优化配置
+        this.numRings = 6;  // 环的数量
+        this.radii = [50, 80, 110, 140, 170, 200]; // 固定的基础半径
+        this.smoothedRadii = [...this.radii]; // 平滑后的半径
+        this.baseHues = [180, 210, 240, 270, 300, 330]; // 基础色调
+        this.rotations = Array(this.numRings).fill(0); // 旋转角度
+        this.rotationSpeeds = []; // 旋转速度
+        
+        // 性能优化参数
+        this.lastFrameTime = 0; // 上一帧时间
+        this.frameRate = 60; // 目标帧率
+        this.frameInterval = 1000 / this.frameRate; // 帧间隔
+        this.isHighPerformance = true; // 性能模式
+        
+        // 使用更少的粒子提高性能
+        this.particles = [];
+        this.particleCount = this.isHighPerformance ? 3000 : 1500; // 根据性能模式调整粒子数量
+        this.particlesPerRing = Math.floor(this.particleCount / this.numRings);
+        
+        // 音频响应参数
+        this.bass = 0;
+        this.mid = 0;
+        this.treble = 0;
+        this.rms = 0;
+        this.isBeat = false;
+        this.isPlaying = false;
+        this.pausedTime = 0;
+        this.previousAudioData = {
+          bass: 0, mid: 0, treble: 0, rms: 0
+        }; // 用于平滑处理
+        
+        // 预设颜色方案 - 优化颜色组合
+        this.colorSchemes = [
+          [180, 210, 240, 270, 300, 330], // 紫蓝-粉红 (默认)
+          [200, 220, 160, 140, 120, 100], // 蓝绿-橙黄
+          [300, 330, 0, 30, 60, 90],      // 紫红-橙黄
+          [120, 140, 160, 180, 200, 220], // 绿青-蓝色
+          [0, 30, 60, 90, 120, 150]       // 新增: 红黄-绿色
+        ];
+        this.currentScheme = 0;
+        
+        // 动画控制
+        this.animationStyle = 'normal'; // normal, slow, reactive
+        
+        // 添加新的视觉特效标志
+        this.enableBloom = true; // 泛光效果
+        this.enableWaterColor = true; // 水彩效果
+        
+        // 优化光晕效果
+        this.glowIntensity = 0.7;
+        this.glowSize = 15;
+        
+        // 初始化
+        this.initRotationSpeeds();
+        this.initParticles();
+        this.resizeCanvas();
+        this.bindEvents();
+        this.animate();
+      }
+      
+      // 切换动画风格，更好的性能适配
+      setAnimationStyle(style) {
+        this.animationStyle = style;
+        switch(style) {
+          case 'slow':
+            // 慢速平稳模式
+            this.frameRate = 30;
+            this.frameInterval = 1000 / this.frameRate;
+            this.glowIntensity = 0.5;
+            break;
+          case 'reactive':
+            // 高响应模式 - 更快的响应速度
+            this.frameRate = 60;
+            this.frameInterval = 1000 / this.frameRate;
+            this.glowIntensity = 0.9;
+            break;
+          default:
+            // 正常模式
+            this.frameRate = 60;
+            this.frameInterval = 1000 / this.frameRate;
+            this.glowIntensity = 0.7;
+            break;
+        }
+      }
+      
+      // 改进性能模式切换
+      setPerformanceMode(isHigh) {
+        this.isHighPerformance = isHigh;
+        
+        // 动态调整粒子数量
+        const targetCount = isHigh ? 3000 : 1500;
+        
+        // 如果要减少粒子
+        if (!isHigh && this.particles.length > targetCount) {
+          this.particles = this.particles.slice(0, targetCount);
+        } 
+        // 如果要增加粒子，重新初始化
+        else if (isHigh && this.particles.length < targetCount) {
+          this.particleCount = targetCount;
+          this.particlesPerRing = Math.floor(this.particleCount / this.numRings);
+          this.initParticles();
+        }
+        
+        // 调整视觉效果
+        this.enableBloom = isHigh;
+        
+        console.log(`[ParticleSystem] 性能模式已切换为: ${isHigh ? '高' : '低'}, 粒子数量: ${this.particles.length}`);
+      }
+      
+      // 增强的背景绘制 - 动态渐变
+      drawGradientBackground() {
+        const ctx = this.ctx;
+        
+        // 创建更具动态感的渐变背景
+        const gradient = ctx.createRadialGradient(
+          this.centerX, this.centerY, 0,
+          this.centerX, this.centerY, Math.max(this.width, this.height) / 1.5
+        );
+        
+        // 获取当前色调，用于背景渐变
+        const baseHue = this.baseHues[0];
+        const beatIntensity = this.isBeat ? 15 : 0;
+        const complementaryHue = (baseHue + 180) % 360; // 补色
+        
+        // 响应音乐的明暗变化
+        const brightness = 10 + (this.bass * 10) + beatIntensity;
+        
+        // 创建更丰富的渐变
+        gradient.addColorStop(0, `hsla(${baseHue}, 50%, ${brightness + 10}%, 1)`); // 中心
+        gradient.addColorStop(0.4, `hsla(${baseHue + 20}, 45%, ${brightness + 5}%, 1)`); // 中间过渡
+        gradient.addColorStop(0.8, `hsla(${baseHue + 40}, 40%, ${brightness}%, 1)`); // 外围
+        gradient.addColorStop(1, `hsla(${complementaryHue}, 35%, ${Math.max(5, brightness - 5)}%, 1)`); // 边缘补色
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, this.width, this.height);
+        
+        if (this.isHighPerformance) {
+          // 添加高级视觉效果
+          this.addNoiseTexture();
+          
+          if (this.enableWaterColor && this.bass > 0.4) {
+            this.addWatercolorEffect();
+          }
+        }
+      }
+      
+      // 新增水彩效果
+      addWatercolorEffect() {
+        const ctx = this.ctx;
+        ctx.save();
+        
+        // 使用叠加混合模式
+        ctx.globalCompositeOperation = 'overlay';
+        ctx.globalAlpha = this.bass * 0.15;
+        
+        // 随机绘制透明的色彩块
+        const numBlobs = 5 + Math.floor(this.bass * 10);
+        
+        for (let i = 0; i < numBlobs; i++) {
+          const hue = (this.baseHues[0] + (i * 30) + Math.random() * 60) % 360;
+          const x = this.centerX + (Math.random() - 0.5) * this.width * 0.8;
+          const y = this.centerY + (Math.random() - 0.5) * this.height * 0.8;
+          const radius = 50 + Math.random() * 200 + (this.bass * 100);
+          
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+          gradient.addColorStop(0, `hsla(${hue}, 90%, 60%, 0.2)`);
+          gradient.addColorStop(0.5, `hsla(${hue}, 80%, 40%, 0.1)`);
+          gradient.addColorStop(1, `hsla(${hue}, 70%, 30%, 0)`);
+          
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
+      
+      // 在主界面添加控制按钮 - 修复响应问题
+      addVisualControls() {
+        const container = document.createElement('div');
+        container.className = 'visual-controls';
+        container.style.cssText = 'position: absolute; top: 20px; right: 80px; z-index: 25; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; font-family: Arial, sans-serif;';
+        
+        // 创建标题
+        const title = document.createElement('div');
+        title.textContent = '可视化控制';
+        title.style.cssText = 'color: white; font-size: 14px; margin-bottom: 8px; text-align: center; font-weight: bold;';
+        container.appendChild(title);
+        
+        // 创建按钮组
+        const btnGroup = document.createElement('div');
+        btnGroup.style.cssText = 'display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;';
+        
+        // 添加动画风格按钮
+        const addStyleButton = (style, text) => {
+          const btn = document.createElement('button');
+          btn.textContent = text;
+          btn.className = 'control-button';
+          btn.style.cssText = 'padding: 5px 10px; background: rgba(60,60,80,0.6); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s;';
+          
+          // 根据当前状态高亮按钮
+          if (this.animationStyle === style) {
+            btn.style.background = 'rgba(100,100,180,0.8)';
+            btn.style.boxShadow = '0 0 5px rgba(150,150,255,0.5)';
+          }
+          
+          btn.addEventListener('click', () => {
+            console.log(`切换动画风格为: ${style}`);
+            this.setAnimationStyle(style);
+            
+            // 更新按钮状态
+            document.querySelectorAll('.control-button').forEach(b => {
+              b.style.background = 'rgba(60,60,80,0.6)';
+              b.style.boxShadow = 'none';
+            });
+            btn.style.background = 'rgba(100,100,180,0.8)';
+            btn.style.boxShadow = '0 0 5px rgba(150,150,255,0.5)';
+          });
+          
+          btnGroup.appendChild(btn);
+          return btn;
+        };
+        
+        // 添加动画风格按钮
+        addStyleButton('normal', '标准模式');
+        addStyleButton('reactive', '高响应');
+        addStyleButton('slow', '平缓模式');
+        
+        // 添加性能模式切换按钮
+        const perfButton = document.createElement('button');
+        perfButton.textContent = this.isHighPerformance ? '高质量' : '流畅模式';
+        perfButton.className = 'control-button';
+        perfButton.style.cssText = 'padding: 5px 10px; background: rgba(60,80,60,0.6); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s;';
+        
+        if (this.isHighPerformance) {
+          perfButton.style.background = 'rgba(80,120,80,0.8)';
+        }
+        
+        perfButton.addEventListener('click', () => {
+          const newMode = !this.isHighPerformance;
+          console.log(`切换性能模式为: ${newMode ? '高' : '低'}`);
+          this.setPerformanceMode(newMode);
+          perfButton.textContent = newMode ? '高质量' : '流畅模式';
+          perfButton.style.background = newMode ? 'rgba(80,120,80,0.8)' : 'rgba(60,80,60,0.6)';
+        });
+        
+        btnGroup.appendChild(perfButton);
+        container.appendChild(btnGroup);
+        
+        // 添加效果切换按钮组
+        const effectsGroup = document.createElement('div');
+        effectsGroup.style.cssText = 'display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 5px;';
+        
+        // 添加彩色切换按钮
+        const colorBtn = document.createElement('button');
+        colorBtn.textContent = '切换配色';
+        colorBtn.className = 'control-button';
+        colorBtn.style.cssText = 'padding: 5px 10px; background: rgba(80,60,80,0.6); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s;';
+        
+        colorBtn.addEventListener('click', () => {
+          console.log('切换颜色配色');
+          this.changeColorScheme();
+        });
+        
+        effectsGroup.appendChild(colorBtn);
+        
+        // 泛光效果切换
+        const bloomBtn = document.createElement('button');
+        bloomBtn.textContent = this.enableBloom ? '关闭泛光' : '开启泛光';
+        bloomBtn.className = 'control-button';
+        bloomBtn.style.cssText = 'padding: 5px 10px; background: rgba(80,60,80,0.6); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s;';
+        
+        if (this.enableBloom) {
+          bloomBtn.style.background = 'rgba(100,80,100,0.8)';
+        }
+        
+        bloomBtn.addEventListener('click', () => {
+          this.enableBloom = !this.enableBloom;
+          bloomBtn.textContent = this.enableBloom ? '关闭泛光' : '开启泛光';
+          bloomBtn.style.background = this.enableBloom ? 'rgba(100,80,100,0.8)' : 'rgba(80,60,80,0.6)';
+        });
+        
+        effectsGroup.appendChild(bloomBtn);
+        container.appendChild(effectsGroup);
+        
+        // 添加控制按钮的隐藏/显示
+        const toggleButton = document.createElement('button');
+        toggleButton.innerHTML = '⚙️';
+        toggleButton.style.cssText = 'position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(0,0,0,0.5); border: none; border-radius: 50%; color: white; font-size: 20px; cursor: pointer; z-index: 26; display: flex; align-items: center; justify-content: center; transition: all 0.3s;';
+        
+        document.body.appendChild(toggleButton);
+        
+        // 默认隐藏控制面板
+        container.style.display = 'none';
+        
+        toggleButton.addEventListener('click', () => {
+          if (container.style.display === 'none') {
+            container.style.display = 'flex';
+            toggleButton.style.transform = 'rotate(45deg)';
+            toggleButton.style.background = 'rgba(60,60,100,0.8)';
+          } else {
+            container.style.display = 'none';
+            toggleButton.style.transform = 'rotate(0deg)';
+            toggleButton.style.background = 'rgba(0,0,0,0.5)';
+          }
+        });
+        
+        document.body.appendChild(container);
+        console.log('[ParticleSystem] 控制面板已添加');
+      }
+      
+      // 初始化旋转速度
+      initRotationSpeeds() {
+        // 从内到外，速度递减 (0.02到0.008)
+        for (let i = 0; i < this.numRings; i++) {
+          this.rotationSpeeds[i] = 0.02 - (i * (0.02 - 0.008) / (this.numRings - 1));
+        }
+      }
+      
+      // 初始化内部粒子
+      initParticles() {
+        this.particles = [];
+        
+        // 为每个环创建粒子
+        for (let ringIndex = 0; ringIndex < this.numRings; ringIndex++) {
+          const ringRadius = this.radii[ringIndex];
+          const nextRingRadius = (ringIndex < this.numRings - 1) ? 
+                                this.radii[ringIndex + 1] : this.width / 2;
+          const ringWidth = nextRingRadius - ringRadius;
+          
+          // 根据环的大小调整粒子数量
+          const particlesInRing = Math.floor(this.particlesPerRing * (ringRadius / this.radii[this.numRings - 1]));
+          
+          for (let i = 0; i < particlesInRing; i++) {
+            // 随机角度和半径
+            const angle = Math.random() * Math.PI * 2;
+            const radiusOffset = Math.random() * ringWidth;
+            // 确保粒子分布在环的中间部分，不会太靠近内圆或外圆
+            const r = ringRadius + (ringWidth * 0.3) + (radiusOffset * 0.4);
+            
+            // 计算位置
+            const x = this.centerX + Math.cos(angle) * r;
+            const y = this.centerY + Math.sin(angle) * r;
+            
+            // 粒子大小和透明度
+            const size = 1 + Math.random() * 2; // 1-3px
+            const alpha = 0.1 + Math.random() * 0.4; // 0.1-0.5
+            
+          this.particles.push({
+              x: x,
+              y: y,
+              size: size,
+              baseRadius: r,
+              angle: angle,
+              ringIndex: ringIndex,
+              alpha: alpha,
+              baseAlpha: alpha
+          });
+        }
+      }
+      
+        // 创建背景粒子
+        const bgParticleCount = 1800; // 1500-2000个背景粒子
+        for (let i = 0; i < bgParticleCount; i++) {
+          const x = Math.random() * this.width;
+          const y = Math.random() * this.height;
+          const size = 1 + Math.random() * 1; // 1-2px
+          const alpha = 0.1 + Math.random() * 0.2; // 0.1-0.3
+          
+          // 随机生成浅蓝到浅紫的颜色 (HSB 200-240)
+          const hue = 200 + Math.random() * 40;
+          
+          this.particles.push({
+            x: x,
+            y: y,
+            size: size,
+            alpha: alpha,
+            baseAlpha: alpha,
+            isBackground: true,
+            hue: hue
+          });
+        }
+      }
+      
+      resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+        this.centerX = this.width / 2;
+        this.centerY = this.height / 2;
+        
+        // 重新初始化粒子以适应新的画布大小
+        this.initParticles();
+      }
+      
+      bindEvents() {
+        // 窗口调整大小事件
+        window.addEventListener('resize', () => {
+          this.resizeCanvas();
+        });
+        
+        // 鼠标点击事件 - 切换颜色方案
+        this.canvas.addEventListener('click', () => {
+          this.changeColorScheme();
+        });
+      }
+      
+      // 切换颜色方案
+      changeColorScheme() {
+        this.currentScheme = (this.currentScheme + 1) % this.colorSchemes.length;
+        this.baseHues = [...this.colorSchemes[this.currentScheme]];
+        console.log("颜色方案已切换到", this.currentScheme);
+      }
+      
+      // 生成环形边缘波动
+      getEdgeNoise(ringIndex, angle) {
+        // 使用近似的柏林噪声
+        const noiseFreq = 0.8;
+        const time = Date.now() * 0.001;
+        const noiseX = (Math.cos(angle) + 1) * noiseFreq + (ringIndex * 0.1) + time * 0.1;
+        const noiseY = (Math.sin(angle) + 1) * noiseFreq + (ringIndex * 0.1) + time * 0.1;
+        
+        // 生成噪声，确保波动范围为±20px
+        const noise = this.simpleNoise2D(noiseX, noiseY);
+        return (noise - 0.5) * 40; // 转换为±20px范围
+      }
+      
+      // 简化的2D噪声实现
+      simpleNoise2D(x, y) {
+        const dotProduct = (x, y, vx, vy) => x * vx + y * vy;
+        const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+        
+        // 简单伪随机方向
+        const getDir = (i, j) => {
+          const a = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
+          return [Math.cos(a), Math.sin(a)];
+        };
+        
+        const ix = Math.floor(x);
+        const iy = Math.floor(y);
+        const fx = x - ix;
+        const fy = y - iy;
+        
+        const ux = fade(fx);
+        const uy = fade(fy);
+        
+        // 四个角落的梯度方向
+        const g00 = getDir(ix, iy);
+        const g10 = getDir(ix + 1, iy);
+        const g01 = getDir(ix, iy + 1);
+        const g11 = getDir(ix + 1, iy + 1);
+        
+        // 点积
+        const d00 = dotProduct(fx, fy, g00[0], g00[1]);
+        const d10 = dotProduct(fx - 1, fy, g10[0], g10[1]);
+        const d01 = dotProduct(fx, fy - 1, g01[0], g01[1]);
+        const d11 = dotProduct(fx - 1, fy - 1, g11[0], g11[1]);
+        
+        // 插值
+        const x1 = d00 + ux * (d10 - d00);
+        const x2 = d01 + ux * (d11 - d01);
+        const result = x1 + uy * (x2 - x1);
+        
+        // 归一化到 0-1
+        return (result + 1) / 2;
+      }
+      
+      // 更新环形区域
+      updateRings() {
+        // 减慢旋转速度
+        for (let i = 0; i < this.numRings; i++) {
+          // 基础旋转速度降低为原来的1/3
+          const baseSpeed = this.rotationSpeeds[i] * 0.3;
+          
+          // 旋转速度随低频变化，但变化程度较小
+          this.rotations[i] += baseSpeed + (this.bass * 0.03);
+          
+          // 目标半径更多地受到音频振幅的影响
+          const bassInfluence = this.bass * 40; // 低频影响
+          const beatBoost = this.isBeat ? 15 : 0; // 节拍时额外扩张
+          
+          const targetRadius = this.radii[i] + (this.rms * 30) + bassInfluence + beatBoost;
+          
+          // 平滑系数减小，使半径变化更缓慢
+          this.smoothedRadii[i] += (targetRadius - this.smoothedRadii[i]) * 0.05;
+        }
+      }
+      
+      // 更新粒子
+      updateParticles() {
+        const particleRotationSpeed = 0.02; // 降低粒子旋转速度
+        
+        this.particles.forEach(p => {
+          if (p.isBackground) {
+            // 背景粒子
+            // 低频时粒子扩散或聚拢，但速度更慢
+            const dx = this.centerX - p.x;
+            const dy = this.centerY - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const direction = dist > this.width / 3 ? 1 : -1;
+            
+            // 降低粒子移动速度
+            p.x += dx * this.bass * 0.003 * direction;
+            p.y += dy * this.bass * 0.003 * direction;
+            
+            // 高频增加亮度
+            p.alpha = p.baseAlpha + (this.treble * 0.3);
+            p.alpha = Math.min(p.alpha, 0.8);
+          } else {
+            // 环形内部粒子
+            const ringIndex = p.ringIndex;
+            
+            // 更新角度，粒子随环形旋转，速度更慢
+            p.angle += particleRotationSpeed;
+            
+            // 更新基础半径
+            const ringRadius = this.smoothedRadii[ringIndex];
+            const nextRingRadius = (ringIndex < this.numRings - 1) ? 
+                                 this.smoothedRadii[ringIndex + 1] : ringRadius + 30;
+            const ringWidth = nextRingRadius - ringRadius;
+            
+            // 粒子位置受低频影响，但影响更大
+            const radiusOffset = p.baseRadius - this.radii[ringIndex] + (this.bass * 40);
+            const adjustedRadius = ringRadius + radiusOffset;
+            
+            // 更新位置
+            p.x = this.centerX + Math.cos(p.angle) * adjustedRadius;
+            p.y = this.centerY + Math.sin(p.angle) * adjustedRadius;
+            
+            // 增强节拍对亮度的影响
+            const beatBoost = this.isBeat ? 0.4 : 0;
+            p.alpha = p.baseAlpha + (this.treble * 0.2) + beatBoost;
+            p.alpha = Math.min(p.alpha, 0.9);
+          }
+          
+          // 确保粒子在画布范围内
+          if (p.x < 0) p.x = this.width;
+          if (p.x > this.width) p.x = 0;
+          if (p.y < 0) p.y = this.height;
+          if (p.y > this.height) p.y = 0;
+        });
+      }
+      
+      // 绘制所有可视化元素
+      render() {
+        const ctx = this.ctx;
+        
+        // 绘制渐变背景
+        this.drawGradientBackground();
+        
+        // 绘制背景粒子
+        this.drawBackgroundParticles();
+        
+        // 只绘制彩色波形线，不绘制白色环形
+        for (let i = 0; i < this.numRings; i++) {
+          // 获取当前环的半径和色调
+          const radius = this.smoothedRadii[i];
+          
+          // 动态色调 - 基础色调随中频和时间变化
+          const hue = (this.baseHues[i] + (this.mid * 30) + 
+                      Math.sin(Date.now() * 0.01) * 10) % 360;
+          
+          // 绘制外部矩形线条（波形）
+          this.drawOuterWaveform(i, radius, hue);
+          
+          // 在节拍检测到时添加动态效果
+          if (this.isBeat) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            // 不要绘制环形，而是在波形上增加亮度
+            this.enhanceWaveform(i, radius, hue);
+            ctx.restore();
+          }
+        }
+        
+        // 绘制内部粒子
+        this.drawRingParticles();
+      }
+      
+      // 新增：增强波形效果，替代原来的环形光晕
+      enhanceWaveform(ringIndex, radius, hue) {
+        // 同样只在特定环上显示增强效果
+        if (ringIndex % 2 !== 0 && ringIndex !== this.numRings - 1) {
+          return;
+        }
+        
+        const ctx = this.ctx;
+        const numWaves = 1;
+        
+        for (let waveIndex = 0; waveIndex < numWaves; waveIndex++) {
+          const waveOffset = waveIndex * (this.radii[ringIndex + 1] - this.radii[ringIndex]) / numWaves;
+          
+          const numPoints = 200;
+          const rotation = this.rotations[ringIndex];
+          
+          ctx.save();
+          
+          // 使用较亮的颜色，但更依赖于音频强度
+          const beatIntensity = this.isBeat ? 0.8 : (this.bass * 0.7);
+          ctx.lineWidth = 3.5;
+          ctx.strokeStyle = `hsla(${hue}, 95%, 80%, ${beatIntensity})`;
+          
+          // 使用贝塞尔曲线绘制平滑波形
+          ctx.beginPath();
+          
+          // 创建点数组
+          const points = [];
+          for (let j = 0; j <= numPoints; j++) {
+            const angle = (j / numPoints) * Math.PI * 2;
+            const rotatedAngle = angle + rotation;
+            
+            // 减慢时间变化速度到0.0005
+            const currentTime = this.isPlaying ? Date.now() * 0.0005 : this.pausedTime || 0;
+            
+            // 使波形更多地受到音频振幅影响
+            // 增强低频对波形的影响
+            const bassInfluence = this.bass * 180;
+            // 节拍检测到时增加额外振幅
+            const beatBoost = this.isBeat ? 50 : 0;
+            
+            const waveHeight = 40 + 
+                            bassInfluence + // 低频影响
+                            beatBoost +     // 节拍影响
+                            (this.rms * 80) + // 总音量影响
+                            Math.sin(j * 0.3 + currentTime * 500) * 20; // 减小时间影响
+            
+            const r = radius + waveOffset + 40 + waveHeight;
+            const x = this.centerX + Math.cos(rotatedAngle) * r;
+            const y = this.centerY + Math.sin(rotatedAngle) * r;
+            
+            points.push({x, y});
+          }
+          
+          // 绘制平滑曲线
+          if (points.length > 0) {
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 0; i < points.length - 1; i++) {
+              const curr = points[i];
+              const nextIndex = (i + 1) % points.length;
+              const next = points[nextIndex];
+              
+              // 计算控制点
+              const cp1x = curr.x + (next.x - curr.x) * 0.5;
+              const cp1y = curr.y + (next.y - curr.y) * 0.5;
+              
+              ctx.quadraticCurveTo(cp1x, cp1y, next.x, next.y);
+            }
+          }
+          
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+      
+      // 绘制渐变背景
+      drawGradientBackground() {
+        const ctx = this.ctx;
+        const gradient = ctx.createRadialGradient(
+          this.centerX, this.centerY, 0,
+          this.centerX, this.centerY, Math.max(this.width, this.height) / 2
+        );
+        
+        // 浅蓝到紫色渐变
+        gradient.addColorStop(0, 'hsla(200, 50%, 20%, 1)'); // 更暗的中心
+        gradient.addColorStop(0.7, 'hsla(220, 50%, 30%, 1)');
+        gradient.addColorStop(1, 'hsla(240, 50%, 20%, 1)');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, this.width, this.height);
+      }
+      
+      // 绘制背景粒子
+      drawBackgroundParticles() {
+        const ctx = this.ctx;
+        
+        ctx.save();
+        
+        this.particles.forEach(p => {
+          if (p.isBackground) {
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = `hsla(${p.hue}, 70%, 70%, ${p.alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+        
+        ctx.restore();
+      }
+      
+      // 绘制环形内部粒子
+      drawRingParticles() {
+        const ctx = this.ctx;
+        
+        ctx.save();
+        
+        this.particles.forEach(p => {
+          if (!p.isBackground) {
+            // 获取粒子所在环的色调
+            const hue = (this.baseHues[p.ringIndex] + (this.mid * 30) + 
+                        Math.sin(Date.now() * 0.01) * 10) % 360;
+            
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = `hsla(${hue}, 80%, 60%, ${p.alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+        
+        ctx.restore();
+      }
+      
+      // 新增：绘制单个环形边缘
+      drawRing(ringIndex, radius, hue, saturation, brightness, alphaMultiplier) {
+        // 对于内侧环，设置不绘制或使用最小半径
+        // 让最内侧的环形半径为20，不要留白
+        if (ringIndex === 0) {
+          radius = Math.max(20, radius); // 确保最小20px半径
+        }
+        
+        const ctx = this.ctx;
+        const numPoints = 300; // 增加点数量使曲线更紧密
+        const rotation = this.rotations[ringIndex];
+        
+        // 设置边缘厚度，增加内层环的厚度
+        const strokeWidth = 3 + (this.numRings - ringIndex) * 0.7; // 内层环更粗
+        
+        ctx.save();
+        ctx.beginPath();
+        
+        // 绘制环形区域
+        for (let j = 0; j <= numPoints; j++) {
+          const angle = (j / numPoints) * Math.PI * 2;
+          const rotatedAngle = angle + rotation;
+          
+          // 根据噪声生成不规则边缘
+          const edgeNoise = this.getEdgeNoise(ringIndex, angle);
+          const r = radius + edgeNoise;
+          
+          // 计算坐标
+          const x = this.centerX + Math.cos(rotatedAngle) * r;
+          const y = this.centerY + Math.sin(rotatedAngle) * r;
+          
+          if (j === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        
+        ctx.closePath();
+        
+        // 不绘制白色线条，改用彩色线条
+        // 使用对应环的色调而不是白色
+        ctx.lineWidth = strokeWidth;
+        // 应用环的色调，同时增加饱和度和亮度
+        ctx.strokeStyle = `hsla(${hue}, ${saturation + 30}%, ${brightness - 10}%, ${alphaMultiplier * 0.9})`;
+        ctx.stroke();
+        
+        // 添加边缘发光效果
+        if (this.isBeat || this.bass > 0.6) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.lineWidth = strokeWidth + 2;
+          ctx.strokeStyle = `hsla(${hue}, ${saturation + 20}%, ${brightness + 20}%, ${this.bass * 0.6})`;
+          ctx.stroke();
+          ctx.restore();
+        }
+        
+        ctx.restore();
+      }
+      
+      // 绘制外部矩形线条（波形）
+      drawOuterWaveform(ringIndex, radius, hue) {
+        // 减少波形数量，优化密度
+        // 只在每隔一个环上显示波形，减少视觉密度
+        if (ringIndex % 2 !== 0 && ringIndex !== this.numRings - 1) {
+          return; // 跳过偶数环和非最外层环
+        }
+        
+        // 减少波形线数量
+        const numWaves = ringIndex === this.numRings - 1 ? 1 : 2; // 从3减少到2
+        
+        for (let waveIndex = 0; waveIndex < numWaves; waveIndex++) {
+          // 增加波形间距
+          const waveOffset = waveIndex * (this.radii[ringIndex + 1] - this.radii[ringIndex]) / (numWaves + 0.5);
+          this.drawSingleWaveform(ringIndex, radius + waveOffset, hue);
+        }
+      }
+      
+      // 绘制单个波形线
+      drawSingleWaveform(ringIndex, radius, hue) {
+        const ctx = this.ctx;
+        const numPoints = 200;
+        const rotation = this.rotations[ringIndex];
+        
+        ctx.save();
+        
+        // 线条设置
+        ctx.lineWidth = 2.5;
+        
+        // 根据音频振幅调整线条透明度，增强与音乐的同步感
+        const alphaBase = 0.5 + this.rms * 0.5; // 基础透明度随音量变化
+        ctx.strokeStyle = `hsla(${hue}, 90%, 65%, ${alphaBase})`;
+        
+        // 使用贝塞尔曲线使波形更加平滑
+        ctx.beginPath();
+        
+        // 创建点数组以便构建平滑曲线
+        const points = [];
+        for (let j = 0; j <= numPoints; j++) {
+          const angle = (j / numPoints) * Math.PI * 2;
+          const rotatedAngle = angle + rotation;
+          
+          // 减缓时间变化，将时间系数从0.001降低到0.0003
+          const currentTime = this.isPlaying ? Date.now() * 0.0003 : this.pausedTime || 0;
+          
+          // 增强音频响应，尤其是低频和中频的影响
+          const bassInfluence = this.bass * 150; // 增大低频影响
+          const midInfluence = this.mid * 50;   // 增加中频影响
+          
+          // 基础波形高度更多依赖于音频数据而非时间
+          const waveHeight = 30 + 
+                           bassInfluence + // 低频影响波形振幅
+                           midInfluence +  // 中频影响
+                           Math.sin(j * 0.2 + currentTime) * 15; // 时间影响减小
+          
+          const r = radius + 30 + waveHeight;
+          const x = this.centerX + Math.cos(rotatedAngle) * r;
+          const y = this.centerY + Math.sin(rotatedAngle) * r;
+          
+          points.push({x, y});
+        }
+        
+        // 绘制平滑的曲线
+        if (points.length > 0) {
+          ctx.moveTo(points[0].x, points[0].y);
+          
+          // 使用贝塞尔曲线连接各点，使曲线更平滑
+          for (let i = 0; i < points.length - 1; i++) {
+            const curr = points[i];
+            const next = points[i + 1];
+            
+            // 确保曲线闭合
+            const nextIndex = (i + 1) % points.length;
+            const nextPoint = points[nextIndex];
+            
+            // 计算控制点
+            const cp1x = curr.x + (nextPoint.x - curr.x) * 0.5;
+            const cp1y = curr.y + (nextPoint.y - curr.y) * 0.5;
+            
+            ctx.quadraticCurveTo(cp1x, cp1y, nextPoint.x, nextPoint.y);
+          }
+        }
+        
+        ctx.stroke();
+        
+        // 添加波形闪光效果 - 只在低频或节拍明显时出现，增强与音乐的同步感
+        if (this.bass > 0.6 || this.isBeat) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.lineWidth = 3.5;
+          // 闪光颜色随低频强度变化
+          const glowIntensity = this.bass * 0.7;
+          ctx.strokeStyle = `hsla(${hue}, 95%, 75%, ${glowIntensity})`;
+          ctx.stroke();
+          ctx.restore();
+        }
+        
+        ctx.restore();
+      }
+      
+      // 新增：创建额外的中心曲线
+      drawCenterRings() {
+        const ctx = this.ctx;
+        const innerRadius = 10; // 设置最小内环半径
+        const numInnerRings = 3; // 内部环数量
+        
+        for (let i = 0; i < numInnerRings; i++) {
+          // 动态半径从10-40之间变化
+          const radius = innerRadius + i * 10 + (this.bass * 5) + Math.sin(Date.now() * 0.001 * (i+1)) * 5;
+          
+          // 色调也随时间变化
+          const hue = (this.baseHues[0] + i * 30 + Math.sin(Date.now() * 0.0005) * 40) % 360;
+          
+          ctx.save();
+          ctx.beginPath();
+          
+          const numPoints = 100;
+          for (let j = 0; j <= numPoints; j++) {
+            const angle = (j / numPoints) * Math.PI * 2;
+            
+            // 添加扭曲波纹，保持较小范围
+            const noise = (Math.sin(angle * 8 + Date.now() * 0.001) * 0.5 + 
+                         Math.sin(angle * 5 + Date.now() * 0.002) * 0.5) * (i+1) * 2;
+            
+            const r = radius + noise;
+            const x = this.centerX + Math.cos(angle) * r;
+            const y = this.centerY + Math.sin(angle) * r;
+            
+            if (j === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          
+          ctx.closePath();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
+          ctx.stroke();
+          
+          ctx.restore();
+        }
+      }
+      
+      // 更新动画
+      update() {
+        // 只有在播放状态时才更新环形旋转和粒子动画
+        if (this.isPlaying) {
+          this.updateRings();
+        this.updateParticles();
+        }
+      }
+      
+      // 绘制画面
+      draw() {
+        // 清除画布
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        
+        // 渲染所有元素
+        this.render();
+      }
+      
+      // 动画循环
+      animate() {
+        this.update();
+        this.draw();
+        
+        // 继续动画循环
+        requestAnimationFrame(() => this.animate());
+      }
+      
+      // 接收音频分析数据
+      updateAudioData(bass, mid, treble, rms, isBeat, isPlaying) {
+        this.bass = bass;
+        this.mid = mid;
+        this.treble = treble;
+        this.rms = rms;
+        this.isBeat = isBeat;
+        this.isPlaying = isPlaying;
+        
+        // 当暂停时记录当前时间作为固定参考
+        if (!isPlaying && this.isPlaying !== isPlaying) {
+          this.pausedTime = Date.now() * 0.001;
+        }
+      }
+    }
+    
+    // 初始化粒子系统
+    const canvas = document.getElementById('particle-canvas');
+    const particleSystem = new ParticleSystem(canvas);
+    
+    // 为了测试粒子效果的音频响应，添加模拟音频数据
+    // 实际项目中，这应该由真实的音频分析器提供
+    clearInterval(window.testInterval);
+    
+    // === 音频处理器类 ===
+    class AudioProcessor {
+      constructor() {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.analyser = this.audioContext.createAnalyser();
+        this.gainNode = this.audioContext.createGain();
+        
+        // 设置分析器参数
+        this.analyser.fftSize = 2048;
+        this.analyser.smoothingTimeConstant = 0.8;
+        
+        // 连接节点
+        this.analyser.connect(this.audioContext.destination);
+        this.gainNode.connect(this.analyser);
+        
+        // 初始化分析数据数组
+        this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+        this.timeData = new Uint8Array(this.analyser.frequencyBinCount);
+        
+        // 音频状态
+        this.audioBuffer = null;
+        this.bufferSource = null;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.startTime = 0;
+        this.startOffset = 0;
+        
+        // 音频分析数据
+        this.bass = 0;
+        this.mid = 0;
+        this.treble = 0;
+        this.rms = 0;
+        this.isBeat = false;
+        
+        // 简单的节拍检测
+        this.beatDetectionEnabled = true;
+        this.beatCutOff = 0.3;
+        this.beatThreshold = 0.3;
+        this.beatDecayRate = 0.05;
+        this.beatTime = 0;
+        this.beatHoldTime = 60;
+      }
+      
+      async loadAudio(file) {
+        if (!file) throw new Error("无效的文件");
+        
+        try {
+          // 读取文件
+          const arrayBuffer = await file.arrayBuffer();
+          console.log(`[AudioProcessor] 已读取 ${arrayBuffer.byteLength} 字节`);
+          
+          // 解码音频数据
+          return new Promise((resolve, reject) => {
+            this.audioContext.decodeAudioData(
+              arrayBuffer,
+              (decoded) => {
+                console.log(`[AudioProcessor] 解码成功，时长: ${decoded.duration}s`);
+                this.stop();
+                this.audioBuffer = decoded;
+                this.startOffset = 0;
+                
+                const metadata = {
+                  name: file.name,
+                  title: file.name.replace(/\.[^/.]+$/, ""),
+                  artist: "未知艺术家",
+                  duration: decoded.duration
+                };
+                
+                resolve({ success: true, metadata });
+              },
+              (error) => {
+                console.error("[AudioProcessor] 解码失败:", error);
+                reject(new Error("音频解码失败，文件格式可能不受支持"));
+              }
+            );
+          });
+        } catch (error) {
+          console.error("[AudioProcessor] 读取文件错误:", error);
+          throw new Error(`读取文件失败: ${error.message}`);
+        }
+      }
+      
+      async play() {
+        if (this.isPlaying) return;
+        if (!this.audioBuffer) throw new Error("没有可播放的音频");
+        
+        try {
+          // 确保音频上下文是活跃的
+          if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+          }
+          
+          // 清理之前的音源
+          if (this.bufferSource) {
+            try { this.bufferSource.stop(); } catch(e) {}
+            this.bufferSource.disconnect();
+          }
+          
+          // 创建新音源
+          this.bufferSource = this.audioContext.createBufferSource();
+          this.bufferSource.buffer = this.audioBuffer;
+          
+          // 连接节点
+          this.bufferSource.connect(this.gainNode);
+          
+          // 计算开始时间和偏移
+          this.startTime = this.audioContext.currentTime;
+          const offset = Math.min(this.startOffset, this.audioBuffer.duration);
+          
+          // 开始播放
+          this.bufferSource.start(0, offset);
+          this.isPlaying = true;
+          this.isPaused = false;
+          
+          // 处理播放结束事件
+          this.bufferSource.onended = () => {
+            if (this.isPlaying) {
+              this.isPlaying = false;
+              this.isPaused = false;
+              this.startOffset = 0;
+              
+              // 触发播放结束事件
+              window.dispatchEvent(new Event('track-ended'));
+            }
+          };
+          
+          return true;
+        } catch (error) {
+          console.error("[AudioProcessor] 播放失败:", error);
+          this.isPlaying = false;
+          throw error;
+        }
+      }
+      
+      pause() {
+        if (!this.isPlaying || !this.bufferSource) return;
+        
+        try {
+          // 计算当前播放位置
+          const elapsed = this.audioContext.currentTime - this.startTime;
+          this.startOffset += elapsed;
+          
+          // 停止播放
+          this.bufferSource.stop();
+          this.isPlaying = false;
+          this.isPaused = true;
+        } catch (error) {
+          console.error("[AudioProcessor] 暂停失败:", error);
+        }
+      }
+      
+      stop() {
+        if (!this.bufferSource && !this.isPlaying && !this.isPaused) return;
+        
+        try {
+          if (this.bufferSource) {
+            this.bufferSource.stop();
+            this.bufferSource.disconnect();
+          }
+          
+          this.bufferSource = null;
+          this.isPlaying = false;
+          this.isPaused = false;
+          this.startOffset = 0;
+          this.startTime = 0;
+        } catch (error) {
+          console.error("[AudioProcessor] 停止失败:", error);
+        }
+      }
+      
+      seekTo(time) {
+        if (!this.audioBuffer) return Promise.resolve(false);
+        console.log(`[AudioProcessor] 跳转到时间点: ${time}s`);
+
+        try {
+          const wasPlaying = this.isPlaying;
+          const newOffset = Math.max(0, Math.min(time, this.getDuration()));
+
+          // Stop the current source regardless of playing state
+          if (this.bufferSource) {
+            this.bufferSource.onended = null; // Prevent onended from firing due to stop()
+            try { this.bufferSource.stop(); } catch(e) { console.warn("[AudioProcessor] Error stopping previous source:", e); }
+            this.bufferSource.disconnect();
+            this.bufferSource = null;
+          }
+
+          // Update the offset
+          this.startOffset = newOffset;
+          this.isPlaying = false; // Explicitly set playing state before potential restart
+          this.isPaused = !wasPlaying; // Update paused state
+
+          // Update UI immediately
+          window.dispatchEvent(new CustomEvent('audio-seek', {
+            detail: { currentTime: this.startOffset, duration: this.getDuration() }
+          }));
+
+          if (wasPlaying) {
+            // If it was playing, restart playback from the new offset
+            // Need to re-create the source and start it
+            this.bufferSource = this.audioContext.createBufferSource();
+            this.bufferSource.buffer = this.audioBuffer;
+            this.bufferSource.connect(this.gainNode);
+            this.startTime = this.audioContext.currentTime; // Reset start time for accurate getCurrentTime()
+
+            // Set the onended handler again for the new source
+            this.bufferSource.onended = () => {
+              // Check isPlaying flag which should be true now if ended naturally
+              if (this.isPlaying) { 
+                console.log("[AudioProcessor] Track ended naturally after seek.");
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.startOffset = 0;
+                window.dispatchEvent(new Event('track-ended'));
+              } else {
+                // This branch is hit if stop() or another seek happens before natural end
+                console.log("[AudioProcessor] bufferSource ended, but isPlaying is false (likely due to stop/pause/seek).");
+              }
+            };
+
+            this.bufferSource.start(0, this.startOffset);
+            this.isPlaying = true; // Mark as playing again
+            this.isPaused = false;
+            console.log(`[AudioProcessor] Resuming playback at offset: ${this.startOffset}`);
+            return Promise.resolve(true);
+          } else {
+            // If it was paused, just update the offset and remain paused
+            console.log(`[AudioProcessor] Seek while paused, new offset: ${this.startOffset}`);
+            return Promise.resolve(true);
+          }
+        } catch (error) {
+          console.error("[AudioProcessor] 跳转失败:", error);
+          // Ensure state consistency on error
+          this.isPlaying = false;
+          this.isPaused = true; 
+          if (this.bufferSource) {
+              try { this.bufferSource.stop(); } catch(e) {}
+              this.bufferSource.disconnect();
+              this.bufferSource = null;
+          }
+          return Promise.reject(error);
+        }
+      }
+      
+      setVolume(value) {
+        if (this.gainNode) {
+          this.gainNode.gain.value = Math.max(0, Math.min(1, value));
+        }
+      }
+      
+      getCurrentTime() {
+        if (!this.audioBuffer) return 0;
+        
+        if (this.isPlaying) {
+          return this.startOffset + (this.audioContext.currentTime - this.startTime);
+        } else {
+          return this.startOffset;
+        }
+      }
+      
+      getDuration() {
+        return this.audioBuffer ? this.audioBuffer.duration : 0;
+      }
+      
+      // 更新音频分析数据
+      updateAnalysisData() {
+        if (!this.analyser || !this.isPlaying) return;
+        
+        // 获取频率数据和时域数据
+        this.analyser.getByteFrequencyData(this.frequencyData);
+        this.analyser.getByteTimeDomainData(this.timeData);
+        
+        // 计算RMS（均方根，表示音量）
+        let sum = 0;
+        for (let i = 0; i < this.timeData.length; i++) {
+          const amplitude = (this.timeData[i] - 128) / 128;
+          sum += amplitude * amplitude;
+        }
+        this.rms = Math.sqrt(sum / this.timeData.length);
+        
+        // 计算频率范围能量
+        this.calculateFrequencyRanges();
+        
+        // 节拍检测
+        if (this.beatDetectionEnabled) {
+          this.detectBeat();
+        }
+        
+        // 将分析数据传递给粒子系统
+        if (particleSystem) {
+          particleSystem.updateAudioData(this.bass, this.mid, this.treble, this.rms, this.isBeat, this.isPlaying);
+        }
+      }
+      
+      // 计算不同频率范围的能量
+      calculateFrequencyRanges() {
+        const nyquist = this.audioContext.sampleRate / 2;
+        const lowFreq = [20, 250];    // 低频范围 20-250 Hz
+        const midFreq = [250, 2000];  // 中频范围 250-2000 Hz
+        const highFreq = [2000, 20000]; // 高频范围 2000-20000 Hz
+        
+        let bassSum = 0, bassCount = 0;
+        let midSum = 0, midCount = 0;
+        let trebleSum = 0, trebleCount = 0;
+        
+        // 分析频率数据
+        for (let i = 0; i < this.frequencyData.length; i++) {
+          const frequency = i * nyquist / this.frequencyData.length;
+          const value = this.frequencyData[i] / 255; // 归一化到0-1
+          
+          if (frequency >= lowFreq[0] && frequency <= lowFreq[1]) {
+            bassSum += value;
+            bassCount++;
+          } else if (frequency >= midFreq[0] && frequency <= midFreq[1]) {
+            midSum += value;
+            midCount++;
+          } else if (frequency >= highFreq[0] && frequency <= highFreq[1]) {
+            trebleSum += value;
+            trebleCount++;
+          }
+        }
+        
+        // 计算平均能量
+        this.bass = bassCount > 0 ? bassSum / bassCount : 0;
+        this.mid = midCount > 0 ? midSum / midCount : 0;
+        this.treble = trebleCount > 0 ? trebleSum / trebleCount : 0;
+      }
+      
+      // 简单的节拍检测
+      detectBeat() {
+        if (this.bass > this.beatCutOff && this.bass > this.beatThreshold) {
+          this.isBeat = true;
+          this.beatCutOff = this.bass * 1.1;
+          this.beatTime = Date.now();
+        } else {
+          this.isBeat = (Date.now() - this.beatTime) < this.beatHoldTime;
+          this.beatCutOff *= this.beatDecayRate;
+          this.beatCutOff = Math.max(this.beatCutOff, this.beatThreshold);
+        }
+      }
+    }
+    
+    // === UI管理器类 ===
+    class UIManager {
+      constructor() {
+        // 获取UI元素
+        this.elements = {
+          playBtn: document.getElementById('play-btn'),
+          playIcon: document.getElementById('play-icon'),
+          pauseIcon: document.getElementById('pause-icon'),
+          prevBtn: document.getElementById('prev-btn'),
+          nextBtn: document.getElementById('next-btn'),
+          volumeSlider: document.getElementById('volume-slider'),
+          seekBar: document.getElementById('seek-bar'),
+          seekBarFill: document.getElementById('seek-bar-fill'),
+          currentTimeDisplay: document.getElementById('current-time'),
+          durationDisplay: document.getElementById('duration'),
+          currentTrackTitle: document.getElementById('current-track-title'),
+          currentTrackArtist: document.getElementById('current-track-artist'),
+          uploadBtn: document.getElementById('upload-btn'),
+          uploadLyricsBtn: document.getElementById('upload-lyrics-btn'),
+          audioFileInput: document.getElementById('audio-file-input'),
+          lyricsFileInput: document.getElementById('lyrics-file-input'),
+          uploadZone: document.getElementById('upload-zone'),
+          lyricsUploadZone: document.getElementById('lyrics-upload-zone'),
+          lyricsContainer: document.getElementById('lyrics-container'),
+          lyricsScroll: document.getElementById('lyrics-scroll'),
+          lyricsPositionBtn: document.getElementById('lyrics-position-btn'),
+          autoScrollBtn: document.getElementById('auto-scroll-btn'),
+          playlist: document.getElementById('playlist')
+        };
+        
+        this.notificationTimeout = null;
+      }
+      
+      // 显示通知
+      showNotification(message, type = 'info') {
+        // 删除旧通知
+        if (this.notificationTimeout) {
+          clearTimeout(this.notificationTimeout);
+        }
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+          existingNotification.remove();
+        }
+        
+        // 创建新通知
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        // 根据类型选择图标
+        let iconClass = 'ri-information-line';
+        if (type === 'success') iconClass = 'ri-check-line';
+        if (type === 'error') iconClass = 'ri-error-warning-line';
+        if (type === 'warning') iconClass = 'ri-alert-line';
+        
+        notification.innerHTML = `
+          <i class="${iconClass}"></i>
+          <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // 3.5秒后自动移除
+        this.notificationTimeout = setTimeout(() => notification.remove(), 3500);
+      }
+      
+      // 更新播放按钮状态
+      updatePlayButtonUI(isPlaying) {
+        if (!this.elements.playIcon || !this.elements.pauseIcon) return;
+        
+        if (isPlaying) {
+          this.elements.playIcon.classList.add('hidden');
+          this.elements.pauseIcon.classList.remove('hidden');
+        } else {
+          this.elements.playIcon.classList.remove('hidden');
+          this.elements.pauseIcon.classList.add('hidden');
+        }
+      }
+      
+      // 更新时间显示
+      updateTimeDisplay(currentTime, duration) {
+        if (this.elements.currentTimeDisplay) {
+          this.elements.currentTimeDisplay.textContent = formatTime(currentTime);
+        }
+        
+        if (this.elements.durationDisplay) {
+          this.elements.durationDisplay.textContent = formatTime(duration);
+        }
+        
+        // 更新进度条
+        this.updateSeekBar(duration > 0 ? currentTime / duration : 0);
+      }
+      
+      // 更新进度条
+      updateSeekBar(progress) {
+        if (!this.elements.seekBarFill) return;
+        
+        // 确保进度在0-100%之间
+        const percent = Math.max(0, Math.min(100, progress * 100));
+        this.elements.seekBarFill.style.width = `${percent}%`;
+      }
+      
+      // 更新曲目信息显示
+      updateTrackInfo(metadata) {
+        if (this.elements.currentTrackTitle) {
+          this.elements.currentTrackTitle.textContent = metadata.title || "未知曲目";
+        }
+        if (this.elements.currentTrackArtist) {
+          this.elements.currentTrackArtist.textContent = metadata.artist || "未知艺术家";
+        }
+      }
+    }
+    
+    // === 歌词管理器类 ===
+    class LyricsManager {
+      constructor(container, audioProcessor) {
+        this.container = container;
+        this.audioProcessor = audioProcessor;
+        this.lyricsData = [];
+        this.currentLineIndex = -1;
+        this.isAutoScrollEnabled = true;
+        this.position = 'bottom'; // 歌词位置: top, center, bottom
+        this.pendingLyrics = null; // 存储待加载的歌词
+      }
+      
+      // 加载歌词
+      loadLyrics(lrcContent) {
+        try {
+          this.lyricsData = this.parseLRC(lrcContent);
+          this.renderLyrics();
+          this.currentLineIndex = -1;
+          console.log(`[LyricsManager] 解析了 ${this.lyricsData.length} 行歌词`);
+          this.pendingLyrics = null; // 清除待加载的歌词
+        } catch (error) {
+          console.error("[LyricsManager] 解析歌词失败:", error);
+          this.container.innerHTML = '<div class="lyrics-line"><p class="text-center text-red-500">无法加载歌词</p></div>';
+          this.lyricsData = [];
+        }
+      }
+      
+      // 存储待加载的歌词
+      storePendingLyrics(lrcContent) {
+        this.pendingLyrics = lrcContent;
+        // 显示提示信息
+        this.container.innerHTML = '<div class="lyrics-line"><p class="text-center">已保存歌词，播放音乐时将自动显示</p></div>';
+      }
+      
+      // 加载待处理的歌词（如果有）
+      loadPendingLyricsIfExists() {
+        if (this.pendingLyrics) {
+          this.loadLyrics(this.pendingLyrics);
+          return true;
+        }
+        return false;
+      }
+      
+      // 清除歌词
+      clearLyrics() {
+        this.container.innerHTML = '<div class="lyrics-line"><p class="text-center">没有歌词</p></div>';
+        this.lyricsData = [];
+        this.currentLineIndex = -1;
+      }
+      
+      // 解析LRC格式歌词
+      parseLRC(text) {
+        const lines = text.split('\n');
+        const result = [];
+        const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g;
+        
+        for (let line of lines) {
+          let content = line.replace(timeRegex, '').trim();
+          if (!content) continue;
+          
+          timeRegex.lastIndex = 0;
+          let match;
+          while ((match = timeRegex.exec(line)) !== null) {
+            const min = parseInt(match[1]);
+            const sec = parseInt(match[2]);
+            const ms = match[3].length === 2 ? parseInt(match[3]) * 10 : parseInt(match[3]);
+            const time = min * 60 + sec + ms / 1000;
+            
+            // 处理双语歌词
+            let chinese = content, english = '';
+            if (content.includes('|')) {
+              const parts = content.split('|');
+              english = parts[0].trim();
+              chinese = parts[1].trim();
+            }
+            
+            result.push({ time, chinese, english });
+          }
+        }
+        
+        return result.sort((a, b) => a.time - b.time);
+      }
+      
+      // 渲染歌词
+      renderLyrics() {
+        this.container.innerHTML = '';
+        
+        if (this.lyricsData.length === 0) {
+          this.clearLyrics();
+          return;
+        }
+        
+        const self = this;
+        
+        this.lyricsData.forEach((line, index) => {
+          const lineElement = document.createElement('div');
+          lineElement.classList.add('lyrics-line');
+          lineElement.dataset.index = index;
+          lineElement.dataset.time = line.time;
+          
+          // 为每行歌词分配颜色类
+          const colorClass = `lyrics-color-${index % 10}`;
+          
+          let html = '';
+          if (line.english) {
+            html += `<p class="text-sm">${line.english}</p>`;
+          }
+          if (line.chinese) {
+            html += `<p class="text-lg ${colorClass}">${line.chinese}</p>`;
+          }
+          
+          lineElement.innerHTML = html || '<p class="text-center">&nbsp;</p>';
+          
+          // 点击歌词跳转 - 使用原生onclick
+          lineElement.onclick = function() {
+            if (!self.audioProcessor || !self.audioProcessor.audioBuffer) {
+              console.log('[LyricsManager] 无法跳转：没有加载音频');
+              return;
+            }
+            
+            const time = parseFloat(this.dataset.time);
+            if (isNaN(time)) return;
+            
+            console.log(`[LyricsManager] 点击歌词，跳转到 ${time}s`);
+            
+            // 直接调用seekTo方法
+            self.audioProcessor.seekTo(time)
+              .then(() => {
+                console.log('[LyricsManager] 歌词跳转成功');
+              })
+              .catch(err => {
+                console.error('[LyricsManager] 歌词跳转失败:', err);
+              });
+          };
+          
+          this.container.appendChild(lineElement);
+        });
+      }
+      
+      // 高亮当前行歌词
+      updateHighlight(currentTime) {
+        if (this.lyricsData.length === 0) return;
+        
+        let newLineIndex = -1;
+        // 查找当前时间对应的歌词行
+        for (let i = 0; i < this.lyricsData.length; i++) {
+          if (currentTime >= this.lyricsData[i].time) {
+            newLineIndex = i;
+          } else {
+            break;
+          }
+        }
+        
+        // 如果找到新的行，更新高亮
+        if (newLineIndex !== this.currentLineIndex) {
+          const lines = this.container.querySelectorAll('.lyrics-line');
+          
+          // 移除之前的高亮
+          if (this.currentLineIndex >= 0 && lines[this.currentLineIndex]) {
+            lines[this.currentLineIndex].classList.remove('active');
+          }
+          
+          // 添加新的高亮和动画
+          if (newLineIndex >= 0 && lines[newLineIndex]) {
+            lines[newLineIndex].classList.add('active');
+            
+            // 添加动画类
+            lines[newLineIndex].classList.remove('animate');
+            void lines[newLineIndex].offsetWidth; // 触发重绘
+            lines[newLineIndex].classList.add('animate');
+            
+            // 如果启用了自动滚动，滚动到当前行
+            if (this.isAutoScrollEnabled) {
+              this.scrollToLine(lines[newLineIndex]);
+            }
+          }
+          
+          this.currentLineIndex = newLineIndex;
+        }
+      }
+      
+      // 滚动到指定行
+      scrollToLine(lineElement) {
+        if (!lineElement || !this.container) return;
+        
+        const containerRect = this.container.getBoundingClientRect();
+        const lineRect = lineElement.getBoundingClientRect();
+        
+        // 计算相对于容器的位置
+        const lineTop = lineRect.top - containerRect.top;
+        
+        // 滚动到中心位置
+        const targetScrollTop = this.container.scrollTop + lineTop - (containerRect.height / 2) + (lineRect.height / 2);
+        
+        this.container.scrollTo({
+          top: targetScrollTop,
+          behavior: 'smooth'
+        });
+      }
+      
+      // 切换自动滚动
+      toggleAutoScroll(enable) {
+        this.isAutoScrollEnabled = enable;
+        console.log(`[LyricsManager] 自动滚动: ${enable ? '开启' : '关闭'}`);
+      }
+      
+      // 改变歌词位置
+      changePosition(position) {
+        this.position = position;
+        const lyricsContainer = document.getElementById('lyrics-container');
+        
+        // 移除所有位置类
+        lyricsContainer.classList.remove('top', 'center', 'bottom');
+        
+        // 添加新位置类
+        lyricsContainer.classList.add(position);
+        
+        console.log(`[LyricsManager] 歌词位置: ${position}`);
+      }
+    }
+    
+    // === 播放列表管理器类 ===
+    class PlaylistManager {
+      constructor(container) {
+        this.container = container;
+        this.playlist = [];
+        this.currentIndex = -1;
+        this.isShuffled = false;
+      }
+      
+      // 添加曲目
+      addTrack(track) {
+        this.playlist.push(track);
+        this.renderPlaylist();
+        console.log(`[PlaylistManager] 添加曲目: ${track.metadata.title}`);
+      }
+      
+      // 添加多个曲目
+      addTracks(tracks) {
+        this.playlist = this.playlist.concat(tracks);
+        this.renderPlaylist();
+        console.log(`[PlaylistManager] 添加了 ${tracks.length} 个曲目`);
+      }
+      
+      // 清空播放列表
+      clearPlaylist() {
+        this.playlist = [];
+        this.currentIndex = -1;
+        this.renderPlaylist();
+        console.log('[PlaylistManager] 播放列表已清空');
+      }
+      
+      // 播放指定索引的曲目
+      playTrack(index) {
+        if (index >= 0 && index < this.playlist.length) {
+          this.currentIndex = index;
+          return this.playlist[index];
+        }
+        return null;
+      }
+      
+      // 播放下一曲
+      playNext() {
+        if (this.playlist.length === 0) return null;
+        
+        let nextIndex;
+        
+        if (this.isShuffled) {
+          // 随机模式：随机选择不同于当前的索引
+          if (this.playlist.length <= 1) {
+            nextIndex = 0;
+          } else {
+            do {
+              nextIndex = Math.floor(Math.random() * this.playlist.length);
+            } while (nextIndex === this.currentIndex);
+          }
+        } else {
+          // 顺序模式：下一个索引，循环到开头
+          nextIndex = (this.currentIndex + 1) % this.playlist.length;
+        }
+        
+        return this.playTrack(nextIndex);
+      }
+      
+      // 播放上一曲
+      playPrevious() {
+        if (this.playlist.length === 0) return null;
+        
+        let prevIndex;
+        
+        if (this.isShuffled) {
+          // 随机模式：随机选择不同于当前的索引
+          if (this.playlist.length <= 1) {
+            prevIndex = 0;
+          } else {
+            do {
+              prevIndex = Math.floor(Math.random() * this.playlist.length);
+            } while (prevIndex === this.currentIndex);
+          }
+        } else {
+          // 顺序模式：上一个索引，循环到结尾
+          prevIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
+        }
+        
+        return this.playTrack(prevIndex);
+      }
+      
+      // 高亮当前播放曲目
+      highlightCurrentTrack() {
+        const items = this.container.querySelectorAll('.playlist-item');
+        
+        items.forEach((item, index) => {
+          if (index === this.currentIndex) {
+            item.classList.add('bg-blue-900', 'border-l-4', 'border-blue-500');
+          } else {
+            item.classList.remove('bg-blue-900', 'border-l-4', 'border-blue-500');
+          }
+        });
+      }
+      
+      // 渲染播放列表
+      renderPlaylist() {
+        this.container.innerHTML = '';
+        
+        if (this.playlist.length === 0) {
+          this.container.innerHTML = '<p class="text-gray-400 text-center p-4">播放列表为空</p>';
+          return;
+        }
+        
+        this.playlist.forEach((track, index) => {
+          const item = document.createElement('div');
+          item.className = 'playlist-item p-3 hover:bg-gray-700 cursor-pointer flex justify-between items-center transition-colors duration-200';
+          
+          if (index === this.currentIndex) {
+            item.classList.add('bg-blue-900', 'border-l-4', 'border-blue-500');
+          }
+          
+          const title = track.metadata.title || '未知曲目';
+          const artist = track.metadata.artist || '未知艺术家';
+          const duration = track.metadata.duration ? formatTime(track.metadata.duration) : '--:--';
+          
+          item.innerHTML = `
+            <div>
+              <p class="font-semibold">${title}</p>
+              <p class="text-xs text-gray-400">${artist}</p>
+            </div>
+            <span class="text-xs text-gray-400">${duration}</span>
+          `;
+          
+          item.addEventListener('click', () => {
+            // 触发播放事件，由外部处理
+            const event = new CustomEvent('playlist-track-selected', {
+              detail: { index: index }
+            });
+            window.dispatchEvent(event);
+          });
+          
+          this.container.appendChild(item);
+        });
+      }
+      
+      // 更新曲目元数据
+      updateTrackMetadata(index, metadata) {
+        if (index >= 0 && index < this.playlist.length) {
+          this.playlist[index].metadata = {
+            ...this.playlist[index].metadata,
+            ...metadata
+          };
+          this.renderPlaylist();
+        }
+      }
+      
+      // 更新曲目歌词
+      updateTrackLyrics(index, lyricsContent) {
+        if (index >= 0 && index < this.playlist.length) {
+          this.playlist[index].lyricsContent = lyricsContent;
+          return true;
+        } else if (this.playlist.length > 0) {
+          // 如果没有当前选择的曲目，但播放列表不为空，添加到第一首
+          this.playlist[0].lyricsContent = lyricsContent;
+          return true;
+        }
+        return false;
+      }
+      
+      // 切换随机播放模式
+      toggleShuffle(enabled) {
+        this.isShuffled = enabled;
+        console.log(`[PlaylistManager] 随机播放: ${enabled ? '开启' : '关闭'}`);
+      }
+    }
+    
+    // === 初始化应用程序 ===
+    const audioProcessor = new AudioProcessor();
+    const uiManager = new UIManager();
+    
+    // 确保UIManager可以访问formatTime函数
+    uiManager.formatTime = formatTime;
+    
+    const lyricsManager = new LyricsManager(uiManager.elements.lyricsScroll, audioProcessor);
+    const playlistManager = new PlaylistManager(uiManager.elements.playlist);
+    
+    // 禁用测试动画
+    clearInterval(window.testInterval);
+    
+    // === 绑定事件处理程序 ===
+    
+    // 播放/暂停按钮
+    uiManager.elements.playBtn.addEventListener('click', async () => {
+      if (audioProcessor.isPlaying) {
+        audioProcessor.pause();
+        uiManager.updatePlayButtonUI(false);
+      } else {
+        if (audioProcessor.isPaused || audioProcessor.audioBuffer) {
+          try {
+            await audioProcessor.play();
+            uiManager.updatePlayButtonUI(true);
+          } catch (error) {
+            uiManager.showNotification(`播放失败: ${error.message}`, 'error');
+          }
+        } else if (playlistManager.playlist.length > 0) {
+          // 如果有播放列表但没有加载音频，播放第一首
+          const firstTrack = playlistManager.playTrack(0);
+          playTrack(firstTrack);
+        } else {
+          uiManager.showNotification('请先添加音乐', 'warning');
+        }
+      }
+    });
+    
+    // 上一曲按钮
+    uiManager.elements.prevBtn.addEventListener('click', () => {
+      const prevTrack = playlistManager.playPrevious();
+      if (prevTrack) {
+        playTrack(prevTrack);
+      }
+    });
+    
+    // 下一曲按钮
+    uiManager.elements.nextBtn.addEventListener('click', () => {
+      const nextTrack = playlistManager.playNext();
+      if (nextTrack) {
+        playTrack(nextTrack);
+      }
+    });
+    
+    // 音量滑块
+    uiManager.elements.volumeSlider.addEventListener('input', (e) => {
+      const volume = parseFloat(e.target.value);
+      audioProcessor.setVolume(volume);
+    });
+    
+    // 进度条拖动
+    uiManager.elements.seekBar.addEventListener('click', (e) => {
+      if (!audioProcessor.audioBuffer) {
+        console.log('[UI] 无法调整进度：没有加载音频');
+        return;
+      }
+      
+      const rect = uiManager.elements.seekBar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const time = ratio * audioProcessor.getDuration();
+      
+      console.log(`[UI] 进度条点击，跳转到 ${time.toFixed(2)}s (${(ratio * 100).toFixed(1)}%)`);
+      
+      // 使用改进的seekTo方法
+      audioProcessor.seekTo(time);
+      
+      // 立即更新歌词显示
+      lyricsManager.updateHighlight(time);
+    });
+    
+    // 添加进度条拖动功能
+    let isDraggingSeekBar = false;
+    
+    uiManager.elements.seekBar.addEventListener('mousedown', (e) => {
+      if (!audioProcessor.audioBuffer) {
+        console.log('[UI] 无法调整进度：没有加载音频');
+        return;
+      }
+      
+      isDraggingSeekBar = true;
+      
+      const rect = uiManager.elements.seekBar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const time = ratio * audioProcessor.getDuration();
+      
+      // 更新进度条UI
+      uiManager.updateSeekBar(ratio);
+      
+      // 立即更新歌词显示
+      lyricsManager.updateHighlight(time);
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDraggingSeekBar || !audioProcessor.audioBuffer) return;
+      
+      const rect = uiManager.elements.seekBar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      
+      // 只更新UI，不实际跳转音频
+      uiManager.updateSeekBar(ratio);
+      
+      // 更新时间显示
+      const time = ratio * audioProcessor.getDuration();
+      uiManager.updateTimeDisplay(time, audioProcessor.getDuration());
+      
+      // 更新歌词显示
+      lyricsManager.updateHighlight(time);
+    });
+    
+    document.addEventListener('mouseup', (e) => {
+      if (!isDraggingSeekBar || !audioProcessor.audioBuffer) return;
+      
+      const rect = uiManager.elements.seekBar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const time = ratio * audioProcessor.getDuration();
+      
+      // 拖动结束时跳转到相应位置
+      audioProcessor.seekTo(time);
+      
+      isDraggingSeekBar = false;
+    });
+    
+    // 歌词位置按钮
+    uiManager.elements.lyricsPositionBtn.addEventListener('click', () => {
+      const positions = ['bottom', 'center', 'top'];
+      const currentIndex = positions.indexOf(lyricsManager.position);
+      const nextIndex = (currentIndex + 1) % positions.length;
+      lyricsManager.changePosition(positions[nextIndex]);
+    });
+    
+    // 自动滚动按钮
+    uiManager.elements.autoScrollBtn.addEventListener('click', () => {
+      lyricsManager.toggleAutoScroll(!lyricsManager.isAutoScrollEnabled);
+      uiManager.elements.autoScrollBtn.classList.toggle('bg-green-600', lyricsManager.isAutoScrollEnabled);
+    });
+    
+    // 添加音频文件
+    uiManager.elements.audioFileInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files.length === 0) return;
+      
+      handleAudioFiles(files);
+      
+      // 重置输入框，允许选择相同文件
+      e.target.value = '';
+    });
+    
+    // 添加歌词文件
+    uiManager.elements.lyricsFileInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files.length === 0) return;
+      
+      handleLyricsFile(files[0]);
+      
+      // 重置输入框，允许选择相同文件
+      e.target.value = '';
+    });
+    
+    // 上传区域点击
+    uiManager.elements.uploadBtn.addEventListener('click', () => {
+      uiManager.elements.audioFileInput.click();
+    });
+    
+    uiManager.elements.uploadLyricsBtn.addEventListener('click', () => {
+      uiManager.elements.lyricsFileInput.click();
+    });
+    
+    // 上传区域拖放
+    uiManager.elements.uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      uiManager.elements.uploadZone.classList.add('drag-over');
+    });
+    
+    uiManager.elements.uploadZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      uiManager.elements.uploadZone.classList.remove('drag-over');
+    });
+    
+    uiManager.elements.uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      uiManager.elements.uploadZone.classList.remove('drag-over');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleAudioFiles(files);
+      }
+    });
+    
+    // 歌词区域拖放
+    uiManager.elements.lyricsUploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      uiManager.elements.lyricsUploadZone.classList.add('drag-over');
+    });
+    
+    uiManager.elements.lyricsUploadZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      uiManager.elements.lyricsUploadZone.classList.remove('drag-over');
+    });
+    
+    uiManager.elements.lyricsUploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      uiManager.elements.lyricsUploadZone.classList.remove('drag-over');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleLyricsFile(files[0]);
+      }
+    });
+    
+    // 播放列表选中项
+    window.addEventListener('playlist-track-selected', (e) => {
+      const index = e.detail.index;
+      const track = playlistManager.playTrack(index);
+      if (track) {
+        playTrack(track);
+      }
+    });
+    
+    // 曲目播放结束
+    window.addEventListener('track-ended', () => {
+      const nextTrack = playlistManager.playNext();
+      if (nextTrack) {
+        playTrack(nextTrack);
+      }
+    });
+    
+    // === 处理文件函数 ===
+    
+    // 处理音频文件
+    async function handleAudioFiles(files) {
+      const audioFiles = Array.from(files).filter(file => 
+        file.type.startsWith('audio/') || /\.(mp3|wav|ogg|flac)$/i.test(file.name)
+      );
+      
+      if (audioFiles.length === 0) {
+        uiManager.showNotification('未找到有效的音频文件', 'warning');
+        return;
+      }
+      
+      uiManager.showNotification(`正在添加 ${audioFiles.length} 个音乐文件...`, 'info');
+      
+      const tracks = audioFiles.map(file => ({
+        file: file,
+        metadata: {
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          artist: '未知艺术家',
+          duration: 0
+        },
+        lyricsContent: null
+      }));
+      
+      const wasPlaylistEmpty = playlistManager.playlist.length === 0;
+      playlistManager.addTracks(tracks);
+      
+      // 如果播放列表之前是空的，自动播放第一首
+      if (wasPlaylistEmpty) {
+        playTrack(playlistManager.playlist[0]);
+      }
+    }
+    
+    // 处理歌词文件
+    async function handleLyricsFile(file) {
+      if (!(/\.(lrc|txt)$/i.test(file.name))) {
+        uiManager.showNotification('请选择LRC格式的歌词文件', 'warning');
+        return;
+      }
+      
+      try {
+        uiManager.showNotification(`正在加载歌词: ${file.name}`, 'info');
+        
+        // 确保正确读取文本编码
+        const reader = new FileReader();
+        reader.readAsText(file, 'UTF-8');
+        
+        reader.onload = (event) => {
+          const text = event.target.result;
+          
+          if (playlistManager.currentIndex === -1) {
+            // 没有播放中的曲目，但存在播放列表
+            if (playlistManager.playlist.length > 0) {
+              // 存储歌词到第一首歌
+              playlistManager.updateTrackLyrics(0, text);
+              // 存储待播放的歌词
+              lyricsManager.storePendingLyrics(text);
+              uiManager.showNotification('歌词已保存，播放音乐时将自动显示', 'success');
+            } else {
+              // 没有播放列表，只存储待播放的歌词
+              lyricsManager.storePendingLyrics(text);
+              uiManager.showNotification('歌词已保存，播放音乐时将自动显示', 'success');
+            }
+          } else {
+            // 有播放中的曲目，直接加载歌词
+          playlistManager.updateTrackLyrics(playlistManager.currentIndex, text);
+          lyricsManager.loadLyrics(text);
+          uiManager.showNotification('歌词加载成功', 'success');
+          }
+        };
+        
+        reader.onerror = () => {
+          throw new Error('文件读取失败');
+        };
+      } catch (error) {
+        console.error('[LyricsFile] 读取歌词失败:', error);
+        uiManager.showNotification('读取歌词文件失败', 'error');
+      }
+    }
+    
+    // 播放曲目
+    async function playTrack(track) {
+      if (!track || !track.file) {
+        uiManager.showNotification('无效的曲目', 'error');
+        return;
+      }
+      
+      try {
+        // 停止当前播放
+        audioProcessor.stop();
+        
+        // 显示加载信息
+        uiManager.showNotification(`正在加载: ${track.metadata.title}`, 'info');
+        uiManager.updatePlayButtonUI(false); // 显示加载状态
+        
+        // 加载音频
+        const result = await audioProcessor.loadAudio(track.file);
+        
+        // 更新元数据
+        const metadata = { ...track.metadata, ...result.metadata };
+        playlistManager.updateTrackMetadata(playlistManager.currentIndex, metadata);
+        
+        // 更新UI
+        uiManager.updateTrackInfo(metadata);
+        uiManager.updateTimeDisplay(0, metadata.duration);
+        playlistManager.highlightCurrentTrack();
+        
+        // 加载歌词（如果有）
+        if (track.lyricsContent) {
+          lyricsManager.loadLyrics(track.lyricsContent);
+        } else if (lyricsManager.loadPendingLyricsIfExists()) {
+          // 尝试加载待播放的歌词
+          console.log('[PlayTrack] 加载了待播放的歌词');
+        } else {
+          lyricsManager.clearLyrics();
+        }
+        
+        // 播放音频
+        await audioProcessor.play();
+        uiManager.updatePlayButtonUI(true);
+        uiManager.showNotification(`正在播放: ${metadata.title}`, 'success');
+        
+        // 启动更新循环
+        startUpdateLoop();
+      } catch (error) {
+        console.error('[PlayTrack] 播放失败:', error);
+        uiManager.showNotification(`播放失败: ${error.message}`, 'error');
+      }
+    }
+    
+    // 开始UI更新循环
+    function startUpdateLoop() {
+      // 清除之前的循环
+      if (window.updateLoopInterval) {
+        clearInterval(window.updateLoopInterval);
+      }
+      
+      const updateInterval = 50; // 50ms更新一次，保持UI流畅
+          
+      function update() {
+        if (!audioProcessor) return;
+        
+        // 获取当前时间和总时长
+          const currentTime = audioProcessor.getCurrentTime();
+          const duration = audioProcessor.getDuration();
+          
+        // 更新用户界面，即使在暂停状态
+        if (uiManager) {
+          uiManager.updateTimeDisplay(currentTime, duration);
+          uiManager.updateSeekBar(duration > 0 ? currentTime / duration : 0);
+        }
+        
+        // 只在播放状态下更新音频分析
+        if (audioProcessor.isPlaying) {
+          audioProcessor.updateAnalysisData();
+        }
+        
+        // 更新歌词高亮，即使在暂停状态
+        if (lyricsManager && lyricsManager.lyricsData.length > 0) {
+          lyricsManager.updateHighlight(currentTime);
+        }
+      }
+      
+      // 使用setInterval替代setTimeout，确保稳定更新
+      window.updateLoopInterval = setInterval(update, updateInterval);
+      console.log('[Main] 启动UI更新循环 (间隔:', updateInterval, 'ms)');
+      
+      // 立即执行一次，确保UI立即更新
+      update();
+    }
+    
+    // 时间更新事件监听
+    window.addEventListener('time-updated', (e) => {
+      const { currentTime, duration } = e.detail;
+      uiManager.updateTimeDisplay(currentTime, duration);
+      uiManager.updateSeekBar(currentTime / duration);
+      lyricsManager.updateHighlight(currentTime);
+    });
+    
+    // === 侧边栏控制 ===
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const closeSidebar = document.getElementById('close-sidebar');
+    const mainInterface = document.querySelector('.main-interface');
+    
+    sidebarToggle.addEventListener('click', () => {
+      mainInterface.classList.toggle('sidebar-collapsed');
+    });
+    
+    closeSidebar.addEventListener('click', () => {
+      mainInterface.classList.add('sidebar-collapsed');
+    });
+    
+    // 初始化时启动UI更新循环，确保界面响应即使在没有播放音乐的情况下
+    startUpdateLoop();
+    
+    // 欢迎消息
+    uiManager.showNotification('欢迎使用星璇律动音乐可视化', 'success');
+    
+    // 自定义事件监听器 - 处理音频跳转事件
+    window.addEventListener('audio-seek', function(e) {
+      const { currentTime, duration } = e.detail;
+      
+      // 更新UI
+      if (uiManager) {
+        uiManager.updateTimeDisplay(currentTime, duration);
+        uiManager.updateSeekBar(duration > 0 ? currentTime / duration : 0);
+      }
+      
+      // 更新歌词
+      if (lyricsManager) {
+        lyricsManager.updateHighlight(currentTime);
+      }
+    });
+
+    // === 五音播放功能 ===
+    let currentToneAudioElement = null;
+
+    // 播放五音音频的函数
+    function playToneAudio(tone) {
+      // 停止当前正在播放的音频
+      stopCurrentAudio();
+      
+      // 创建音频元素并播放
+      const audioElement = new Audio();
+      audioElement.id = "currentToneAudio"; // 设置ID以便后续控制
+      audioElement.volume = 0.7; // 设置适中音量
+
+      // 根据选择的五音设置对应的音频文件
+      switch(tone) {
+        case 'gong':
+          audioElement.src = "土音.wav";
+          break;
+        case 'shang':
+          audioElement.src = "金音.wav";
+          break;
+        case 'jue':
+          audioElement.src = "木音.wav";
+          break;
+        case 'zhi':
+          audioElement.src = "火音.wav";
+          break;
+        case 'yu':
+          audioElement.src = "水音.wav";
+          break;
+        default:
+          console.warn("未知的音调: ", tone);
+          return; // 如果没有匹配的音调，直接返回
+      }
+      
+      // 添加到DOM并播放
+      document.body.appendChild(audioElement);
+      audioElement.play().catch(e => console.error("音频播放错误: ", e));
+      currentToneAudioElement = audioElement; // 保存当前播放的元素
+      
+      // 可选：显示正在播放的提示
+      showPlayingNotification(`正在播放: ${getToneChineseName(tone)}`);
+
+      // 音频播放结束后移除元素
+      audioElement.onended = () => {
+        stopCurrentAudio();
+      };
+    }
+
+    // 停止当前播放的音频
+    function stopCurrentAudio() {
+      if (currentToneAudioElement) {
+        currentToneAudioElement.pause();
+        if (currentToneAudioElement.parentNode) {
+          currentToneAudioElement.parentNode.removeChild(currentToneAudioElement);
+        }
+        currentToneAudioElement = null;
+      }
+    }
+
+    // 获取五音中文名称（用于通知）
+    function getToneChineseName(tone) {
+      switch(tone) {
+        case 'gong': return "宫音（土音）";
+        case 'shang': return "商音（金音）";
+        case 'jue': return "角音（木音）";
+        case 'zhi': return "徵音（火音）";
+        case 'yu': return "羽音（水音）";
+        default: return "未知音调";
+      }
+    }
+
+    // 为五音卡片添加点击事件监听器
+    const toneCards = document.querySelectorAll('.tone-card');
+    toneCards.forEach(card => {
+      card.addEventListener('click', function() {
+        // 移除其他卡片的 active 类
+        toneCards.forEach(c => c.classList.remove('active'));
+        // 为当前卡片添加 active 类
+        this.classList.add('active');
+        
+        const toneName = this.getAttribute('data-tone');
+        console.log("Selected tone: " + toneName);
+        playToneAudio(toneName);
+      });
+    });
+
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1627 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星璇律动 - AI辅助歌词创作平台</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap">
+<style>body {margin: 0;overflow-x: hidden;font-family: "Noto Serif SC", serif;background: #000 url("../images/background.jpg");background-size: cover;background-position: center;background-attachment: fixed;color: #fff;}
+
+#canvas {position: fixed;top: 0;left: 0;width: 100%;height: 100%;z-index: -1;background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3), rgba(249, 115, 22, 0.3));backdrop-filter: blur(8px);}
+
+.gradient-text {
+  color: #60a5fa; /* 初始颜色为亮蓝色 */
+  animation: color-change 6s infinite linear; /* 使用纯色动画 */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9); /* 增强阴影 */
+}
+
+@keyframes color-change {
+  0% { color: #60a5fa; } /* 亮蓝色 */
+  50% { color: #f472b6; } /* 亮粉色 */
+  100% { color: #60a5fa; } /* 回到亮蓝色 */
+}
+
+.glass-card {background: rgba(30, 41, 59, 0.25);backdrop-filter: blur(10px);-webkit-backdrop-filter: blur(10px);border: 1px solid rgba(255, 255, 255, 0.18);box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);max-width: 90vw;border-radius: 16px;}
+
+.input-field {
+background: rgba(30, 41, 59, 0.8);
+border: 1px solid rgba(255, 255, 255, 0.1);
+transition: all 0.3s ease;
+}
+
+.input-field:focus {
+border-color: rgba(255, 255, 255, 0.5);
+box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.btn-glow {
+position: relative;
+overflow: hidden;
+transition: all 0.5s ease;
+}
+
+.btn-glow:after {
+content: '';
+position: absolute;
+top: -50%;
+left: -50%;
+width: 200%;
+height: 200%;
+background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+transform: rotate(45deg);
+animation: btn-shine 3s infinite;
+}
+
+@keyframes btn-shine {
+0% { left: -100%; top: -100%; }
+100% { left: 100%; top: 100%; }
+}
+
+.lyric-display {
+font-family: 'Noto Serif SC', serif;
+line-height: 1.8;
+}
+
+.music-note {
+position: absolute;
+font-size: 24px;
+opacity: 0;
+animation: float-up 4s ease-out forwards;
+}
+
+@keyframes float-up {
+0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+10% { opacity: 1; }
+90% { opacity: 0.8; }
+100% { transform: translateY(-100px) rotate(20deg); opacity: 0; }
+}
+
+.highlight-verse {
+  background: rgba(255, 255, 255, 0.1); /* 使用白色半透明背景，增强隔离 */
+  border-left: 3px solid #3b82f6;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+.highlight-chorus {
+background: rgba(139, 92, 246, 0.2);
+border-left: 3x solid #8b5cf6;
+}
+
+.highlight-bridge {
+background: rgba(236, 72, 153, 0.2);
+border-left: 3px solid #ec4899;
+}
+
+.tab-active {
+border-bottom: 2px solid #f9d423;
+color: #f9d423;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+background: rgba(15, 23, 42, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background: rgba(255, 255, 255, 0.3);
+border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+background: rgba(255, 255, 255, 0.5);
+}
+
+.rhyme-pattern {
+display: inline-block;
+width: 20px;
+height: 20px;
+border-radius: 50%;
+margin: 0 2px;
+text-align: center;
+font-size: 12px;
+line-height: 20px;
+}
+
+.rhyme-a { background-color: rgba(239, 68, 68, 0.7); }
+.rhyme-b { background-color: rgba(59, 130, 246, 0.7); }
+.rhyme-c { background-color: rgba(16, 185, 129, 0.7); }
+.rhyme-d { background-color: rgba(245, 158, 11, 0.7); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/javascript">
+  // 情感关键词映射
+  const toneKeywords = {
+      '欢乐': ['阳光', '微笑', '欢笑', '跳跃'],
+      '忧伤': ['雨夜', '离别', '思念', '孤独'],
+      '浪漫': ['星空', '花海', '月光', '拥抱'],
+      '愤怒': ['呐喊', '挣脱', '燃烧', '战斗'],
+      '平静': ['湖面', '晨曦', '微风', '宁静'],
+      '励志': ['巅峰', '征程', '飞翔', '梦想']
+  };
+  
+  // 禁用的歌名（避免与知名歌曲重名）
+  const bannedNames = [
+      '七里香', '青花瓷', '双截棍', '稻香', '晴天', '夜曲', '告白气球', // 周杰伦
+      '可惜没如果', '那些你很冒险的梦', '修炼爱情', // 林俊杰
+      '浮夸', '富士山下', '十年', '红玫瑰', // 陈奕迅
+      '海阔天空', '光辉岁月', '真的爱你', // Beyond
+      '春天里', '北京北京', '怒放的生命', // 汪峰
+      '曾经的你', '蓝莲花', '旅行', // 许巍
+      '山阴路的夏天', '梵高先生', '关于郑州的记忆', // 李志
+      '成都', '画', '南方姑娘', // 赵雷
+      '奇妙能力歌', '历历万乡', '易燃易爆炸', // 陈粒
+      '火锅底料', '万里长城', // GAI
+      '一百种生活', '过', // 王嘉尔
+      '有一种悲伤', '说散就散', '光年之外' // 流行歌曲
+  ];
+  
+  var gk_isXlsx = false;
+  var gk_xlsxFileLookup = {};
+  
+  // 增强型结构识别算法 - 按顺序标记版本
+  const structureRegex = /^\s*\[?(verse|chorus|bridge|pre-chorus|outro|intro|主歌|副歌|桥段|前奏|间奏|尾奏)\s*\d*\]?/i;
+
+  // 语义分析判断段落类型 - 统一返回 verse 类型
+  function detectSectionType(text) {
+      text = text.toLowerCase().trim();
+      // 无论是否有明确标记，统一按 verse 处理，后续分配顺序编号
+      return 'verse';
+  }
+
+  var gk_fileData = {};
+  function loadFileData(filename) {
+  if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+      try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+
+          // Convert sheet to JSON to filter blank rows
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          // Filter out blank rows (rows where all cells are empty, null, or undefined)
+          var filteredData = jsonData.filter(row =>
+              row.some(cell => cell !== '' && cell !== null && cell !== undefined)
+          );
+
+          // Convert filtered JSON back to CSV
+          var csv = XLSX.utils.aoa_to_sheet(filteredData); // Create a new sheet from filtered array of arrays
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+      } catch (e) {
+          console.error(e);
+          return "";
+      }
+  }
+  return gk_fileData[filename] || "";
+  }
+</script>
+<script type="text/babel">
+                  const { useState, useEffect, useRef } = React;
+
+                  // 音符组件
+                  const MusicNotes = () => {
+                    const containerRef = useRef(null);
+
+                    useEffect(() => {
+                      const container = containerRef.current;
+                      const notes = ['♪', '♫', '♬', '♩', '♭', '♮'];
+                      const colors = ['#f9d423', '#ff4e50', '#00d2ff', '#a8ff78', '#fc00ff'];
+
+                      const createNote = () => {
+                        if (!container) return;
+
+                        const note = document.createElement('div');
+                        note.className = 'music-note';
+                        note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                        note.style.left = `${Math.random() * 100}%`;
+                        note.style.color = colors[Math.floor(Math.random() * colors.length)];
+                        note.style.animationDuration = `${3 + Math.random() * 4}s`;
+
+                        container.appendChild(note);
+
+                        setTimeout(() => {
+                          note.remove();
+                        }, 7000);
+                      };
+
+                      const interval = setInterval(createNote, 800);
+                      return () => clearInterval(interval);
+                    }, []);
+
+                    return <div ref={containerRef} className="fixed inset-0 pointer-events-none z-10"></div>;
+                  };
+
+                  // 歌词创作指南组件
+                  const LyricGuide = ({ isOpen, onClose }) => {
+                    if (!isOpen) return null;
+
+                    return (
+                      <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+                        <div className="glass-card rounded-xl max-w-3xl max-h-[80vh] overflow-y-auto custom-scrollbar p-6">
+                          <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold gradient-text">歌词创作指南</h2>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                              </svg>
+                            </button>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div>
+                              <h3 className="text-xl font-bold text-blue-400 mb-2">清晰与简单</h3>
+                              <p>使用易懂的语言，确保听众能快速抓住重点。避免过于复杂的词汇和句式，让歌词更容易被记住和传唱。</p>
+                            </div>
+
+                            <div>
+                              <h3 className="text-xl font-bold text-purple-400 mb-2">情感连接</h3>
+                              <p>通过共鸣的歌词唤起听众情感，增强共鸣。使用第一人称叙述或描述普遍体验，让听众产生"这就是我的感受"的共鸣。</p>
+                            </div>
+
+                            <div>
+                              <h3 className="text-xl font-bold text-green-400 mb-2">讲故事</h3>
+                              <p>讲述个人、虚构或普遍体验的故事，吸引听众。好的歌词故事有起承转合，角色和情节发展清晰，让听众跟随情感起伏。</p>
+                            </div>
+
+                            <div>
+                              <h3 className="text-xl font-bold text-yellow-400 mb-2">意象</h3>
+                              <p>运用生动的意象（如"星空"、"雨夜"）使歌词更具画面感。具体的意象比抽象的概念更能引起听众的情感共鸣。</p>
+                            </div>
+
+                            <div>
+                              <h3 className="text-xl font-bold text-red-400 mb-2">押韵与节奏</h3>
+                              <p>保持流畅的节奏和押韵（如AABB），提升听觉享受。押韵模式示例：</p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <div className="bg-gray-800 p-2 rounded">
+                                  <span className="font-bold">AABB：</span>
+                                  <div className="mt-1">
+                                    <div>星空闪烁 照亮前路 <span className="rhyme-a">A</span></div>
+                                    <div>心中希望 不再迷途 <span className="rhyme-a">A</span></div>
+                                    <div>勇敢前行 不惧风雨 <span className="rhyme-b">B</span></div>
+                                    <div>终将抵达 梦想之处 <span className="rhyme-b">B</span></div>
+                                  </div>
+                                </div>
+                                <div className="bg-gray-800 p-2 rounded">
+                                  <span className="font-bold">ABAB：</span>
+                                  <div className="mt-1">
+                                    <div>星空闪烁 照亮前路 <span className="rhyme-a">A</span></div>
+                                    <div>勇敢前行 不惧风雨 <span className="rhyme-b">B</span></div>
+                                    <div>心中希望 不再迷途 <span className="rhyme-a">A</span></div>
+                                    <div>终将抵达 梦想之处 <span className="rhyme-b">B</span></div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <h3 className="text-xl font-bold text-pink-400 mb-2">歌曲结构</h3>
+                              <p>常见的歌曲结构包括：</p>
+                              <ul className="list-disc pl-5 mt-2 space-y-1">
+                                <li><span className="font-bold text-blue-400">主歌 (Verse)：</span>讲述故事或表达思想，每段内容通常不同</li>
+                                <li><span className="font-bold text-purple-400">副歌 (Chorus)：</span>包含歌曲核心信息，通常重复出现</li>
+                                <li><span className="font-bold text-pink-400">桥段 (Bridge)：</span>提供情感转折或新视角，通常出现在歌曲后半部分</li>
+                                <li><span className="font-bold text-yellow-400">前奏/间奏/尾奏：</span>纯音乐部分，为歌词部分做铺垫或过渡</li>
+                              </ul>
+                            </div>
+
+                            <div>
+                              <h3 className="text-xl font-bold text-indigo-400 mb-2">修订技巧</h3>
+                              <p>通过多次修改完善歌词，提升艺术性和表达力：</p>
+                              <ul className="list-disc pl-5 mt-2 space-y-1">
+                                <li>检查是否有更精准的词语可以替换模糊表达</li>
+                                <li>确保押韵自然，不要为押韵而牺牲意义</li>
+                                <li>朗读歌词检查节奏感和流畅度</li>
+                                <li>寻求他人反馈，了解听众的第一印象</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  // 歌词分析器类 - 基于LyricAnalyzer实现
+                  
+                  class LyricAnalyzer {
+                    constructor(language = 'zh') {
+                      this.language = language;
+                      this.lyrics = "";
+                      this.lyrical_lines = [];
+                      this.sections = [];
+                      this.sectionCounter = 0;
+                    }
+
+                    loadLyrics(lyrics) {
+                      this.lyrics = lyrics;
+                      this.lyrical_lines = [];
+                      this.sections = [];
+                      this.sectionCounter = 0;
+
+                      const lines = lyrics.split('\n');
+                      for (let line of lines) {
+                        if (!line.trim() || this.isInstrumental(line)) {
+                          continue;
+                        }
+                        if (this.matchesSectionHeader(line)) {
+                          this.sections.push(this.extractSection(line));
+                          continue;
+                        }
+                        this.lyrical_lines.push(line);
+                      }
+                      return this;
+                    }
+
+                    isInstrumental(line) {
+                      return line.includes('♪') || line.includes('♫') ||
+                            line.includes('(音乐)') || line.includes('(乐器独奏)');
+                    }
+
+                    matchesSectionHeader(line) {
+                      return line.match(structureRegex) !== null;
+                    }
+
+                    extractSection(line) {
+                      this.sectionCounter++;
+                      return `verse${this.sectionCounter}`;
+                    }
+
+                    countRows() {
+                      return this.lyrics.split('\n').length;
+                    }
+
+                    countWords() {
+                      if (this.language === 'zh') {
+                        return this.lyrical_lines.reduce((sum, line) => {
+                          return sum + line.replace(/[\s,.!?;:'"\[\]()]/g, '').length;
+                        }, 0);
+                      } else {
+                        return this.lyrical_lines.reduce((sum, line) => {
+                          return sum + line.split(/\s+/).filter(word => word.trim()).length;
+                        }, 0);
+                      }
+                    }
+
+                    avgWordsPerLine() {
+                      return this.lyrical_lines.length > 0 ?
+                        Math.round((this.countWords() / this.lyrical_lines.length) * 10) / 10 : 0;
+                    }
+
+
+                    analyze() {
+                      return {
+                        totalRows: this.countRows(),
+                        totalWords: this.countWords(),
+                        avgWordsPerLine: this.avgWordsPerLine(),
+                      };
+                    }
+                  }
+
+
+                  // 歌词分析组件
+                  
+                  const LyricAnalysis = ({ lyrics, isOpen, onClose, appreciation }) => {
+                    if (!isOpen || !lyrics || typeof lyrics !== 'string') return null;
+
+                    const analyzer = new LyricAnalyzer('zh');
+                    const analysis = analyzer.loadLyrics(lyrics).analyze();
+
+                    const totalLines = analyzer.lyrical_lines.length;
+                    const totalRows = analysis.totalRows;
+                    const wordsCount = analysis.totalWords;
+                    const avgWordsPerLine = analysis.avgWordsPerLine;
+
+                    const formatLyrics = (lyrics) => {
+                      console.log('formatLyrics: processing lyrics:', lyrics);
+                      let verseCounter = 0;
+                      return lyrics.split('\n').map((line, i) => {
+                        console.log('formatLyrics: processing line:', line);
+                        if (i === 0 && line.match(/^\s*[\*#]+.*[\*#]+\s*$/) || line.match(/^\s*[\*#]{2}\s*.*\s*[\*#]{2}\s*$/)) {
+                          const parts = line.split(/\*\*(.*?)\*\*/g);
+                          const formattedLine = parts.map((part, index) => {
+                            if (index % 2 === 1) {
+                              return <b key={index}>{part}</b>;
+                            }
+                            return part;
+                          });
+                          return (
+                            <div key={i} className="text-xl font-bold text-center p-2 mb-4 gradient-text">{formattedLine}</div>
+                          );
+                        } else if (line.match(/^\s*\[?(verse|chorus|bridge|pre-chorus|outro|intro|主歌|副歌|桥段|前奏|间奏|尾奏)\s*\d*\]?/i)) {
+                          verseCounter++;
+                          const parts = line.split(/\*\*(.*?)\*\*/g);
+                          const formattedLine = parts.map((part, index) => {
+                            if (index % 2 === 1) {
+                              return <b key={index}>{part}</b>;
+                            }
+                            return part;
+                          });
+                          return (
+                            <div key={i} className="highlight-verse p-2 mb-2 flex items-start">
+                              <div className="w-3 h-3 bg-blue-500 rounded-full mr-2 mt-1"></div>
+                              {formattedLine}
+                            </div>
+                          );
+                        } else if (line.trim().startsWith('(') && line.trim().endsWith(')')) {
+                          return <div key={i} className="text-gray-400 italic p-2 mb-2">{line}</div>;
+                        } else if (line.trim() === '') {
+                          return null;
+                        }
+                        const parts = line.split(/\*\*(.*?)\*\*/g);
+                        const formattedLine = parts.map((part, index) => {
+                          if (index % 2 === 1) {
+                            return <b key={index}>{part}</b>;
+                          }
+                          return part;
+                        });
+                        return <div key={i} className="p-2 mb-2">{formattedLine}</div>;
+                      }).filter(Boolean);
+                    };
+
+                    return (
+                      <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+                        <div className="glass-card rounded-xl max-w-2xl max-h-[80vh] overflow-y-auto custom-scrollbar p-6">
+                          <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold gradient-text">歌词分析</h2>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                              </svg>
+                            </button>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="bg-gray-800 bg-opacity-50 p-3 rounded-lg">
+                                <div className="text-gray-400 text-sm">总行数</div>
+                                <div className="text-2xl font-bold">{totalRows}</div>
+                              </div>
+                              <div className="bg-gray-800 bg-opacity-50 p-3 rounded-lg">
+                                <div className="text-gray-400 text-sm">有效歌词行数</div>
+                                <div className="text-2xl font-bold">{totalLines}</div>
+                              </div>
+                              <div className="bg-gray-800 bg-opacity-50 p-3 rounded-lg">
+                                <div className="text-gray-400 text-sm">总词数</div>
+                                <div className="text-2xl font-bold">{wordsCount}</div>
+                              </div>
+                              <div className="bg-gray-800 bg-opacity-50 p-3 rounded-lg">
+                                <div className="text-gray-400 text-sm">平均每行词数</div>
+                                <div className="text-2xl font-bold">{avgWordsPerLine}</div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <h3 className="text-lg font-bold mb-2">改进建议</h3>
+                              <div className="space-y-2">
+                                {totalLines < 12 ? (
+                                  <div className="flex items-start">
+                                    <svg className="text-yellow-500 w-5 h-5 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <span>歌词较短，建议增加内容丰富度和叙述层次。</span>
+                                  </div>
+                                ) : null}
+
+                                {avgWordsPerLine > 12 ? (
+                                  <div className="flex items-start">
+                                    <svg className="text-yellow-500 w-5 h-5 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <span>每行词数较多，可能影响演唱流畅度，建议精简表达。</span>
+                                  </div>
+                                ) : null}
+
+                                {avgWordsPerLine < 5 && totalLines > 0 ? (
+                                  <div className="flex items-start">
+                                    <svg className="text-yellow-500 w-5 h-5 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <span>每行词数较少，建议丰富每行内容，增强表达深度。</span>
+                                  </div>
+                                ) : null}
+
+                                {totalLines >= 12 && avgWordsPerLine >= 5 && avgWordsPerLine <= 12 ? (
+                                  <div className="flex items-start">
+                                    <svg className="text-green-500 w-5 h-5 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>歌词长度和每行词数适中，整体结构合理。</span>
+                                  </div>
+                                ) : null}
+                              </div>
+
+                              <ul className="list-disc pl-5 space-y-1 mt-3">
+                                {totalLines < 12 && (
+                                  <li>增加歌词内容，加入更多段落或细节，丰富叙述层次。</li>
+                                )}
+                                {avgWordsPerLine < 5 && (
+                                  <li>适当增加每行词数，加入更多描述性词汇，增强表达深度。</li>
+                                )}
+                                {avgWordsPerLine > 12 && (
+                                  <li>精简部分行的词数，使用更简洁的表达，提高演唱流畅度。</li>
+                                )}
+                                <li>检查是否使用了生动的意象（如“星空”、“雨滴”），增强画面感。</li>
+                                <li>确保歌词有情感起伏，避免内容过于单一或重复。</li>
+                              </ul>
+                            </div>
+
+                            <div className="mt-4">
+                              <h3 className="text-lg font-bold mb-2">歌词预览</h3>
+                              <div className="bg-gray-900 bg-opacity-50 p-4 rounded-lg max-h-60 overflow-y-auto custom-scrollbar">
+                                {formatLyrics(lyrics)}
+                              </div>
+                            </div>
+
+                            {appreciation && (
+                              <div className="mt-4">
+                                <h3 className="text-lg font-bold mb-2">歌词鉴赏</h3>
+                                <div className="bg-gray-900 bg-opacity-50 p-4 rounded-lg">
+                                  <p className="text-gray-200">{appreciation}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  // 歌词编辑器组件
+                  const LyricEditor = ({ lyrics, onUpdate }) => {
+                    const [editedLyrics, setEditedLyrics] = useState(lyrics);
+
+                    useEffect(() => {
+                      setEditedLyrics(lyrics);
+                    }, [lyrics]);
+
+                    const handleChange = (e) => {
+                      setEditedLyrics(e.target.value);
+                    };
+
+                    const handleSave = () => {
+                      onUpdate(editedLyrics);
+                    };
+
+                    const formatLyrics = () => {
+                      let formatted = editedLyrics;
+
+                      if (!formatted.toLowerCase().includes('[verse]')) {
+                        const lines = formatted.split('\n');
+                        if (lines.length > 4) {
+                          lines.splice(0, 0, '[Verse]');
+                          formatted = lines.join('\n');
+                        }
+                      }
+
+                      if (!formatted.toLowerCase().includes('[chorus]')) {
+                        const lines = formatted.split('\n');
+                        if (lines.length > 8) {
+                          const middle = Math.floor(lines.length / 2);
+                          lines.splice(middle, 0, '\n[Chorus]');
+                          formatted = lines.join('\n');
+                        }
+                      }
+
+                      setEditedLyrics(formatted);
+                    };
+
+                    return (
+                      <div className="mt-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-xl font-bold">编辑歌词</h3>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={formatLyrics}
+                              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-sm"
+                            >
+                              格式化结构
+                            </button>
+                            <button
+                              onClick={handleSave}
+                              className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm"
+                            >
+                              保存修改
+                            </button>
+                          </div>
+                        </div>
+                        <textarea
+                          className="w-full h-64 p-3 bg-gray-900 bg-opacity-70 rounded border border-gray-700 text-white focus:outline-none focus:border-blue-500 custom-scrollbar"
+                          value={editedLyrics}
+                          onChange={handleChange}
+                        ></textarea>
+                        <div className="mt-2 text-sm text-gray-400">
+                          提示：使用[Verse]、[Chorus]、[Bridge]等标记来标识歌曲结构
+                        </div>
+                      </div>
+                    );
+                  };
+                  
+                  class ErrorBoundary extends React.Component {
+                    state = { hasError: false, error: null };
+
+                    static getDerivedStateFromError(error) {
+                      return { hasError: true, error };
+                    }
+
+                    componentDidCatch(error, errorInfo) {
+                      console.error('Error caught by boundary:', error, errorInfo);
+                    }
+
+                    render() {
+                      if (this.state.hasError) {
+                        return (
+                          <div className="text-center text-red-400 p-6">
+                            <h2>分析歌词时发生错误</h2>
+                            <p>{this.state.error?.message || '未知错误'}</p>
+                            <button
+                              className="mt-4 px-4 py-2 bg-blue-600 rounded"
+                              onClick={() => this.setState({ hasError: false, error: null })}
+                            >
+                              重试
+                            </button>
+                          </div>
+                        );
+                      }
+                      return this.props.children;
+                    }
+                  }
+
+                  // 格式化歌词显示组件
+                  const FormattedLyrics = ({ lyrics }) => {
+                    if (!lyrics || typeof lyrics !== 'string') return null;
+
+                    const [verseCounter, setVerseCounter] = React.useState(0);
+
+                    const formatLyricLine = (line) => {
+                      console.log('formatLyricLine: processing line:', line);
+                      if (line.match(/^\s*\[?(verse|chorus|bridge|pre-chorus|outro|intro|主歌|副歌|桥段|前奏|间奏|尾奏)\s*\d*\]?/i)) {
+                        setVerseCounter(prev => prev + 1);
+                        const parts = line.split(/\*\*(.*?)\*\*/g);
+                        const formattedLine = parts.map((part, index) => {
+                          if (index % 2 === 1) {
+                            return <b key={index}>{part}</b>;
+                          }
+                          return part;
+                        });
+                        return (
+                          <div className="font-bold text-blue-400 mt-4">
+                            {formattedLine}
+                          </div>
+                        );
+                      } else if (line.trim() === '') {
+                        return <div className="h-2"></div>;
+                      } else {
+                        const parts = line.split(/\*\*(.*?)\*\*/g);
+                        const formattedLine = parts.map((part, index) => {
+                          if (index % 2 === 1) {
+                            return <b key={index}>{part}</b>;
+                          }
+                          return part;
+                        });
+                        return (
+                          <div className="highlight-verse px-3 py-1 rounded gradient-text">
+                            {formattedLine}
+                          </div>
+                        );
+                      }
+                    };
+
+                    return (
+                      <div className="lyric-display">
+                        {lyrics.split('\n').map((line, index) => (
+                          <div key={index}>{formatLyricLine(line)}</div>
+                        ))}
+                      </div>
+                    );
+                  };
+
+                  const removeOutroNaturalLanguage = (lyrics) => {
+                    const lines = lyrics.split('\n');
+                    let separatorIndex = -1;
+
+                    // 查找 ----- 分隔符
+                    for (let i = 0; i < lines.length; i++) {
+                      const line = lines[i].trim();
+                      if (line === '---') {
+                        separatorIndex = i;
+                        break;
+                      }
+                    }
+
+                    // 如果找到分隔符，移除其后的所有内容
+                    if (separatorIndex !== -1) {
+                      return lines.slice(0, separatorIndex).join('\n').trim();
+                    }
+
+                    // 如果没有分隔符，返回原歌词
+                    return lyrics.trim();
+                  };
+
+                  // 歌词创作组件
+                  const LyricCreator = () => {
+                    const [prompt, setPrompt] = useState('');
+                    const [lyrics, setLyrics] = useState('');
+                    const [feedback, setFeedback] = useState('');
+                    const [versions, setVersions] = useState([]);
+                    const [style, setStyle] = useState('流行');
+                    const [tone, setTone] = useState('欢乐');
+                    const [loading, setLoading] = useState(false);
+                    const [songName, setSongName] = useState('');
+                    const [activeTab, setActiveTab] = useState('创作');
+                    const [showGuide, setShowGuide] = useState(false);
+                    const [showAnalysis, setShowAnalysis] = useState(false);
+                    const [rhymePattern, setRhymePattern] = useState('AABB');
+                    const [theme, setTheme] = useState('');
+                    const [targetAudience, setTargetAudience] = useState('青年');
+                    const [imagePrompt, setImagePrompt] = useState('');
+                    const [retryCount, setRetryCount] = useState(0);
+                    const [appreciation, setAppreciation] = useState(''); // 新增鉴赏状态
+                    const [modificationSuggestion, setModificationSuggestion] = useState('');
+
+                    // DeepSeek API 配置
+                    const DEEPSEEK_API_URL = 'https://qianfan.baidubce.com/v2/chat/completions';
+                    const DEEPSEEK_API_KEY = 'bce-v3/ALTAK-RchEIxf3sbfws5WguI70P/da8467395e243b9b0ea94716637e995298c4e3b1';
+                    const DEEPSEEK_MODEL = 'deepseek-v3';
+
+                    const renderWithBold = (text) => {
+                      if (!text || typeof text !== 'string') {
+                        console.log('renderWithBold: text is invalid:', text);
+                        return text;
+                      }
+                      console.log('renderWithBold: processing text:', text);
+                      const parts = text.split(/\*\*(.*?)\*\*/g);
+                      return parts.map((part, index) => {
+                        if (index % 2 === 1) {
+                          return <b key={index}>{part}</b>;
+                        }
+                        return part;
+                      });
+                    };
+
+                    // 调用大模型进行歌词鉴赏
+                    const analyzeLyricsWithAI = async (generatedLyrics) => {
+                      try {
+                        const analysisPrompt = `你是一位专业的音乐评论家，请对以下歌词进行艺术鉴赏，分析其情感表达、意象运用、结构安排和整体艺术价值。以下是歌词内容：
+
+                        \`\`\`
+                        ${generatedLyrics}
+                        \`\`\`
+
+                        请提供一段详细的鉴赏评论，字数控制在200-300字，语言优美且有深度。`;
+
+                        const response = await fetch(DEEPSEEK_API_URL, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                          },
+                          body: JSON.stringify({
+                            model: DEEPSEEK_MODEL,
+                            messages: [
+                              {
+                                role: 'user',
+                                content: analysisPrompt
+                              }
+                            ],
+                            temperature: 0.7,
+                            top_p: 0.8
+                          })
+                        });
+
+                        const data = await response.json();
+                        if (data.error) {
+                          throw new Error(data.error.message || 'API 调用失败');
+                        }
+
+                        const appreciationText = data.choices?.[0]?.message?.content || '暂无鉴赏内容';
+                        setAppreciation(appreciationText);
+                      } catch (error) {
+                        console.error('鉴赏歌词时出错:', error);
+                        setAppreciation('无法生成鉴赏内容，请稍后重试。');
+                      }
+                    };
+
+                    const generateLyrics = async () => {
+                      if (!prompt && !theme) {
+                        setFeedback('请输入创作提示或主题');
+                        return;
+                      }
+
+                      setLoading(true);
+                      setFeedback('');
+                      setAppreciation(''); // 清空之前的鉴赏内容
+
+                      const maxRetries = 3;
+                      let currentRetry = retryCount;
+
+                      const attemptGeneration = async () => {
+                        try {
+                          let templateText = templates[style] || templates['流行'];
+                          templateText = templateText
+                            .replace('{主题}', theme || '自由发挥')
+                            .replace('{情感}', tones[tone] || '自由发挥')
+                            .replace('{押韵}', rhymePatterns[rhymePattern] || '自由发挥')
+                            .replace('{受众}', audiences[targetAudience] || '自由发挥');
+
+                          const fullPrompt = `${templateText}\n\n${prompt ? `额外要求：${prompt}` : ''}\n\n请创作一首完整的歌曲，包含主歌、副歌和桥段，并使用[Verse]、[Chorus]、[Bridge]等标记标识不同部分。`;
+
+                          const response = await fetch(DEEPSEEK_API_URL, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                            },
+                            body: JSON.stringify({
+                              model: DEEPSEEK_MODEL,
+                              messages: [
+                                {
+                                  role: 'user',
+                                  content: fullPrompt
+                                }
+                              ],
+                              temperature: 0.7,
+                              top_p: 0.8
+                            })
+                          });
+
+                          const data = await response.json();
+
+                          if (data.error) {
+                            throw new Error(data.error.message || 'API 调用失败');
+                          }
+
+                          const generatedLyrics = data.choices?.[0]?.message?.content || '';
+                          if (!generatedLyrics) {
+                            throw new Error('生成歌词失败');
+                          }
+
+                          if (lyrics) {
+                            setVersions(prev => [...prev, {
+                              lyrics,
+                              timestamp: new Date().toLocaleString(),
+                              name: songName || `未命名歌曲 ${prev.length + 1}`
+                            }]);
+                          }
+
+                          // 清理生成的歌词，移除代码块和其他格式标记
+                          let cleanedLyrics = generatedLyrics.replace(/```[\s\S]*?```/g, '').trim();
+                          cleanedLyrics = removeOutroNaturalLanguage(cleanedLyrics);
+
+                          // 清理不平衡的 ** 标记
+                          const cleanMarkdown = (text) => {
+                            let count = (text.match(/\*\*/g) || []).length;
+                            if (count % 2 !== 0) {
+                              const lastIndex = text.lastIndexOf('**');
+                              text = text.substring(0, lastIndex) + text.substring(lastIndex + 2);
+                            }
+                            return text;
+                          };
+
+                          cleanedLyrics = cleanMarkdown(cleanedLyrics);
+
+                          // 如果用户提供了歌名，确保将其添加到歌词顶部
+                          let cleanedSongName = songName ? cleanMarkdown(songName.trim()) : '';
+                          if (cleanedSongName && !cleanedLyrics.includes(cleanedSongName)) {
+                            cleanedLyrics = `**${cleanedSongName}**\n\n${cleanedLyrics}`;
+                          }
+
+                          setLyrics(cleanedLyrics);
+
+                          // 使用用户提供的歌名或从歌词中提取歌名
+                          const generatedName = generateSongName(theme, style, cleanedLyrics, songName);
+                          setSongName(generatedName);
+
+                          setImagePrompt(`音乐专辑封面，${style}风格，主题是${theme || '自由发挥'}，情感是${tones[tone] || '自由发挥'}，高质量，艺术感强`);
+
+                          // 生成歌词后，调用大模型进行鉴赏
+                          await analyzeLyricsWithAI(cleanedLyrics);
+
+                          setRetryCount(0);
+                          setLoading(false);
+                        } catch (error) {
+                          console.error('生成歌词时出错:', error);
+                          if (currentRetry < maxRetries) {
+                            currentRetry++;
+                            setRetryCount(currentRetry);
+                            setFeedback(`生成失败，正在重试 (${currentRetry}/${maxRetries})...`);
+                            setTimeout(attemptGeneration, 2000);
+                          } else {
+                            setFeedback('生成歌词失败，请稍后重试');
+                            setRetryCount(0);
+                            setLoading(false);
+                          }
+                        }
+                      };
+
+                      attemptGeneration();
+                    };
+                    
+                    const optimizeLyrics = async () => {
+                      if (!lyrics) {
+                        setFeedback('请先生成歌词再进行优化');
+                        return;
+                      }
+                      setLoading(true);
+                      setFeedback('');
+                      setAppreciation('');
+                      const maxRetries = 3;
+                      let currentRetry = retryCount;
+                      const attemptOptimization = async () => {
+                        try {
+                          let templateText = templates[style] || templates['流行'];
+                          templateText = templateText
+                            .replace('{主题}', theme || '自由发挥')
+                            .replace('{情感}', tones[tone] || '自由发挥')
+                            .replace('{押韵}', rhymePatterns[rhymePattern] || '自由发挥')
+                            .replace('{受众}', audiences[targetAudience] || '自由发挥');
+                          const optimizationPrompt = `以下是现有歌词：
+                    \`\`\`
+                    ${lyrics}
+                    \`\`\`
+
+                    请根据以下修改建议优化歌词：
+                    ${modificationSuggestion || '根据现有风格和主题进行优化，保持结构完整，增强情感表达和意象运用。'}
+
+                    优化后的歌词应保持原有的${style}风格、${tones[tone]}情感基调、${rhymePatterns[rhymePattern]}押韵模式，并针对${audiences[targetAudience]}受众。确保歌词包含主歌、副歌和桥段，并使用[Verse]、[Chorus]、[Bridge]等标记标识不同部分。`;
+
+                          const response = await fetch(DEEPSEEK_API_URL, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                            },
+                            body: JSON.stringify({
+                              model: DEEPSEEK_MODEL,
+                              messages: [
+                                {
+                                  role: 'user',
+                                  content: optimizationPrompt
+                                }
+                              ],
+                              temperature: 0.7,
+                              top_p: 0.8
+                            })
+                          });
+                          const data = await response.json();
+                          if (data.error) {
+                            throw new Error(data.error.message || 'API 调用失败');
+                          }
+                          const optimizedLyrics = data.choices?.[0]?.message?.content || '';
+                          if (!optimizedLyrics) {
+                            throw new Error('优化歌词失败');
+                          }
+                          if (lyrics) {
+                            setVersions(prev => [...prev, {
+                              lyrics,
+                              timestamp: new Date().toLocaleString(),
+                              name: songName || `未命名歌曲 ${prev.length + 1}`
+                            }]);
+                          }
+                          let cleanedLyrics = optimizedLyrics.replace(/```[\s\S]*?```/g, '').trim();
+                          cleanedLyrics = removeOutroNaturalLanguage(cleanedLyrics);
+                          const cleanMarkdown = (text) => {
+                            let count = (text.match(/\*\*/g) || []).length;
+                            if (count % 2 !== 0) {
+                              const lastIndex = text.lastIndexOf('**');
+                              text = text.substring(0, lastIndex) + text.substring(lastIndex + 2);
+                            }
+                            return text;
+                          };
+                          cleanedLyrics = cleanMarkdown(cleanedLyrics);
+                          let cleanedSongName = songName ? cleanMarkdown(songName.trim()) : '';
+                          if (cleanedSongName && !cleanedLyrics.includes(cleanedSongName)) {
+                            cleanedLyrics = `**${cleanedSongName}**\n\n${cleanedLyrics}`;
+                          }
+                          setLyrics(cleanedLyrics);
+                          const generatedName = generateSongName(theme, style, cleanedLyrics, songName);
+                          setSongName(generatedName);
+                          setImagePrompt(`音乐专辑封面，${style}风格，主题是${theme || '自由发挥'}，情感是${tones[tone] || '自由发挥'}，高质量，艺术感强`);
+                          await analyzeLyricsWithAI(cleanedLyrics);
+                          setModificationSuggestion('');
+                          setRetryCount(0);
+                          setLoading(false);
+                        } catch (error) {
+                          console.error('优化歌词时出错:', error);
+                          if (currentRetry < maxRetries) {
+                            currentRetry++;
+                            setRetryCount(currentRetry);
+                            setFeedback(`优化失败，正在重试 (${currentRetry}/${maxRetries})...`);
+                            setTimeout(attemptOptimization, 2000);
+                          } else {
+                            setFeedback('优化歌词失败，请稍后重试');
+                            setRetryCount(0);
+                            setLoading(false);
+                          }
+                        }
+                      };
+                      attemptOptimization();
+                    };
+
+
+
+                    const templates = {
+                      流行: `创作一首流行风格的歌曲，主题为{主题}，情感基调为{情感}，押韵模式为{押韵}，目标受众为{受众}。`,
+                      摇滚: `创作一首摇滚风格的歌曲，主题为{主题}，情感基调为{情感}，押韵模式为{押韵}，目标受众为{受众}。歌词应当充满力量和激情。`,
+                      民谣: `创作一首民谣风格的歌曲，主题为{主题}，情感基调为{情感}，押韵模式为{押韵}，目标受众为{受众}。歌词应当朴实无华，富有生活气息。`,
+                      嘻哈: `创作一首嘻哈风格的歌曲，主题为{主题}，情感基调为{情感}，押韵模式为{押韵}，目标受众为{受众}。歌词应当节奏感强，韵脚丰富。`,
+                      电子: `创作一首电子风格的歌曲，主题为{主题}，情感基调为{情感}，押韵模式为{押韵}，目标受众为{受众}。歌词应当简洁有力，适合舞曲。`
+                    };
+
+                    const tones = {
+                      欢乐: "积极向上，充满活力",
+                      忧伤: "伤感忧郁，触动心弦",
+                      浪漫: "温柔甜蜜，充满爱意",
+                      愤怒: "激烈强烈，表达不满",
+                      平静: "淡然从容，富有哲理",
+                      励志: "振奋人心，激励前行"
+                    };
+
+                    const audiences = {
+                      青年: "18-35岁年轻人",
+                      青少年: "13-17岁青少年",
+                      儿童: "12岁以下儿童",
+                      中年: "36-55岁中年人",
+                      老年: "56岁以上老年人",
+                      全年龄: "各个年龄段人群"
+                    };
+
+                    const rhymePatterns = {
+                      AABB: "每四行中，第一行与第二行押韵，第三行与第四行押韵",
+                      ABAB: "每四行中，第一行与第三行押韵，第二行与第四行押韵",
+                      AAAA: "每四行都押相同的韵",
+                      ABBA: "每四行中，第一行与第四行押韵，第二行与第三行押韵",
+                      自由: "不限定严格的押韵模式，根据内容自然押韵"
+                    };
+
+                    // 从歌词中提取歌名（通常是第一行）
+                    const extractSongNameFromLyrics = (lyrics) => {
+                      if (!lyrics) return '';
+
+                      // 尝试从歌词中提取标题（通常是第一行，且不是结构标记如[Verse]）
+                      const lines = lyrics.split('\n').filter(line => line.trim());
+                      for (const line of lines) {
+                        const trimmedLine = line.trim();
+                        // 跳过结构标记行
+                        if (trimmedLine.match(structureRegex)) continue;
+                        // 跳过括号内的注释
+                        if (trimmedLine.startsWith('(') && trimmedLine.endsWith(')')) continue;
+
+                        // 使用第一个非结构标记、非注释的行作为歌名
+                        return trimmedLine;
+                      }
+                      return '';
+                    };
+
+                    // 生成或获取歌名
+                    const generateSongName = (theme, style, lyrics, userProvidedName) => {
+                      // 如果用户已提供歌名，优先使用用户提供的
+                      if (userProvidedName && userProvidedName.trim()) {
+                        return userProvidedName.trim();
+                      }
+
+                      // 检查歌词第一行是否是歌名（通常以**歌名**或类似格式出现）
+                      if (lyrics) {
+                        const lines = lyrics.split('\n').filter(line => line.trim());
+                        const firstLine = lines[0]?.trim() || '';
+
+                        // 检查是否是标题格式（如 **歌名** 或 # 歌名）
+                        const titleMatch = firstLine.match(/^\s*[\*#]+\s*([^\*#]+?)\s*[\*#]*\s*$/);
+                        if (titleMatch && titleMatch[1] && !bannedNames.includes(titleMatch[1].trim())) {
+                          return titleMatch[1].trim();
+                        }
+
+                        // 如果第一行不是标题格式，尝试提取普通歌名
+                        const extractedName = extractSongNameFromLyrics(lyrics);
+                        if (extractedName && !bannedNames.includes(extractedName)) {
+                          return extractedName;
+                        }
+                      }
+
+                      // 如果无法提取或提取的歌名在禁用列表中，使用主题生成
+                      return `${theme || '未命名'}之歌`;
+                    };
+
+                    useEffect(() => {
+                      const canvas = document.getElementById('canvas');
+                      if (!canvas) return;
+                      const ctx = canvas.getContext('2d');
+
+                      const resizeCanvas = () => {
+                        canvas.width = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                      };
+
+                      resizeCanvas();
+                      window.addEventListener('resize', resizeCanvas);
+
+                      const drawBackground = () => {
+                        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                        gradient.addColorStop(0, '#0f172a');
+                        gradient.addColorStop(1, '#1e293b');
+
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        const stars = Math.floor(canvas.width * canvas.height / 10000);
+
+                        for (let i = 0; i < stars; i++) {
+                          const x = Math.random() * canvas.width;
+                          const y = Math.random() * canvas.height;
+                          const radius = Math.random() * 1.5;
+                          const opacity = Math.random();
+
+                          ctx.beginPath();
+                          ctx.arc(x, y, radius, 0, Math.PI * 2);
+                          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                          ctx.fill();
+                        }
+                      };
+
+                      drawBackground();
+
+                      return () => {
+                        window.removeEventListener('resize', resizeCanvas);
+                      };
+                    }, []);
+
+                    const handleTabChange = (tab) => {
+                      setActiveTab(tab);
+                    };
+
+                    const updateLyrics = (newLyrics) => {
+                      setLyrics(newLyrics);
+                    };
+
+                    const handleVersionSelect = (version) => {
+                      setLyrics(version.lyrics);
+                      setSongName(version.name);
+                    };
+
+                    return (
+                      <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+                        <MusicNotes />
+
+                        <div className="max-w-5xl mx-auto">
+                          <div className="text-center mb-10">
+                            <h1 className="text-4xl sm:text-5xl font-bold gradient-text mb-4">星璇律动</h1>
+                            <p className="text-xl text-gray-300">AI辅助歌词创作平台，让灵感自由流动</p>
+                          </div>
+
+                          <div className="glass-card rounded-xl p-6 mb-8">
+                            <div className="flex border-b border-gray-700 mb-6">
+                              <button
+                                className={`px-4 py-2 font-medium ${activeTab === '创作' ? 'tab-active' : 'text-gray-400 hover:text-white'}`}
+                                onClick={() => handleTabChange('创作')}
+                              >
+                                创作歌词
+                              </button>
+                              <button
+                                className={`px-4 py-2 font-medium ${activeTab === '编辑' ? 'tab-active' : 'text-gray-400 hover:text-white'}`}
+                                onClick={() => handleTabChange('编辑')}
+                              >
+                                编辑优化
+                              </button>
+                              <button
+                                className={`px-4 py-2 font-medium ${activeTab === '历史' ? 'tab-active' : 'text-gray-400 hover:text-white'}`}
+                                onClick={() => handleTabChange('历史')}
+                              >
+                                历史版本
+                              </button>
+                              <div className="flex-grow"></div>
+                              <button
+                                className="px-4 py-2 font-medium text-yellow-400 hover:text-yellow-300 flex items-center"
+                                onClick={() => setShowGuide(true)}
+                              >
+                                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                创作指南
+                              </button>
+                            </div>
+
+                            {activeTab === '创作' && (
+                              <div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                  <div>
+                                    <label className="block text-gray-300 mb-2">歌曲主题</label>
+                                    <input
+                                      type="text"
+                                      className="w-full px-4 py-2 rounded input-field text-white"
+                                      placeholder="例如：青春、爱情、梦想、友情..."
+                                      value={theme}
+                                      onChange={(e) => setTheme(e.target.value)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-gray-300 mb-2">歌曲风格</label>
+                                    <select
+                                      className="w-full px-4 py-2 rounded input-field text-white"
+                                      value={style}
+                                      onChange={(e) => setStyle(e.target.value)}
+                                    >
+                                      <option value="流行">流行</option>
+                                      <option value="摇滚">摇滚</option>
+                                      <option value="民谣">民谣</option>
+                                      <option value="嘻哈">嘻哈</option>
+                                      <option value="电子">电子</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-gray-300 mb-2">情感基调</label>
+                                    <select
+                                      className="w-full px-4 py-2 rounded input-field text-white"
+                                      value={tone}
+                                      onChange={(e) => setTone(e.target.value)}
+                                    >
+                                      <option value="欢乐">欢乐</option>
+                                      <option value="忧伤">忧伤</option>
+                                      <option value="浪漫">浪漫</option>
+                                      <option value="愤怒">愤怒</option>
+                                      <option value="平静">平静</option>
+                                      <option value="励志">励志</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-gray-300 mb-2">押韵模式</label>
+                                    <select
+                                      className="w-full px-4 py-2 rounded input-field text-white"
+                                      value={rhymePattern}
+                                      onChange={(e) => setRhymePattern(e.target.value)}
+                                    >
+                                      <option value="AABB">AABB</option>
+                                      <option value="ABAB">ABAB</option>
+                                      <option value="AAAA">AAAA</option>
+                                      <option value="ABBA">ABBA</option>
+                                      <option value="自由">自由押韵</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-gray-300 mb-2">目标受众</label>
+                                    <select
+                                      className="w-full px-4 py-2 rounded input-field text-white"
+                                      value={targetAudience}
+                                      onChange={(e) => setTargetAudience(e.target.value)}
+                                    >
+                                      <option value="青年">青年</option>
+                                      <option value="青少年">青少年</option>
+                                      <option value="儿童">儿童</option>
+                                      <option value="中年">中年</option>
+                                      <option value="老年">老年</option>
+                                      <option value="全年龄">全年龄</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-gray-300 mb-2">歌曲名称</label>
+                                    <input
+                                      type="text"
+                                      className="w-full px-4 py-2 rounded input-field text-white"
+                                      placeholder="可留空，AI将自动生成"
+                                      value={songName}
+                                      onChange={(e) => setSongName(e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="mb-6">
+                                  <label className="block text-gray-300 mb-2">额外创作要求（可选）</label>
+                                  <textarea
+                                    className="w-full px-4 py-2 rounded input-field text-white h-24"
+                                    placeholder="输入更详细的创作要求，例如：希望歌词中包含特定的意象、情节或表达方式..."
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                  ></textarea>
+                                </div>
+
+                                <div className="flex justify-center">
+                                  <button
+                                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg font-bold text-lg btn-glow"
+                                    onClick={generateLyrics}
+                                    disabled={loading}
+                                  >
+                                    {loading ? (
+                                      <span className="flex items-center">
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        创作中...
+                                      </span>
+                                    ) : '开始创作'}
+                                  </button>
+                                </div>
+
+                                {feedback && (
+                                  <div className="mt-4 text-center text-red-400">{feedback}</div>
+                                )}
+                              </div>
+                            )}
+
+                            {activeTab === '编辑' && (
+                              <LyricEditor lyrics={lyrics} onUpdate={updateLyrics} />
+                            )}
+
+                            {activeTab === '历史' && (
+                              <div>
+                                {versions.length > 0 ? (
+                                  <div className="space-y-4">
+                                    {versions.map((version, index) => (
+                                      <div key={index} className="bg-gray-800 bg-opacity-50 p-4 rounded-lg">
+                                        <div className="flex justify-between items-center mb-2">
+                                          <h3 className="font-bold text-lg">{version.name}</h3>
+                                          <span className="text-sm text-gray-400">{version.timestamp}</span>
+                                        </div>
+                                        <div className="max-h-32 overflow-hidden text-gray-300 text-sm mb-3">
+                                          {version.lyrics.split('\n').slice(0, 3).map((line, i) => (
+                                            <div key={i}>{line}</div>
+                                          ))}
+                                          {version.lyrics.split('\n').length > 3 && <div>...</div>}
+                                        </div>
+                                        <button
+                                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+                                          onClick={() => handleVersionSelect(version)}
+                                        >
+                                          加载此版本
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-center text-gray-400 py-8">
+                                    暂无历史版本，创作后会自动保存
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {lyrics && (
+                            <div className="glass-card rounded-xl p-6 mb-8">
+                              <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold">{renderWithBold(songName) || '未命名歌曲'}</h2>
+                                <div className="flex space-x-2">
+                                  <button
+                                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm flex items-center"
+                                    onClick={() => setShowAnalysis(true)}
+                                  >
+                                    <svg className="w-	4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                    分析歌词
+                                  </button>
+                                  <button
+                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm flex items-center"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(lyrics)
+                                        .then(() => alert('歌词已复制到剪贴板'))
+                                        .catch(err => console.error('复制失败: ', err));
+                                    }}
+                                  >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                                    </svg>
+                                    复制歌词
+                                  </button>
+                                  <button
+                                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm flex items-center"
+                                    onClick={() => {
+                                      const element = document.createElement('a');
+                                      const file = new Blob([lyrics], {type: 'text/plain'});
+                                      element.href = URL.createObjectURL(file);
+                                      element.download = `${songName || '未命名歌曲'}.txt`;
+                                      document.body.appendChild(element);
+                                      element.click();
+                                      document.body.removeChild(element);
+                                    }}
+                                  >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    导出TXT
+                                  </button>
+                                  <button
+                                    className="px-3 py-1 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 rounded text-sm flex items-center btn-glow"
+                                    onClick={() => {
+                                      window.location.href = 'music_visualizer_enhanced.html'; // 请替换为你的播放网页链接
+                                    }}
+                                  >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    播放歌曲
+                                  </button>
+
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                  <FormattedLyrics lyrics={lyrics} />
+                                </div>
+                                <div className="bg-gray-800 bg-opacity-30 p-4 rounded-lg">
+                                  <h3 className="text-xl font-bold mb-4">歌词灵感</h3>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <h4 className="font-bold text-blue-400">相关意象</h4>
+                                      <div className="flex flex-wrap gap-2 mt-1">
+                                        {generateImagery(theme, style, tone).map((item, index) => (
+                                          <span key={index} className="px-2 py-1 bg-blue-900 bg-opacity-40 rounded-full text-sm">
+                                            {item}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-bold text-purple-400">情感词汇</h4>
+                                      <div className="flex flex-wrap gap-2 mt-1">
+                                        {generateEmotionalWords(tone).map((item, index) => (
+                                          <span key={index} className="px-2 py-1 bg-purple-900 bg-opacity-40 rounded-full text-sm">
+                                            {item}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-bold text-pink-400">押韵词组</h4>
+                                      <div className="flex flex-wrap gap-2 mt-1">
+                                        {generateRhymingWords().map((item, index) => (
+                                          <span key={index} className="px-2 py-1 bg-pink-900 bg-opacity-40 rounded-full text-sm">
+                                            {item}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-bold text-yellow-400">专辑封面灵感</h4>
+                                      <div className="mt-1 p-3 bg-gray-900 bg-opacity-50 rounded text-sm">
+                                        {imagePrompt}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-6">
+                                <label className="block text-gray-300 mb-2">歌词修改建议（可选）</label>
+                                <textarea
+                                  className="w-full px-4 py-2 rounded input-field text-white h-24"
+                                  placeholder="请填入您对歌词的修改建议（非必需）"
+                                  value={modificationSuggestion}
+                                  onChange={(e) => setModificationSuggestion(e.target.value)}
+                                ></textarea>
+                                <div className="flex justify-center mt-4">
+                                  <button
+                                    className="px-8 py-3 bg-gradient-to-r from-green-600 to-teal-600 rounded-lg font-bold text-lg btn-glow"
+                                    onClick={optimizeLyrics}
+                                    disabled={loading}
+                                  >
+                                    {loading ? (
+                                      <span className="flex items-center">
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        优化中...
+                                      </span>
+                                    ) : '按需求优化'}
+                                  </button>
+                                </div>
+                              </div>
+
+                            </div>
+                          )}
+
+                          <LyricGuide
+                            isOpen={showGuide}
+                            onClose={() => setShowGuide(false)}
+                          />
+
+                          <ErrorBoundary>
+                            <LyricAnalysis
+                              lyrics={lyrics}
+                              isOpen={showAnalysis}
+                              onClose={() => setShowAnalysis(false)}
+                              appreciation={appreciation} // 传递鉴赏内容
+                            />
+                          </ErrorBoundary>
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  const generateImagery = (theme, style, tone) => {
+                    const themeImagery = {
+                      '爱情': ['玫瑰', '星空', '海浪', '拥抱', '指尖', '窗台', '雨滴', '信件'],
+                      '青春': ['操场', '校园', '单车', '毕业', '课桌', '书包', '篮球场', '青草'],
+                      '梦想': ['星星', '舞台', '翅膀', '地图', '山峰', '云端', '航船', '风帆'],
+                      '友情': ['肩膀', '篝火', '合照', '电话', '咖啡厅', '笑声', '秘密', '拥抱'],
+                      '乡愁': ['老屋', '炊烟', '麦田', '小路', '老树', '井水', '月光', '故乡'],
+                      '城市': ['霓虹', '地铁', '高楼', '马路', '车流', '咖啡', '公园', '天桥'],
+                      '孤独': ['窗台', '雨夜', '背影', '空房', '旧物', '落叶', '长椅', '街灯'],
+                      '希望': ['黎明', '种子', '春风', '彩虹', '花苞', '晨曦', '新芽', '远方']
+                    };
+
+                    const styleImagery = {
+                      '流行': ['城市', '灯光', '咖啡', '手机', '街道', '时尚', '节奏', '旋律'],
+                      '摇滚': ['吉他', '舞台', '汗水', '呐喊', '皮衣', '荒漠', '火焰', '风暴'],
+                      '民谣': ['木吉他', '田野', '小镇', '旧照片', '火车', '信件', '老房子', '风铃'],
+                      '嘻哈': ['街头', '涂鸦', '节拍', '韵律', '耳机', '帽子', '运动鞋', '金属链'],
+                      '电子': ['霓虹', '舞池', '灯光', '节拍', '耳机', '城市', '夜晚', '未来']
+                    };
+
+                    const toneImagery = {
+                      '欢乐': ['阳光', '微笑', '彩虹', '花朵', '气球', '蓝天', '笑声', '舞蹈'],
+                      '忧伤': ['雨滴', '落叶', '灰色', '旧照', '窗台', '背影', '夕阳', '雾气'],
+                      '浪漫': ['月光', '星空', '烛光', '花瓣', '海边', '晚风', '轻吻', '手牵手'],
+                      '愤怒': ['闪电', '风暴', '碎片', '火焰', '拳头', '黑夜', '荆棘', '迷宫'],
+                      '平静': ['湖面', '树影', '微风', '茶杯', '书页', '窗外', '云朵', '静谧'],
+                      '励志': ['山峰', '日出', '道路', '灯塔', '种子', '翅膀', '脚印', '地图']
+                    };
+
+                    let imagery = [];
+
+                    if (theme && themeImagery[theme]) {
+                      imagery = [...themeImagery[theme]];
+                    } else {
+                      const themes = Object.keys(themeImagery);
+                      const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+                      imagery = [...themeImagery[randomTheme]];
+                    }
+
+                    if (styleImagery[style]) {
+                      imagery = [...imagery, ...styleImagery[style].slice(0, 4)];
+                    }
+
+                    if (toneImagery[tone]) {
+                      imagery = [...imagery, ...toneImagery[tone].slice(0, 4)];
+                    }
+
+                    return [...new Set(imagery)]
+                      .sort(() => Math.random() - 0.5)
+                      .slice(0, 12);
+                  };
+
+                  const generateEmotionalWords = (tone) => {
+                    const emotionalWords = {
+                      '欢乐': ['喜悦', '欢笑', '幸福', '愉快', '开心', '兴奋', '雀跃', '欣喜', '快乐', '轻松'],
+                      '忧伤': ['悲伤', '思念', '孤独', '遗憾', '伤感', '落寞', '惆怅', '怀念', '凄凉', '忧郁'],
+                      '浪漫': ['甜蜜', '温柔', '深情', '眷恋', '柔情', '缠绵', '痴情', '爱恋', '相思', '情意'],
+                      '愤怒': ['愤怒', '不满', '反抗', '挣扎', '抗争', '怒火', '咆哮', '冲突', '抵抗', '爆发'],
+                      '平静': ['安宁', '平静', '从容', '淡然', '宁静', '悠然', '安详', '沉静', '平和', '恬静'],
+                      '励志': ['拼搏', '奋斗', '坚持', '勇敢', '梦想', '希望', '信念', '追逐', '超越', '无畏']
+                    };
+
+                    return emotionalWords[tone] || emotionalWords['欢乐'];
+                  };
+
+                  const generateRhymingWords = () => {
+                    const rhymeGroups = [
+                      ['路', '途', '书', '初'],
+                      ['心', '情', '明', '星'],
+                      ['风', '空', '中', '红'],
+                      ['天', '边', '年', '前'],
+                      ['光', '香', '长', '望'],
+                      ['夜', '月', '雪', '乐']
+                    ];
+                    return rhymeGroups[Math.floor(Math.random() * rhymeGroups.length)];
+                  };
+
+                  ReactDOM.render(<LyricCreator />, document.getElementById('root'));
+                </script>
+</body>
+</html>
+
+
+
+
