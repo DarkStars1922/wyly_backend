@@ -10,9 +10,9 @@ class UserRegisterAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
 
     def post(self,request):
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        password2 = request.POST.get('password2')
+        username = request.data.get('username')
+        password = request.data.get('password')
+        password2 = request.data.get('password2')
 
         if User.objects.filter(username = username) :
              return Response({
@@ -48,8 +48,8 @@ class UserLoginAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
 
     def post(self,request):
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = request.data.get('username')
+        password = request.data.get('password')
         user = authenticate(request=request,username=username,password=password)
 
         if user is not None and user.is_active:
