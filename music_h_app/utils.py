@@ -10,8 +10,6 @@ import os
 import time
 from dotenv import load_dotenv
 from music_h import settings
-from django.core.files.base import ContentFile
-from music_h.settings import MODELS_DIR, MODELS_ROOT
 
 load_dotenv()
 
@@ -89,6 +87,7 @@ class MusicGenerator:
             if format == 'wav':
                 torchaudio.save(save_path, wav[0].cpu(), sample_rate, format='wav')
                 file_path = save_path + ".wav"
+                filename += '.wav'
                 content_type = 'audio/wav'
             else:
                 # MP3格式需要额外处理
@@ -99,12 +98,13 @@ class MusicGenerator:
                     format='mp3',
                 )
                 file_path = save_path + ".mp3"
+                filename += '.mp3'
                 content_type = 'audio/mpeg'
 
             generation_time = time.time() - start_time
             print(f"Generated {duration}s audio in {generation_time:.2f} seconds")
-            
-            return file_path, content_type
+            audio_data = wav[0].cpu().float()
+            return file_path,filename, content_type,audio_data,sample_rate
         except Exception as e:
             print(f"Generation failed: {str(e)}")
             raise

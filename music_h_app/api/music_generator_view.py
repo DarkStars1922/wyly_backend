@@ -1,5 +1,9 @@
+import os
+from django.http import FileResponse
+from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.renderers import TemplateHTMLRenderer,JSONRenderer
 from rest_framework import status
 from ..utils import MusicGenerator
 from ..serializers import MusicGenerationSerializer
@@ -9,7 +13,12 @@ logger = logging.getLogger(__name__)
 
 class GenerateMusicView(APIView):
     generator = MusicGenerator()
-    
+    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+    template_name = 'music_h_app/music_generator.html'
+
+    def get(self,request):
+        return render(request,'music_h_app/music_generator.html')
+
     def post(self, request):
         serializer = MusicGenerationSerializer(data=request.data)
         if not serializer.is_valid():
@@ -21,18 +30,25 @@ class GenerateMusicView(APIView):
         format = data.get('format', 'mp3')
         
         try:
-            audio_path, content_type = self.generator.generate_music(
+            audio_path,filename,content_type ,audio_data,sample_rate= self.generator.generate_music(
                 prompt, 
                 duration=duration,
                 format=format
             )
             
             # 构建响应
-            filename = f"generated_music_{hash(prompt)}.{format}"
-            
-            return Response({
-                "file_path":audio_path,
-                }, status=status.HTTP_201_CREATED)
+            if not os.path.exists(audio_path):
+                return Response({"error": "Audio file not found"}, status=404)
+            audio_byte = open(audio_path, 'rb')
+
+            # 返回文件流响应
+            response = FileResponse(
+                audio_byte,
+                content_type=content_type
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            response['X-Audio-Duration'] = str(duration)
+            return response
             
         except Exception as e:
             logger.error(f"Music generation error: {str(e)}")

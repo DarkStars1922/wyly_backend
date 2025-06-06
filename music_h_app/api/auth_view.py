@@ -1,10 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.renderers import TemplateHTMLRenderer,JSONRenderer
 from rest_framework import status
 from django.contrib.auth import login,logout,authenticate
+
 from ..models import User
 
 class UserRegisterAPIView(APIView):
+    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+
     def post(self,request):
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -41,6 +45,8 @@ class UserRegisterAPIView(APIView):
         
         
 class UserLoginAPIView(APIView):
+    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+
     def post(self,request):
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -60,6 +66,8 @@ class UserLoginAPIView(APIView):
             },status=status.HTTP_400_BAD_REQUEST)
         
 class UserLogoutAPIView(APIView):
+    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+
     def get(self,request):
         logout(request)
         return Response({

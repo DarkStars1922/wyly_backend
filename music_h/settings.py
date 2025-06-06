@@ -17,10 +17,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MODELS_ROOT = os.path.join(BASE_DIR, 'models')
-MODELS_DIR = os.path.join(MODELS_ROOT, "facebook/musicgen-small")
-
-MUSICGEN_MODEL = os.getenv('MUSICGEN_MODEL', 'facebook/musicgen-small')
+TEMPLATES_DIR = os.path.join(BASE_DIR,'templates')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -71,7 +68,7 @@ ROOT_URLCONF = 'music_h.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [TEMPLATES_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
