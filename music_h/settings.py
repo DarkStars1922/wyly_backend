@@ -59,6 +59,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
+    "0.0.0.0",
+    r"^http://101.200.164.120:\d+$",
     r"^http://127.0.0.1:\d+$",
     r"^http://localhost:\d+$",  # 匹配 http://localhost:任意端口
 ]
