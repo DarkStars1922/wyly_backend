@@ -63,7 +63,7 @@ header {
     padding-top: 120px; /* 增加顶部内边距 */
     padding-bottom: 80px; /* 增加底部内边距 */
     /* 调整渐变和背景 */
-    background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(40, 40, 60, 0.9)), url('background.jpg') no-repeat center center;
+    background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(40, 40, 60, 0.9)), url('/static/images/background.jpg') no-repeat center center;
     background-size: cover;
     text-align: center;
     color: #fff;

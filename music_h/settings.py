@@ -26,9 +26,9 @@ TEMPLATES_DIR = os.path.join(BASE_DIR,'templates')
 SECRET_KEY = 'django-insecure-z0smg-*d**y)ymn+fn)x(0qh72_a0v3x)43cy)8)84ku(4p9^t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["101.200.164.120",'*']
+ALLOWED_HOSTS = ["101.200.164.120","127.0.0.1"]
 
 # Application definition
 
@@ -59,7 +59,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    "0.0.0.0",
     r"^http://101.200.164.120:\d+$",
     r"^http://127.0.0.1:\d+$",
     r"^http://localhost:\d+$",  # 匹配 http://localhost:任意端口
@@ -131,7 +130,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+# 开发环境静态文件目录
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
+# 生产环境静态文件收集目录
+STATIC_ROOT = BASE_DIR / "staticfiles"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

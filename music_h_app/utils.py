@@ -13,7 +13,7 @@ from music_h import settings
 
 load_dotenv()
 
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+#os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
 # 加载预训练模型
 MODEL_NAME = os.getenv('AUDIOCRAFT_MODEL', 'facebook/musicgen-small')
@@ -21,20 +21,16 @@ MODEL_CACHE_DIR = os.getenv('MODEL_CACHE_DIR', './model_cache')
 
 class MusicGenerator:
     _instance = None
-    _model_loaded = False  # 新增加载状态标志
     
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(MusicGenerator, cls).__new__(cls)
-            if not cls._model_loaded:  # 仅当未加载时初始化
-                cls._instance._initialize_model()
-                cls._model_loaded = True
+            cls._instance._initialize_model()
         return cls._instance
     
     def _initialize_model(self):
         print(f"Loading {MODEL_NAME} model...")
         start_time = time.time()
-        # 模型初始化
 
         self.model = MusicGen.get_pretrained(
             MODEL_NAME, 
@@ -90,7 +86,7 @@ class MusicGenerator:
             sample_rate = self.model.sample_rate
             
             if format == 'wav':
-                torchaudio.save(save_path, wav[0].cpu(), sample_rate, format='wav')
+                audio_write(save_path, wav[0].cpu(), sample_rate, format='wav')
                 file_path = save_path + ".wav"
                 filename += '.wav'
                 content_type = 'audio/wav'

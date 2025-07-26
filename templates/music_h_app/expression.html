@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五音疗愈表情识别系统</title>
+  <!-- face-api.js -->
+  <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6a11cb;
+      --secondary: #2575fc;
+      --accent: #ff6b6b;
+      --dark: #2c3e50;
+      --light: #f8f9fa;
+      --success: #1dd1a1;
+      --warning: #feca57;
+      --danger: #ff6b6b;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+      color: var(--light);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    header {
+      text-align: center;
+      margin: 20px 0 30px;
+      width: 100%;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+    
+    .logo i {
+      font-size: 2.5rem;
+      color: var(--accent);
+    }
+    
+    h1 {
+      font-size: 2.8rem;
+      background: linear-gradient(90deg, var(--accent), var(--secondary));
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      max-width: 1400px;
+      width: 100%;
+    }
+    
+    .camera-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      width: 640px;
+    }
+    
+    #container {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      background: #000;
+    }
+    
+    video, canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4);
+    }
+    
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(106, 17, 203, 0.6);
+    }
+    
+    .btn:active {
+      transform: translateY(1px);
+    }
+    
+    .btn-stop {
+      background: linear-gradient(135deg, var(--danger), #ff4757);
+    }
+    
+    .results-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex: 1;
+      min-width: 300px;
+      max-width: 500px;
+    }
+    
+    .results-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .result-box {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+    
+    .expression {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      color: var(--success);
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(29, 209, 161, 0.5);
+    }
+    
+    .confidence {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      color: var(--warning);
+    }
+    
+    .status {
+      font-size: 1.2rem;
+      color: #aaa;
+    }
+    
+    .chart-container {
+      margin-top: 20px;
+    }
+    
+    .chart-title {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      color: #ddd;
+    }
+    
+    .bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .bar-label {
+      width: 100px;
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+    
+    .bar-bg {
+      flex: 1;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .bar-fill {
+      height: 100%;
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.5s ease;
+    }
+    
+    .bar-value {
+      margin-left: 10px;
+      font-size: 0.9rem;
+      width: 50px;
+      text-align: right;
+      color: #ddd;
+    }
+    
+    .api-status {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 25px;
+      font-size: 0.9rem;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .connected {
+      background-color: var(--success);
+    }
+    
+    .disconnected {
+      background-color: var(--danger);
+    }
+    
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.6);
+      width: 100%;
+      padding: 20px;
+    }
+    
+    @media (max-width: 1100px) {
+      .container {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .camera-container, .results-container {
+        width: 100%;
+        max-width: 640px;
+      }
+    }
+    
+    @media (max-width: 700px) {
+      #container {
+        height: 400px;
+      }
+      
+      h1 {
+        font-size: 2.2rem;
+      }
+    }
+    
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <i class="fas fa-smile-beam"></i>
+      <h1>智能表情识别系统</h1>
+    </div>
+    <p class="subtitle">基于深度学习的实时面部表情识别技术，准确捕捉并分析您的情绪状态</p>
+  </header>
+  
+  <div class="container">
+    <div class="camera-container">
+      <div id="container">
+        <video id="video" autoplay muted playsinline></video>
+      </div>
+      
+      <div class="controls">
+        <button id="startBtn" class="btn pulse">
+          <i class="fas fa-play"></i> 开始识别
+        </button>
+        <button id="stopBtn" class="btn btn-stop">
+          <i class="fas fa-stop"></i> 停止识别
+        </button>
+        <button id="captureBtn" class="btn">
+          <i class="fas fa-camera"></i> 捕捉表情
+        </button>
+      </div>
+    </div>
+    
+    <div class="results-container">
+      <h2 class="results-title"><i class="fas fa-chart-bar"></i> 表情分析结果</h2>
+      
+      <div class="result-box">
+        <div class="expression" id="expression">😊 中性</div>
+        <div class="confidence" id="confidence">0%</div>
+        <div class="status" id="status">等待识别...</div>
+      </div>
+      
+      <div class="chart-container">
+        <h3 class="chart-title">表情概率分布</h3>
+        <div id="expressionsChart">
+          <!-- Chart bars will be generated here -->
+        </div>
+      </div>
+      
+      <div class="api-status">
+        <p><span class="status-indicator disconnected"></span> 后端状态: <span id="apiStatus">未连接</span></p>
+        <p id="lastUpdate">最后更新时间: --</p>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <p>© 2025 五音疗愈表情识别系统 | 基于 face-api.js 和 Django 构建 </p>
+  </footer>
+
+  <script>
+    // DOM Elements
+    const video = document.getElementById('video');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const expressionEl = document.getElementById('expression');
+    const confidenceEl = document.getElementById('confidence');
+    const statusEl = document.getElementById('status');
+    const apiStatusEl = document.getElementById('apiStatus');
+    const lastUpdateEl = document.getElementById('lastUpdate');
+    const chartContainer = document.getElementById('expressionsChart');
+    
+    // Global variables
+    let recognitionActive = false;
+    let recognitionInterval;
+    let canvas;
+    let modelsLoaded = false;
+    
+    // Expression mapping to emojis
+    const expressionEmojis = {
+      'neutral': '😐',
+      'happy': '😊',
+      'sad': '😢',
+      'angry': '😠',
+      'fearful': '😨',
+      'disgusted': '🤢',
+      'surprised': '😲'
+    };
+    
+    // Expression colors
+    const expressionColors = {
+      'neutral': '#3498db',
+      'happy': '#f1c40f',
+      'sad': '#3498db',
+      'angry': '#e74c3c',
+      'fearful': '#9b59b6',
+      'disgusted': '#1abc9c',
+      'surprised': '#f39c12'
+    };
+    
+    // Initialize the app
+    async function init() {
+      try {
+        // Load models
+        await loadModels();
+        modelsLoaded = true;
+        
+        // Setup event listeners
+        startBtn.addEventListener('click', startRecognition);
+        stopBtn.addEventListener('click', stopRecognition);
+        captureBtn.addEventListener('click', captureExpression);
+        
+        // Setup camera
+        await setupCamera();
+        
+        // Update UI
+        startBtn.classList.remove('pulse');
+        startBtn.disabled = false;
+        statusEl.textContent = "准备就绪，点击开始按钮";
+      } catch (err) {
+        console.error("初始化失败:", err);
+        statusEl.textContent = "初始化失败: " + err.message;
+      }
+    }
+    
+    // Load face-api.js models
+    async function loadModels() {
+      statusEl.textContent = "正在加载AI模型...";
+      
+      try {
+        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+        
+        statusEl.textContent = "AI模型加载完成";
+        return true;
+      } catch (err) {
+        console.error("模型加载错误:", err);
+        statusEl.textContent = "模型加载失败: " + err.message;
+        return false;
+      }
+    }
+    
+    // Setup camera
+    async function setupCamera() {
+      statusEl.textContent = "正在访问摄像头...";
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user' 
+          } 
+        });
+        
+        video.srcObject = stream;
+        
+        return new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            video.play();
+            statusEl.textContent = "摄像头就绪";
+            resolve();
+          };
+        });
+      } catch (err) {
+        console.error("摄像头错误:", err);
+        statusEl.textContent = "无法访问摄像头: " + err.message;
+        throw err;
+      }
+    }
+    
+    // Start face recognition
+    async function startRecognition() {
+      if (!modelsLoaded) {
+        statusEl.textContent = "AI模型尚未加载完成";
+        return;
+      }
+      
+      if (recognitionActive) return;
+      
+      recognitionActive = true;
+      statusEl.textContent = "识别中...";
+      
+      // Create canvas for drawing
+      if (!canvas) {
+        canvas = faceapi.createCanvasFromMedia(video);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        document.getElementById('container').appendChild(canvas);
+      }
+      
+      // Start recognition loop
+      recognitionInterval = setInterval(async () => {
+        if (!recognitionActive) return;
+        
+        try {
+          // Detect faces and expressions
+          const detections = await faceapi
+            .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceExpressions();
+          
+          // Clear canvas and draw results
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          const resizedDetections = faceapi.resizeResults(detections, {
+            width: video.videoWidth,
+            height: video.videoHeight
+          });
+          
+          faceapi.draw.drawDetections(canvas, resizedDetections);
+          faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+          faceapi.draw.drawFaceExpressions(canvas, resizedDetections, 0.7);
+          
+          // Update UI with results
+          if (detections.length > 0) {
+            const expressions = detections[0].expressions;
+            const maxExp = getMaxExpression(expressions);
+            
+            // Update expression display
+            expressionEl.textContent = `${expressionEmojis[maxExp[0]]} ${maxExp[0]}`;
+            expressionEl.style.color = expressionColors[maxExp[0]];
+            confidenceEl.textContent = `${(maxExp[1] * 100).toFixed(1)}%`;
+            
+            // Update chart
+            updateExpressionsChart(expressions);
+            
+            // Update status
+            statusEl.textContent = `检测到 ${detections.length} 张人脸`;
+          } else {
+            expressionEl.textContent = "😐 未检测到人脸";
+            expressionEl.style.color = expressionColors['neutral'];
+            confidenceEl.textContent = "0%";
+            statusEl.textContent = "未检测到人脸";
+          }
+        } catch (err) {
+          console.error("识别错误:", err);
+          statusEl.textContent = "识别出错: " + err.message;
+        }
+      }, 500); // Process every 500ms
+    }
+    
+    // Stop face recognition
+    function stopRecognition() {
+      if (!recognitionActive) return;
+      
+      recognitionActive = false;
+      clearInterval(recognitionInterval);
+      
+      // Clear canvas
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      statusEl.textContent = "识别已停止";
+      expressionEl.textContent = "😐 识别已停止";
+      confidenceEl.textContent = "0%";
+    }
+    
+    // Capture current expression and send to server
+    async function captureExpression() {
+      if (!recognitionActive) {
+        statusEl.textContent = "请先开始识别";
+        return;
+      }
+      
+      try {
+        statusEl.textContent = "正在捕捉表情...";
+        
+        // Simulate sending data to Django backend
+        const expressions = await faceapi.detectSingleFace(video)
+          .withFaceExpressions()
+          .then(res => res ? res.expressions : null);
+        
+        if (!expressions) {
+          statusEl.textContent = "未检测到表情";
+          return;
+        }
+        
+        const maxExp = getMaxExpression(expressions);
+        
+        // Create data to send
+        const expressionData = {
+          timestamp: new Date().toISOString(),
+          expression: maxExp[0],
+          confidence: maxExp[1],
+          allExpressions: expressions,
+          image: "data:image/jpeg;base64,..." // In a real app, you'd capture and encode the image
+        };
+        
+        // Simulate API call
+        setTimeout(() => {
+          statusEl.textContent = `表情已捕捉: ${maxExp[0]} (${(maxExp[1]*100).toFixed(1)}%)`;
+          
+          // Update API status
+          apiStatusEl.textContent = "已连接";
+          document.querySelector('.status-indicator').className = 'status-indicator connected';
+          lastUpdateEl.textContent = `最后更新时间: ${new Date().toLocaleTimeString()}`;
+        }, 800);
+        
+        // In a real implementation:
+        // sendExpressionToServer(expressionData);
+        
+      } catch (err) {
+        console.error("捕捉错误:", err);
+        statusEl.textContent = "捕捉失败: " + err.message;
+      }
+    }
+    
+    // Get the expression with the highest confidence
+    function getMaxExpression(expressions) {
+      return Object.entries(expressions).reduce(
+        (max, [expression, value]) => value > max[1] ? [expression, value] : max,
+        ['neutral', 0]
+      );
+    }
+    
+    // Update expressions chart
+    function updateExpressionsChart(expressions) {
+      chartContainer.innerHTML = '';
+      
+      Object.entries(expressions).forEach(([expression, value]) => {
+        const percentage = (value * 100).toFixed(1);
+        
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        
+        const label = document.createElement('div');
+        label.className = 'bar-label';
+        label.textContent = expression.charAt(0).toUpperCase() + expression.slice(1);
+        
+        const bg = document.createElement('div');
+        bg.className = 'bar-bg';
+        
+        const fill = document.createElement('div');
+        fill.className = 'bar-fill';
+        fill.style.width = `${percentage}%`;
+        fill.style.background = expressionColors[expression] || '#3498db';
+        
+        const val = document.createElement('div');
+        val.className = 'bar-value';
+        val.textContent = `${percentage}%`;
+        
+        bg.appendChild(fill);
+        bar.appendChild(label);
+        bar.appendChild(bg);
+        bar.appendChild(val);
+        chartContainer.appendChild(bar);
+      });
+    }
+    
+    // Function to send expression data to Django backend
+    async function sendExpressionToServer(data) {
+      try {
+        // This would be the actual fetch request in a real app
+        
+        const response = await fetch('/api/expressions/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            //'X-CSRFToken': getCSRFToken(), // Required for Django
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          throw new Error('API request failed');
+        }
+        
+        const result = await response.json();
+        console.log('Expression saved:', result);
+        
+        
+        // For simulation, we'll just log to console
+        console.log('Sending expression data:', data);
+        return true;
+      } catch (error) {
+        console.error('Error sending data:', error);
+        return false;
+      }
+    }
+    
+    // Function to get CSRF token (required for Django)
+    function getCSRFToken() {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+      return cookieValue;
+    }
+    
+    // Initialize the application
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

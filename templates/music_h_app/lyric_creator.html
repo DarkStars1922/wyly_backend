@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+{% load static %}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>星璇律动 - AI辅助歌词创作平台</title>
@@ -9,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap">
-<style>body {margin: 0;overflow-x: hidden;font-family: "Noto Serif SC", serif;background: #000 url("../images/background.jpg");background-size: cover;background-position: center;background-attachment: fixed;color: #fff;}
+<style>body {margin: 0;overflow-x: hidden;font-family: "Noto Serif SC", serif;background: #000 url('{% static "images/background.jpg" %}');background-size: cover;background-position: center;background-attachment: fixed;color: #fff;}
 
 #canvas {position: fixed;top: 0;left: 0;width: 100%;height: 100%;z-index: -1;background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3), rgba(249, 115, 22, 0.3));backdrop-filter: blur(8px);}
 

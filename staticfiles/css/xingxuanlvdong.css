@@ -1,0 +1,160 @@
+/* 星璇律动 - 自定义样式 */
+
+body {
+  /* 参考 戏剧(新) 使用纹理背景，并调整渐变 */
+  background: linear-gradient(rgba(15, 23, 42, 0.9), rgba(26, 26, 46, 0.98)), url('戏剧(新)/img/底纹2.jpg') repeat center center fixed;
+  /* background-size: cover; /* 改为 repeat */
+  color: #f0f0f0; /* 调整为更亮的灰色 */
+  padding-top: 70px; /* 为固定导航栏留出空间 */
+  font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif; /* 添加备用字体 */
+}
+
+.navbar {
+  background-color: rgba(15, 23, 42, 0.85); /* 调整为更深的半透明背景 */
+  backdrop-filter: blur(8px); /* 增加模糊效果 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.navbar-brand img {
+    max-height: 50px; /* 调整Logo大小 */
+}
+
+.nav-link, .navbar-brand {
+    color: #d0d0ff !important; /* 调整为稍亮的淡紫色 */
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover, .navbar-brand:hover {
+    color: #ffffff !important;
+}
+
+.navbar-toggler {
+    border-color: rgba(192, 192, 255, 0.5);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(192, 192, 255, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+
+.btn-primary {
+    background-color: #6a0dad; /* 紫色按钮 */
+    border-color: #6a0dad;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #8a2be2; /* 悬停时更亮的紫色 */
+    border-color: #8a2be2;
+}
+
+.btn-outline-light {
+    border-color: #c0c0ff;
+    color: #c0c0ff;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(192, 192, 255, 0.2);
+    color: #ffffff;
+}
+
+header {
+    padding-top: 120px; /* 增加顶部内边距 */
+    padding-bottom: 80px; /* 增加底部内边距 */
+    /* 调整渐变和背景 */
+    background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(40, 40, 60, 0.9)), url('background.jpg') no-repeat center center;
+    background-size: cover;
+    text-align: center;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* 调整边框颜色 */
+}
+
+header h1 {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+}
+
+header p {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.content-section {
+    padding: 60px 15px; /* 调整内边距 */
+    background-color: rgba(26, 26, 46, 0.6); /* 调整背景色使其更融入 */
+    margin-bottom: 40px; /* 增加间距 */
+    border-radius: 15px; /* 更圆润的边角 */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* 调整边框 */
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25); /* 添加轻微阴影 */
+}
+
+.feature-card {
+    background: rgba(40, 40, 60, 0.7); /* 调整卡片背景色 */
+    backdrop-filter: blur(12px); /* 增强玻璃效果 */
+    padding: 35px 25px;
+    border-radius: 16px; /* 更圆润的边角 */
+    margin-bottom: 25px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.15); /* 调整边框 */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    height: 100%; /* 确保卡片等高 */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); /* 调整阴影 */
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    background: rgba(50, 50, 70, 0.8); /* 悬停时背景稍亮 */
+}
+
+.feature-card i {
+    margin-bottom: 15px;
+}
+
+.feature-card h4 {
+    color: #e0e0ff;
+    margin-bottom: 10px;
+}
+
+#about img {
+    max-width: 80%;
+    border: 1px solid #444;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+footer {
+    background-color: #0a0a14; /* 更深的页脚背景 */
+    color: #b0b0b0; /* 稍亮的文字颜色 */
+    padding: 40px 0;
+    text-align: center;
+    font-size: 0.9em;
+    margin-top: 50px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    header {
+        padding-top: 80px;
+        padding-bottom: 40px;
+    }
+    header h1 {
+        font-size: 2.5rem;
+    }
+    header p {
+        font-size: 1rem;
+    }
+    .content-section {
+        padding: 40px 15px;
+    }
+    .feature-card {
+        margin-bottom: 30px;
+    }
+    #about .row {
+        flex-direction: column-reverse; /* 在小屏幕上图片置顶 */
+    }
+    #about img {
+        max-width: 90%;
+        margin-bottom: 20px;
+    }
+}

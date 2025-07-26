@@ -1,11 +1,17 @@
 from rest_framework import serializers
-from .models import Student,User
+from .models import ExpressionRecord, Student,User
 
 class StudentSerializer(serializers.ModelSerializer):
     teacher = serializers.PrimaryKeyRelatedField(queryset = User.objects.all())
     class Meta:
         model = Student
         fields = ['id','teacher','name','account']
+
+class ExpressionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExpressionRecord
+        fields = '__all__'
+        read_only_fields = ('timestamp',)
 
 class MusicGenerationSerializer(serializers.Serializer):
     prompt = serializers.CharField(
