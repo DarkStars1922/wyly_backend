@@ -36,3 +36,31 @@ class MusicGenerationSerializer(serializers.Serializer):
         required=False,
         help_text="生成质量"
     )
+
+
+class VideoGenerationSerializer(serializers.Serializer):
+    prompt = serializers.CharField(
+        max_length=500,
+        required=True,
+        help_text="视频描述文本"
+    )
+    duration = serializers.IntegerField(
+        min_value=2,
+        max_value=6,
+        default=4,
+        required=False,
+        help_text="视频时长(秒)，受模型限制"
+    )
+    fps = serializers.IntegerField(
+        min_value=4,
+        max_value=12,
+        default=8,
+        required=False,
+        help_text="帧率"
+    )
+    resolution = serializers.ChoiceField(
+        choices=['512x512', '768x512', '512x768'],
+        default='512x512',
+        required=False,
+        help_text="输出分辨率"
+    )

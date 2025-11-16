@@ -1,196 +1,390 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
+  {% load static %}
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>星璇律动 - AI视频创作平台</title>
-  <!-- 参考 戏剧(新) 项目引入 Bootstrap -->
-  <link rel="stylesheet" href="../戏剧(新)/bs/css/bootstrap.min.css">
-  <!-- 引入自定义样式 -->
-  <link rel="stylesheet" href="../static/css/xingxuanlvdong.css">
-  <!-- 添加额外的音乐视频创作页面样式 -->
+  <title>星璇律动 - AI 视频创作实验室</title>
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/xingxuanlvdong.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <style>
-    /* 音乐视频创作页面特定样式 */
-    .creation-workspace {
-      background: rgba(20, 25, 45, 0.7);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 25px;
-      margin-bottom: 30px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    body {
+      background: radial-gradient(circle at top, rgba(26, 29, 56, 0.85), #0f172a 70%);
+      color: #f5f6ff;
+      min-height: 100vh;
     }
-    
-    .workspace-header {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding-bottom: 15px;
-      margin-bottom: 20px;
+
+    .navbar {
+      background: rgba(15, 23, 42, 0.92);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(12px);
     }
-    
-    .control-panel {
-      background: rgba(30, 35, 60, 0.6);
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+
+    .video-page {
+      margin-top: 120px;
+      margin-bottom: 80px;
     }
-    
-    .visualizer-container {
-      height: 200px;
-      background: rgba(10, 15, 30, 0.8);
-      border-radius: 8px;
-      margin-bottom: 20px;
+
+    .video-page h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .hero-subtitle {
+      color: #c8cfff;
+      font-size: 1.1rem;
+      max-width: 760px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .btn-cta {
       position: relative;
-      overflow: hidden;
-    }
-    
-    .visualizer-bar {
-      position: absolute;
-      bottom: 0;
-      background: linear-gradient(to top, #6a0dad, #8a2be2);
-      width: 5px;
-      margin: 0 2px;
-      border-radius: 2px 2px 0 0;
-    }
-    
-    .timeline {
-      height: 60px;
-      background: rgba(40, 45, 70, 0.6);
-      border-radius: 8px;
-      margin-bottom: 20px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .timeline-marker {
-      position: absolute;
-      height: 100%;
-      width: 2px;
-      background-color: #ff5e62;
-      left: 50%;
-      top: 0;
-    }
-    
-    .preset-card {
-      background: rgba(40, 40, 70, 0.7);
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 28px;
+      font-size: 1.05rem;
+      border-radius: 50px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
       transition: all 0.3s ease;
-      cursor: pointer;
+      overflow: hidden;
+      z-index: 1;
     }
-    
-    .preset-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-      background: rgba(50, 50, 80, 0.8);
+
+    .btn-cta:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      transition: all 0.3s ease;
+      z-index: -1;
     }
-    
-    .ai-suggestion {
-      background: linear-gradient(135deg, rgba(106, 13, 173, 0.7), rgba(50, 50, 80, 0.7));
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+
+    .btn-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     }
-    
-    .output-preview {
-      background: #000;
+
+    .btn-cta:hover:before {
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6a0dad, #8a2be2);
+      border: none;
+    }
+
+    .beta-badge {
+      display: inline-block;
+      background: rgba(138, 43, 226, 0.2);
+      color: #e0d9ff;
+      border: 1px solid rgba(138, 43, 226, 0.45);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .generator-card,
+    .preview-card {
+      background: linear-gradient(135deg, rgba(32, 32, 56, 0.85), rgba(16, 16, 36, 0.85));
+      border-radius: 18px;
+      padding: 30px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(120, 90, 200, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .generator-card:before,
+    .preview-card:before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.45) 0%, rgba(138, 43, 226, 0) 70%);
+      z-index: 0;
+    }
+
+    .generator-card > *,
+    .preview-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .generator-card h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .generator-card p.video-intro {
+      color: #d6dcff;
+      font-size: 1rem;
+      margin-bottom: 1.6rem;
+      line-height: 1.6;
+    }
+
+    .generator-card label {
+      font-weight: 600;
+      color: #b9a9ff;
+      margin-bottom: 0.6rem;
+    }
+
+    .generator-card textarea {
+      width: 100%;
+      min-height: 160px;
+      border-radius: 14px;
+      border: 2px solid rgba(138, 43, 226, 0.25);
+      background: rgba(12, 16, 38, 0.9);
+      color: #f5f6ff;
+      padding: 18px;
+      resize: vertical;
+      transition: all 0.3s ease;
+    }
+
+    .generator-card textarea:focus {
+      outline: none;
+      border-color: rgba(138, 43, 226, 0.65);
+      box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.25);
+    }
+
+    .video-options {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin: 1.2rem 0 1.8rem;
+    }
+
+    .video-option {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .generator-card select {
+      width: 100%;
       border-radius: 12px;
-      height: 300px;
-      margin-bottom: 20px;
+      border: 2px solid rgba(138, 43, 226, 0.25);
+      background: rgba(12, 16, 38, 0.9);
+      color: #f5f6ff;
+      padding: 12px 16px;
+      appearance: none;
+      transition: border 0.3s ease;
+    }
+
+    .generator-card select:focus {
+      outline: none;
+      border-color: rgba(138, 43, 226, 0.6);
+      box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.2);
+    }
+
+    .sample-prompts {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      color: #a9b4ff;
+      line-height: 1.5;
+      background: rgba(20, 24, 48, 0.6);
+      border-radius: 12px;
+      padding: 15px 18px;
+      border: 1px solid rgba(138, 43, 226, 0.2);
+    }
+
+    .sample-prompts strong {
+      display: block;
+      font-size: 0.9rem;
+      letter-spacing: 0.8px;
+      color: #e0d9ff;
+      margin-bottom: 0.4rem;
+    }
+
+    .video-progress-container {
+      margin-top: 1.5rem;
+      display: none;
+    }
+
+    .video-progress-bar-wrapper {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+
+    .video-progress-bar {
+      height: 100%;
+      width: 6%;
+      border-radius: 20px;
+      background: linear-gradient(90deg, #8a2be2, #48dbfb);
+      transition: width 0.4s ease;
+    }
+
+    .video-progress-message {
+      font-size: 0.95rem;
+      color: #ced3ff;
+    }
+
+    .video-error-alert {
+      display: none;
+      margin-top: 1rem;
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: rgba(220, 53, 69, 0.18);
+      border: 1px solid rgba(220, 53, 69, 0.4);
+      color: #ffb8c2;
+    }
+
+    .preview-card {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .video-placeholder {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(90, 60, 180, 0.3), rgba(40, 20, 90, 0.6));
+      border: 1px dashed rgba(200, 180, 255, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      color: #f2f3ff;
+      font-size: 1rem;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .video-placeholder i {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .video-preview-wrapper {
       position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.2rem;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
-    
-    .output-preview img {
-      max-width: 100%;
-      max-height: 100%;
-    }
-    
-    .output-preview .play-button {
+
+    .video-preview-wrapper video {
       position: absolute;
-      font-size: 3rem;
-      color: rgba(255, 255, 255, 0.8);
-      cursor: pointer;
-      transition: all 0.3s ease;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
     }
-    
-    .output-preview .play-button:hover {
-      color: #fff;
-      transform: scale(1.1);
+
+    .video-meta-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.2rem;
     }
-    
-    .style-selector {
+
+    .video-meta-list li {
       display: flex;
-      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 0.75rem;
+      color: #d6dcff;
+      font-size: 0.95rem;
+    }
+
+    .video-meta-label {
+      min-width: 88px;
+      font-weight: 600;
+      color: #b9a9ff;
+    }
+
+    .video-download {
+      display: flex;
+      flex-direction: column;
       gap: 10px;
-      margin-bottom: 20px;
     }
-    
-    .style-item {
-      background: rgba(60, 60, 90, 0.6);
-      border-radius: 20px;
-      padding: 8px 15px;
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      background: linear-gradient(135deg, #1dd1a1, #10ac84);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .btn-download.disabled {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(16, 172, 132, 0.35);
+    }
+
+    .video-status-message {
       font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #a9b4ff;
     }
-    
-    .style-item:hover, .style-item.active {
-      background: rgba(106, 13, 173, 0.7);
+
+    .video-helper-text {
+      font-size: 0.85rem;
+      color: rgba(214, 220, 255, 0.7);
+      line-height: 1.5;
     }
-    
-    /* 动画效果 */
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
+
+    footer {
+      text-align: center;
+      padding: 30px 0;
+      color: rgba(220, 225, 255, 0.7);
+      font-size: 0.9rem;
     }
-    
-    .pulse-animation {
-      animation: pulse 2s infinite;
+
+    @media (max-width: 992px) {
+      .generator-card,
+      .preview-card {
+        padding: 22px;
+      }
     }
-    
-    /* 生成音乐可视化效果 */
-    @keyframes barHeight {
-      0% { height: 10%; }
-      50% { height: 70%; }
-      100% { height: 30%; }
+
+    @media (max-width: 576px) {
+      .video-options {
+        flex-direction: column;
+      }
+
+      .generator-card textarea {
+        min-height: 140px;
+      }
     }
-    
-    .visualizer-container .visualizer-bar:nth-child(1) { animation: barHeight 0.8s infinite; left: 5%; }
-    .visualizer-container .visualizer-bar:nth-child(2) { animation: barHeight 1.1s infinite; left: 15%; }
-    .visualizer-container .visualizer-bar:nth-child(3) { animation: barHeight 0.7s infinite; left: 25%; }
-    .visualizer-container .visualizer-bar:nth-child(4) { animation: barHeight 1.3s infinite; left: 35%; }
-    .visualizer-container .visualizer-bar:nth-child(5) { animation: barHeight 0.9s infinite; left: 45%; }
-    .visualizer-container .visualizer-bar:nth-child(6) { animation: barHeight 1.2s infinite; left: 55%; }
-    .visualizer-container .visualizer-bar:nth-child(7) { animation: barHeight 0.8s infinite; left: 65%; }
-    .visualizer-container .visualizer-bar:nth-child(8) { animation: barHeight 1.0s infinite; left: 75%; }
-    .visualizer-container .visualizer-bar:nth-child(9) { animation: barHeight 1.4s infinite; left: 85%; }
-    .visualizer-container .visualizer-bar:nth-child(10) { animation: barHeight 0.6s infinite; left: 95%; }
   </style>
 </head>
-
 <body>
-      <!-- 头部区域 -->
-      <header style="background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(40, 40, 60, 0.8)), url('/static/images/background.jpg') no-repeat center center; background-size: cover;">
-        <div class="container">
-          <h1 class="display-4">AI视频创作</h1>
-          <p class="lead">释放你的创意，让AI为你编织影像，呈现视听奇观</p>
-        </div>
-      </header>
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container">
-      <a class="navbar-brand" href="xingxuanlvdong.html">
-        <img src="../images/logo.jpg" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;">
+      <a class="navbar-brand" href="{% url 'home' %}">
+        <img src="{% static 'images/logo.jpg' %}" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;">
         星璇律动
       </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -199,212 +393,361 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
-            <a class="nav-link" href="xingxuanlvdong.html">首页</a>
+            <a class="nav-link" href="{% url 'home' %}">首页</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'lyric-api' %}">歌词创作</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'generate-music' %}">音乐生成</a>
           </li>
           <li class="nav-item active">
-            <a class="nav-link" href="#">音乐创作 <span class="sr-only">(current)</span></a>
+            <a class="nav-link" href="{% url 'generate-video' %}">视频创作</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#video-creation">视频合成</a>
+            <a class="nav-link" href="{% url 'meditation-music' %}">五音冥想</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#showcase">作品展示</a>
+            <a class="nav-link" href="{% url 'showcase' %}">作品展示</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#contact">联系我们</a>
+            <a class="nav-link" href="{% url 'login' %}">登录</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'register' %}">注册</a>
           </li>
         </ul>
       </div>
     </div>
   </nav>
-<section id="video-creation" class="content-section">
-      <h2 class="text-center mb-4">AI视频合成</h2>
-      <p class="text-center lead mb-5">将你的音乐与AI生成的视觉元素完美结合</p>
-      
-      <div class="creation-workspace">
-        <div class="workspace-header">
-          <div class="row align-items-center">
-            <div class="col-md-6">
-              <h4><i class="fas fa-film mr-2"></i> 视频工作区</h4>
-            </div>
-            <div class="col-md-6 text-md-right">
-              <button class="btn btn-primary mr-2"><i class="fas fa-save mr-1"></i> 保存项目</button>
-              <button class="btn btn-outline-light"><i class="fas fa-download mr-1"></i> 导出</button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="row">
-          <!-- 左侧控制面板 -->
-          <div class="col-lg-4">
-            <div class="control-panel">
-              <h5 class="mb-3">视频参数</h5>
-              
-              <div class="form-group">
-                <label for="video-style">视觉风格</label>
-                <select class="form-control bg-dark text-light" id="video-style">
-                  <option>现代抽象</option>
-                  <option>自然风光</option>
-                  <option>城市霓虹</option>
-                  <option>太空星云</option>
-                  <option>水墨中国风</option>
-                  <option>复古怀旧</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label for="video-prompt">视觉提示词</label>
-                <textarea class="form-control bg-dark text-light" id="video-prompt" rows="3" placeholder="输入关键词描述你想要的视觉效果...">星空下的海洋，波光粼粼，星光闪烁</textarea>
-              </div>
-              
-              <div class="form-group">
-                <label>颜色主题</label>
-                <div class="style-selector">
-                  <div class="style-item active" style="background: linear-gradient(to right, #6a0dad, #8a2be2);">紫色系</div>
-                  <div class="style-item" style="background: linear-gradient(to right, #0072ff, #00c6ff);">蓝色系</div>
-                  <div class="style-item" style="background: linear-gradient(to right, #ff5e62, #ff9966);">橙红系</div>
-                  <div class="style-item" style="background: linear-gradient(to right, #11998e, #38ef7d);">绿色系</div>
-                  <div class="style-item" style="background: linear-gradient(to right, #232526, #414345);">黑白系</div>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="video-transition">转场效果</label>
-                <select class="form-control bg-dark text-light" id="video-transition">
-                  <option>淡入淡出</option>
-                  <option>滑动</option>
-                  <option>溶解</option>
-                  <option>旋转</option>
-                  <option>波纹</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label>音乐同步</label>
-                <div class="custom-control custom-switch">
-                  <input type="checkbox" class="custom-control-input" id="sync-music" checked>
-                  <label class="custom-control-label" for="sync-music">与音乐节奏同步</label>
-                </div>
-              </div>
-              
-              <button class="btn btn-primary btn-block pulse-animation mt-4"><i class="fas fa-magic mr-2"></i> 生成视频</button>
-            </div>
-            
-            <div class="ai-suggestion mt-4">
-              <h5 class="mb-3"><i class="fas fa-lightbulb mr-2"></i> AI建议</h5>
-              <p>基于您的音乐风格，我们推荐使用流动的粒子效果和渐变色彩，以增强视觉冲击力。</p>
-              <button class="btn btn-sm btn-outline-light">应用建议</button>
-            </div>
-          </div>
-          
-          <!-- 右侧预览区 -->
-          <div class="col-lg-8">
-            <div class="output-preview">
-              <!-- 视频预览区域 -->
-              <img src="../戏剧(新)/img/戏曲5.jpg" alt="视频预览" style="filter: blur(3px); opacity: 0.7;">
-              <div class="play-button">
-                <i class="fas fa-play-circle"></i>
-              </div>
-            </div>
-            
-            <div class="timeline mb-4">
-              <div class="timeline-marker"></div>
-            </div>
-            
-            <div class="player-controls d-flex justify-content-between align-items-center mb-4">
-              <button class="btn btn-outline-light"><i class="fas fa-step-backward"></i></button>
-              <button class="btn btn-primary btn-lg"><i class="fas fa-play"></i></button>
-              <button class="btn btn-outline-light"><i class="fas fa-step-forward"></i></button>
-              <div class="d-flex align-items-center">
-                <i class="fas fa-volume-up mr-2"></i>
-                <input type="range" class="form-control-range" style="width: 100px;">
-              </div>
-              <span class="text-light">00:00 / 01:00</span>
-            </div>
-            
-            <div class="video-elements">
-              <h5 class="mb-3">视频元素</h5>
-              <div class="track d-flex justify-content-between align-items-center p-2 mb-2 bg-dark rounded">
-                <div>
-                  <i class="fas fa-image mr-2"></i> 背景图层
-                </div>
-                <div>
-                  <button class="btn btn-sm btn-outline-light mr-1"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-sm btn-outline-light mr-1"><i class="fas fa-eye"></i></button>
-                  <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>
-              <div class="track d-flex justify-content-between align-items-center p-2 mb-2 bg-dark rounded">
-                <div>
-                  <i class="fas fa-magic mr-2"></i> 粒子效果
-                </div>
-                <div>
-                  <button class="btn btn-sm btn-outline-light mr-1"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-sm btn-outline-light mr-1"><i class="fas fa-eye"></i></button>
-                  <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>
-              <div class="track d-flex justify-content-between align-items-center p-2 mb-2 bg-dark rounded">
-                <div>
-                  <i class="fas fa-font mr-2"></i> 文字标题
-                </div>
-                <div>
-                  <button class="btn btn-sm btn-outline-light mr-1"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-sm btn-outline-light mr-1"><i class="fas fa-eye"></i></button>
-                  <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>
-              <button class="btn btn-sm btn-outline-light"><i class="fas fa-plus mr-1"></i> 添加元素</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 预设模板 -->
-      <div class="mt-5">
-        <h4 class="text-center mb-4">视频预设模板</h4>
-        <div class="row">
-          <div class="col-md-4">
-            <div class="preset-card">
-              <h5><i class="fas fa-star mr-2" style="color: #ffcc00;"></i> 音乐可视化</h5>
-              <p>动态波形和频谱可视化效果</p>
-              <button class="btn btn-sm btn-outline-light">应用</button>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="preset-card">
-              <h5><i class="fas fa-star mr-2" style="color: #ffcc00;"></i> 星空漫游</h5>
-              <p>梦幻星空和宇宙粒子效果</p>
-              <button class="btn btn-sm btn-outline-light">应用</button>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="preset-card">
-              <h5><i class="fas fa-star mr-2" style="color: #ffcc00;"></i> 水墨中国风</h5>
-              <p>传统水墨画风格的动态效果</p>
-              <button class="btn btn-sm btn-outline-light">应用</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- 作品展示区域 -->
-    
-<!-- 页脚 -->
+  <main class="container video-page">
+    <div class="text-center">
+      <span class="beta-badge">Beta 模型体验</span>
+      <h1>AI 视频创作实验室</h1>
+      <p class="hero-subtitle">将文字想象转化为动态画面，调用 Hugging Face 文本生成视频模型，快速获得可下载的实验性片段。</p>
+    </div>
+
+    <div class="row align-items-stretch mt-4">
+      <div class="col-lg-6 mb-4">
+        <div class="generator-card h-100">
+          <h2>描述你的灵感</h2>
+          <p class="video-intro">输入您想呈现的场景、情绪或镜头语言，系统会自动翻译并发送至模型生成。</p>
+
+          <form id="video-generator-form" data-endpoint="{% url 'generate-video' %}">
+            <div class="form-group">
+              <label for="video-prompt">创作提示词</label>
+              <textarea id="video-prompt" placeholder="例如：雨夜霓虹街头，一位身着旗袍的舞者缓缓旋转"></textarea>
+            </div>
+
+            <div class="video-options">
+              <div class="video-option">
+                <label for="video-duration">时长 (秒)</label>
+                <select id="video-duration">
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4" selected>4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                </select>
+              </div>
+              <div class="video-option">
+                <label for="video-fps">帧率 (FPS)</label>
+                <select id="video-fps">
+                  <option value="4">4</option>
+                  <option value="6">6</option>
+                  <option value="8" selected>8</option>
+                  <option value="10">10</option>
+                  <option value="12">12</option>
+                </select>
+              </div>
+              <div class="video-option">
+                <label for="video-resolution">分辨率</label>
+                <select id="video-resolution">
+                  <option value="512x512" selected>512 x 512</option>
+                  <option value="768x512">768 x 512</option>
+                  <option value="512x768">512 x 768</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" id="generate-video-btn" class="btn btn-primary btn-cta w-100">
+              <i class="fas fa-play-circle mr-2"></i>
+              生成视频
+            </button>
+
+            <div class="video-progress-container" id="video-progress-container">
+              <div class="video-progress-bar-wrapper">
+                <div class="video-progress-bar" id="video-progress-bar"></div>
+              </div>
+              <div class="video-progress-message" id="video-progress-message">正在准备模型...</div>
+            </div>
+
+            <div class="video-error-alert" id="video-error" role="alert"></div>
+
+            <div class="sample-prompts">
+              <strong>灵感示例</strong>
+              <p class="mb-1">• 月光洒在山顶古寺，镜头缓慢推进到灯笼摇曳的廊道</p>
+              <p class="mb-0">• 未来感舞者在霓虹城市街头表演，色彩随音乐律动</p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mb-4">
+        <div class="preview-card h-100">
+          <div class="video-placeholder" id="video-placeholder">
+            <div>
+              <i class="fas fa-photo-video d-block mb-3"></i>
+              <p class="mb-0">生成完成后，可在此预览视频并直接下载源文件。</p>
+            </div>
+          </div>
+
+          <div class="video-preview-wrapper" id="video-preview-wrapper">
+            <video id="generated-video" controls playsinline></video>
+          </div>
+
+          <ul class="video-meta-list" id="video-meta">
+            <li>
+              <span class="video-meta-label">原始提示</span>
+              <span id="video-meta-original">等待生成...</span>
+            </li>
+            <li>
+              <span class="video-meta-label">参数</span>
+              <span id="video-meta-params">—</span>
+            </li>
+          </ul>
+
+          <div class="video-download">
+            <a href="#" class="btn-download disabled" id="download-video-link">
+              <i class="fas fa-download"></i>
+              下载视频
+            </a>
+            <div class="video-status-message" id="video-status-message">模型准备就绪，可以开始体验。</div>
+            <div class="video-helper-text">生成的视频暂存于服务器并附带加速下载链接。建议在几分钟内保存，避免占用额外存储。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <footer>
     <div class="container">
-      <p>&copy; 2025 星璇律动. 保留所有权利。</p>
+      <p>© 2025 星璇律动. 保留所有权利。</p>
       <p>AI驱动的歌词、音乐与视频一体化创作平台</p>
     </div>
   </footer>
 
-  <!-- 引入 Bootstrap JS 和依赖 (从戏剧(新)项目参考) -->
-  <script src="../戏剧(新)/bs/js/jquery.js"></script>
-  <script src="../戏剧(新)/bs/js/bootstrap.bundle.min.js"></script>
-  <!-- Font Awesome 图标库 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{% static 'opera/bs/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('video-generator-form');
+      const promptInput = document.getElementById('video-prompt');
+      const durationSelect = document.getElementById('video-duration');
+      const fpsSelect = document.getElementById('video-fps');
+      const resolutionSelect = document.getElementById('video-resolution');
+      const generateBtn = document.getElementById('generate-video-btn');
+      const progressContainer = document.getElementById('video-progress-container');
+      const progressBar = document.getElementById('video-progress-bar');
+      const progressMessage = document.getElementById('video-progress-message');
+      const errorBox = document.getElementById('video-error');
+      const placeholder = document.getElementById('video-placeholder');
+      const previewWrapper = document.getElementById('video-preview-wrapper');
+      const previewVideo = document.getElementById('generated-video');
+      const downloadLink = document.getElementById('download-video-link');
+      const metaOriginal = document.getElementById('video-meta-original');
+      const metaParams = document.getElementById('video-meta-params');
+      const statusMessage = document.getElementById('video-status-message');
+      const endpoint = form.dataset.endpoint;
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      let progressInterval = null;
+      let currentObjectUrl = null;
 
+      const updateProgress = (value, message) => {
+        const clamped = Math.max(0, Math.min(value, 100));
+        progressBar.style.width = `${clamped}%`;
+        progressMessage.textContent = message;
+      };
 
+      const progressMessageForValue = value => {
+        if (value < 12) {
+          return '正在排队处理请求...';
+        }
+        if (value < 28) {
+          return '正在准备生成参数...';
+        }
+        if (value < 48) {
+          return '模型加载中，请稍候...';
+        }
+        if (value < 68) {
+          return '正在生成关键帧...';
+        }
+        if (value < 84) {
+          return '正在合成视频序列...';
+        }
+        return '正在写入文件并校验数据...';
+      };
+
+      const startProgressSimulation = durationSeconds => {
+        const estimatedTime = Math.max(durationSeconds * 7, 18);
+        const startTime = Date.now();
+        let current = 6;
+        progressContainer.style.display = 'block';
+        updateProgress(current, progressMessageForValue(current));
+
+        return setInterval(() => {
+          const elapsed = (Date.now() - startTime) / 1000;
+          const target = 6 + Math.min(88, (elapsed / estimatedTime) * 82);
+          current = Math.max(current, target);
+          updateProgress(current, progressMessageForValue(current));
+        }, 500);
+      };
+
+      const resetProgress = () => {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+        }
+        progressBar.style.width = '0%';
+        progressMessage.textContent = '正在准备模型...';
+        progressContainer.style.display = 'none';
+      };
+
+      const showError = message => {
+        errorBox.textContent = message;
+        errorBox.style.display = 'block';
+      };
+
+      const hideError = () => {
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+      };
+
+      const parseFilename = header => {
+        if (!header) {
+          return null;
+        }
+        const match = header.match(/filename="?([^";]+)"?/i);
+        return match ? match[1] : null;
+      };
+
+      const cleanupObjectUrl = () => {
+        if (currentObjectUrl) {
+          URL.revokeObjectURL(currentObjectUrl);
+          currentObjectUrl = null;
+        }
+      };
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const prompt = promptInput.value.trim();
+
+        if (!prompt) {
+          showError('请输入想要生成的视频描述。');
+          return;
+        }
+
+        hideError();
+        cleanupObjectUrl();
+        downloadLink.classList.add('disabled');
+        downloadLink.removeAttribute('download');
+        downloadLink.href = '#';
+        placeholder.style.display = 'flex';
+        previewWrapper.style.display = 'none';
+        metaOriginal.textContent = '处理中...';
+        metaParams.textContent = '—';
+        statusMessage.textContent = '正在向模型提交请求...';
+
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>生成中...';
+
+        const payload = {
+          prompt,
+          duration: parseInt(durationSelect.value, 10),
+          fps: parseInt(fpsSelect.value, 10),
+          resolution: resolutionSelect.value
+        };
+
+        progressInterval = startProgressSimulation(payload.duration);
+
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            let errorMessage = `生成失败: ${response.status}`;
+            try {
+              const data = await response.json();
+              errorMessage = data.error || data.detail || errorMessage;
+            } catch (_) {
+              /* ignore JSON parse errors */
+            }
+            throw new Error(errorMessage);
+          }
+
+          updateProgress(95, '正在下载视频数据...');
+
+          const blob = await response.blob();
+          cleanupObjectUrl();
+          const objectUrl = URL.createObjectURL(blob);
+          currentObjectUrl = objectUrl;
+
+          const filename = parseFilename(response.headers.get('Content-Disposition')) || 'ai-video.mp4';
+          downloadLink.href = objectUrl;
+          downloadLink.download = filename;
+          downloadLink.classList.remove('disabled');
+
+          previewVideo.src = objectUrl;
+          previewVideo.load();
+          placeholder.style.display = 'none';
+          previewWrapper.style.display = 'block';
+
+          const originalPrompt = response.headers.get('X-Original-Prompt') || prompt;
+          const durationHeader = response.headers.get('X-Video-Duration');
+          const fpsHeader = response.headers.get('X-Video-Fps');
+          const resolutionHeader = response.headers.get('X-Video-Resolution');
+          const taskId = response.headers.get('X-Task-Id');
+
+          metaOriginal.textContent = originalPrompt;
+
+          const paramsPieces = [];
+          if (durationHeader) {
+            paramsPieces.push(`${durationHeader}s`);
+          }
+          if (fpsHeader) {
+            paramsPieces.push(`${fpsHeader}fps`);
+          }
+          if (resolutionHeader) {
+            paramsPieces.push(resolutionHeader);
+          }
+          if (taskId) {
+            paramsPieces.push(`任务 ${taskId.slice(0, 8)}`);
+          }
+          metaParams.textContent = paramsPieces.length ? paramsPieces.join(' · ') : '—';
+
+          updateProgress(100, '生成完成！');
+          statusMessage.textContent = '生成完成，可以预览与下载生成结果。';
+        } catch (error) {
+          showError(error.message || '视频生成失败，请稍后再试。');
+          statusMessage.textContent = '生成失败，请重试。';
+          resetProgress();
+        } finally {
+          if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+          }
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = '<i class="fas fa-play-circle mr-2"></i>生成视频';
+        }
+      });
+    });
+  </script>
 </body>
 </html>

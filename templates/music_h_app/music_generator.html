@@ -368,13 +368,13 @@
                 
                 <div class="options">
                     <div class="option">
-                        <label for="duration"><i class="fas fa-clock"></i> 时长（秒）</label>
+                        <label for="duration"><i class="fas fa-clock"></i> 时长</label>
                         <select id="duration">
-                            <option value="5">5秒</option>
-                            <option value="10">10秒</option>
-                            <option value="15" selected>15秒</option>
-                            <option value="20">20秒</option>
-                            <option value="30">30秒</option>
+                            <option value="5">5分钟</option>
+                            <option value="10">10分钟</option>
+                            <option value="15" selected>15分钟</option>
+                            <option value="20">20分钟</option>
+                            <option value="30">30分钟</option>
                         </select>
                     </div>
                     
@@ -496,9 +496,14 @@
         }
         
         // 处理后端返回的音频文件
-        function handleAudioResponse(blob, format) {
+        function handleAudioResponse(blob, format, headers) {
+            console.log('处理音频响应...');
+            console.log('Blob 大小:', blob.size);
+            console.log('格式:', format);
+            
             // 创建对象URL
             const audioUrl = URL.createObjectURL(blob);
+            console.log('创建音频 URL:', audioUrl);
             
             // 设置音频播放器
             audioPlayer.src = audioUrl;
@@ -519,41 +524,47 @@
             generateBtn.disabled = false;
             generateBtn.innerHTML = '<i class="fas fa-bolt"></i> 生成音乐';
             
+            console.log('音频响应处理完成');
+            
             // 为音频可视化器设置动画
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const analyser = audioContext.createAnalyser();
-            const source = audioContext.createMediaElementSource(audioPlayer);
-            
-            source.connect(analyser);
-            analyser.connect(audioContext.destination);
-            analyser.fftSize = 256;
-            
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            
-            function visualize() {
-                requestAnimationFrame(visualize);
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaElementSource(audioPlayer);
                 
-                analyser.getByteFrequencyData(dataArray);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                analyser.fftSize = 256;
                 
-                const bars = audioVisualizer.querySelectorAll('.bar');
-                for (let i = 0; i < bars.length; i++) {
-                    const value = dataArray[i % bufferLength] / 255;
-                    const height = Math.max(10, value * 100);
-                    bars[i].style.height = `${height}%`;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                function visualize() {
+                    requestAnimationFrame(visualize);
                     
-                    // 颜色变化
-                    const hue = 240 + value * 60;
-                    bars[i].style.background = `linear-gradient(to top, hsl(${hue}, 70%, 60%), hsl(${hue + 30}, 80%, 50%)`;
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    const bars = audioVisualizer.querySelectorAll('.bar');
+                    for (let i = 0; i < bars.length; i++) {
+                        const value = dataArray[i % bufferLength] / 255;
+                        const height = Math.max(10, value * 100);
+                        bars[i].style.height = `${height}%`;
+                        
+                        // 颜色变化
+                        const hue = 240 + value * 60;
+                        bars[i].style.background = `linear-gradient(to top, hsl(${hue}, 70%, 60%), hsl(${hue + 30}, 80%, 50%)`;
+                    }
                 }
+                
+                audioPlayer.addEventListener('play', () => {
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume();
+                    }
+                    visualize();
+                });
+            } catch (e) {
+                console.error('音频可视化设置失败:', e);
             }
-            
-            audioPlayer.addEventListener('play', () => {
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                visualize();
-            });
         }
         
         // 生成音乐
@@ -567,6 +578,11 @@
                 return;
             }
             
+            console.log('开始生成音乐...');
+            console.log('描述:', description);
+            console.log('时长:', duration);
+            console.log('格式:', format);
+            
             // 禁用按钮
             generateBtn.disabled = true;
             generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
@@ -574,15 +590,18 @@
             // 显示进度部分
             progressSection.style.display = 'block';
             audioSection.style.display = 'none';
-            updateProgress(10, "准备生成请求...");
+            updateProgress(1, "正在连接服务器...");
+            
+            let taskId = null;
+            let progressInterval = null;
+            let vizInterval = null;
             
             try {
-                // 模拟进度（实际项目中应替换为真实的API调用）
-                simulateProgress();
+                console.log('发送 API 请求到 /api/generate/');
+                updateProgress(2, "发送生成请求...");
                 
-                // 实际API调用代码
-                // 注意：这里的URL需要替换为实际后端API地址
-                const response = await fetch('/api/generate/', {
+                // 发起生成请求
+                const generatePromise = fetch('/api/generate/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -594,58 +613,107 @@
                     })
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`请求失败: ${response.status} ${response.statusText}`);
+                // 等待一小段时间
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // 基于真实时间的进度估算
+                updateProgress(5, "正在处理请求...");
+                
+                // 启动视觉反馈
+                vizInterval = setInterval(() => {
+                    updateVisualizer(visualizer, Math.random() * 0.5 + 0.3);
+                }, 100);
+                
+                // 进度更新（基于预估时间）- 更频繁的更新
+                const estimatedTime = parseInt(duration) * 1.8; // 估计生成时间为音频时长的1.8倍
+                const startTime = Date.now();
+                let currentProgress = 5;
+                
+                progressInterval = setInterval(() => {
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    // 使用非线性增长，开始快，后面慢
+                    const rawProgress = Math.min(92, 10 + (elapsed / estimatedTime) * 82);
+                    currentProgress = Math.max(currentProgress, rawProgress);
+                    
+                    let message = "正在生成音乐...";
+                    if (currentProgress < 15) {
+                        message = "正在翻译和分析描述...";
+                    } else if (currentProgress < 30) {
+                        message = "初始化音乐生成模型...";
+                    } else if (currentProgress < 50) {
+                        message = "生成音乐结构中...";
+                    } else if (currentProgress < 70) {
+                        message = "创作旋律和和声...";
+                    } else if (currentProgress < 85) {
+                        message = "添加节奏和音色...";
+                    } else {
+                        message = "最终处理和保存中...";
+                    }
+                    
+                    updateProgress(currentProgress, message);
+                }, 500);  // 每0.5秒更新一次，更流畅
+                
+                // 等待实际请求完成
+                const response = await generatePromise;
+                
+                // 清除进度间隔和视觉效果
+                if (progressInterval) {
+                    clearInterval(progressInterval);
                 }
+                if (vizInterval) {
+                    clearInterval(vizInterval);
+                }
+                
+                console.log('收到响应，状态:', response.status);
+                
+                if (!response.ok) {
+                    // 尝试获取错误详情
+                    let errorMessage = `请求失败: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorData.details || errorMessage;
+                        console.error('服务器错误:', errorData);
+                    } catch (e) {
+                        console.error('无法解析错误响应');
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                updateProgress(95, "接收音频数据...");
+                console.log('开始下载音频...');
                 
                 // 获取音频Blob
                 const blob = await response.blob();
+                console.log('音频下载完成，大小:', blob.size, 'bytes');
                 
-                // 处理音频
-                handleAudioResponse(blob, format);
+                updateProgress(100, "处理完成！");
+                
+                // 处理音频，传递响应头
+                handleAudioResponse(blob, format, response.headers);
                 
             } catch (error) {
                 console.error("生成音乐失败:", error);
+                console.error("错误堆栈:", error.stack);
+                
+                // 清除进度间隔
+                if (progressInterval) {
+                    progressInterval.forEach(id => clearInterval(id));
+                }
+                
                 showNotification(`生成失败: ${error.message}`);
                 
                 // 启用按钮
                 generateBtn.disabled = false;
                 generateBtn.innerHTML = '<i class="fas fa-bolt"></i> 生成音乐';
                 
+                // 清除进度间隔
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                
                 // 隐藏进度部分
                 progressSection.style.display = 'none';
             }
-        }
-        
-        // 模拟进度（仅用于演示）
-        function simulateProgress() {
-            let progress = 10;
-            const interval = setInterval(() => {
-                progress += Math.random() * 5;
-                if (progress >= 90) {
-                    clearInterval(interval);
-                    updateProgress(90, "正在完成处理...");
-                } else {
-                    const messages = [
-                        "正在分析描述...",
-                        "生成音乐结构...",
-                        "创作旋律...",
-                        "添加节奏和声...",
-                        "混音处理中...",
-                        "最终优化..."
-                    ];
-                    const messageIndex = Math.floor(progress / 20);
-                    updateProgress(progress, messages[messageIndex] || "正在生成...");
-                }
-            }, 500);
-            
-            // 更新可视化器
-            const vizInterval = setInterval(() => {
-                updateVisualizer(visualizer, progress/100);
-                if (progress >= 90) {
-                    clearInterval(vizInterval);
-                }
-            }, 100);
         }
         
         // 事件监听器

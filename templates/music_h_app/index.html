@@ -414,6 +414,9 @@
             <a class="nav-link" href="#features">核心功能</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="{% url 'generate-video' %}">视频创作</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="#meditation">五音冥想</a>
           </li>
           <li class="nav-item">
@@ -424,10 +427,10 @@
           </li>
           <!-- 导航栏修改 -->
             <li class="nav-item">
-              <a class="nav-link" href="login.html">登录</a>
+              <a class="nav-link" href="{% url 'login' %}">登录</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="register.html">注册</a>
+              <a class="nav-link" href="{% url 'register' %}">注册</a>
             </li>
         </ul>
       </div>
@@ -470,7 +473,7 @@
             <h4 class="text-center mb-3">AI歌词创作</h4>
             <p>基于主题、情感、风格，智能生成高质量歌词。</p>
             <div class="text-center">
-              <a href="lyric_creator.html" class="btn btn-primary btn-cta mt-3">开始创作</a>
+              <a href="{% url 'lyric-api' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
             </div>
           </div>
         </div>
@@ -482,7 +485,7 @@
             <h4 class="text-center mb-3">AI音乐生成</h4>
             <p>根据歌词或情绪，自动谱曲、编曲，生成多种风格音乐。</p>
             <div class="text-center">
-              <a href="music_creation.html" class="btn btn-primary btn-cta mt-3">开始创作</a>
+              <a href="{% url 'generate-music' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
             </div>
           </div>
         </div>
@@ -494,7 +497,7 @@
             <h4 class="text-center mb-3">AI视频合成</h4>
             <p>结合歌词与音乐，智能匹配素材，生成可视化音乐视频。</p>
             <div class="text-center">
-              <a href="video_creation.html" class="btn btn-primary btn-cta mt-3">开始创作</a>
+              <a href="{% url 'generate-video' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
             </div>
           </div>
         </div>
@@ -506,7 +509,7 @@
             <h4 class="text-center mb-3">五音疗法冥想</h4>
             <p>基于中医五音疗法理论，AI生成个性化冥想音乐，平衡身心。</p>
             <div class="text-center">
-              <a href="meditation_music.html" class="btn btn-primary btn-cta mt-3">开始体验</a>
+              <a href="{% url 'meditation-music' %}" class="btn btn-primary btn-cta mt-3">开始体验</a>
             </div>
           </div>
         </div>
@@ -518,7 +521,7 @@
             <h4 class="text-center mb-3">优秀作品展示</h4>
             <p>浏览社区精选音乐与视频作品，获取灵感与创作素材。</p>
             <div class="text-center">
-              <a href="showcase_page.html" class="btn btn-primary btn-cta mt-3">查看作品</a>
+              <a href="{% url 'showcase' %}" class="btn btn-primary btn-cta mt-3">查看作品</a>
             </div>
           </div>
         </div>
@@ -689,7 +692,7 @@
           <div class="feature-card" style="background: linear-gradient(135deg, rgba(60, 60, 80, 0.8), rgba(40, 40, 60, 0.8));">
             <h4 class="mb-4">体验五音冥想</h4>
             <p class="mb-4">选择您的情绪状态与需求，让AI为您创作专属的冥想音乐</p>
-            <a href="meditation_music.html" class="btn btn-primary btn-cta btn-lg">
+            <a href="{% url 'meditation-music' %}" class="btn btn-primary btn-cta btn-lg">
               <i class="fas fa-headphones-alt mr-2"></i>
               开始体验
             </a>
