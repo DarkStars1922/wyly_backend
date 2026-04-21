@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-z0smg-*d**y)ymn+fn)x(0qh72_a0v3x)43cy)8)84ku(4p9^t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['sdustarpulse.com', 'www.sdustarpulse.com', '10.102.102.1', '127.0.0.1']
 
 # Application definition
 
@@ -129,14 +129,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 # 开发环境静态文件目录
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
 # 生产环境静态文件收集目录
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -150,3 +150,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ]
 }
+
+# 允许在 iframe 中显示
+X_FRAME_OPTIONS = 'SAMEORIGIN'

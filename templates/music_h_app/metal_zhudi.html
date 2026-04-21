@@ -1,0 +1,875 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metal & Pipa Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* 视频层 */
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .bg-video.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        /* 粒子画布层 */
+        #ink-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* UI 层 (3D按钮) */
+        #ui-layer {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .glass-btn {
+            pointer-events: auto;
+            padding: 12px 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+            /* 金元素的白色/银色光晕 */
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Iframe 容器 */
+        #viewer-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        #viewer-frame.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 导航按钮样式 */
+        .nav-trigger {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            z-index: 30;
+            text-decoration: none;
+            opacity: 0.6;
+            transition: all 0.4s ease;
+            padding: 20px;
+        }
+
+        .nav-trigger:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        #nav-prev {
+            left: 20px;
+            flex-direction: row;
+        }
+
+        #nav-next {
+            right: 20px;
+            flex-direction: row-reverse;
+        }
+
+        .arrow-group {
+            display: flex;
+            align-items: center;
+            gap: -5px;
+        }
+
+        .arrow-shape {
+            width: 20px;
+            height: 20px;
+            border-top: 3px solid rgba(255, 255, 255, 0.9);
+            border-right: 3px solid rgba(255, 255, 255, 0.9);
+            transform: rotate(45deg) skew(10deg, 10deg);
+            margin: 0 2px;
+        }
+
+        #nav-prev .arrow-shape {
+            transform: rotate(-135deg) skew(10deg, 10deg);
+        }
+
+        #nav-next .arrow-shape:nth-child(1) {
+            opacity: 0.3;
+        }
+
+        #nav-next .arrow-shape:nth-child(2) {
+            opacity: 0.6;
+        }
+
+        #nav-next .arrow-shape:nth-child(3) {
+            opacity: 1.0;
+        }
+
+        #nav-prev .arrow-shape:nth-child(3) {
+            opacity: 0.3;
+        }
+
+        #nav-prev .arrow-shape:nth-child(2) {
+            opacity: 0.6;
+        }
+
+        #nav-prev .arrow-shape:nth-child(1) {
+            opacity: 1.0;
+        }
+
+        .nav-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin: 0 15px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0 8px;
+        }
+
+        #nav-prev .nav-text {
+            border-left: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 黑场过渡遮罩 */
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 9999;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity 1.2s ease-in-out;
+        }
+
+        #transition-overlay.fade-out {
+            opacity: 0;
+        }
+
+        #transition-overlay.fade-in {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* =========================================
+           新增：高级自定义下拉菜单样式 (完全模拟)
+           ========================================= */
+        .music-layer-control {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 50;
+            /* 必须高于其他元素 */
+            font-family: 'Microsoft YaHei', sans-serif;
+            width: 220px;
+            /* 设定宽度 */
+        }
+
+        /* 1. 触发按钮 (收起状态) */
+        .custom-select-trigger {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            user-select: none;
+        }
+
+        .custom-select-trigger:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .custom-select-trigger.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 20px 20px 0 0;
+            /* 展开时下方直角 */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 小箭头动画 */
+        .arrow-icon {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .custom-select-trigger.active .arrow-icon {
+            transform: rotate(180deg);
+        }
+
+        /* 2. 下拉选项容器 (展开状态) */
+        .custom-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.85);
+            /* 深色半透明背景，对比度更高 */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: none;
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 20px 20px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 300px;
+            /* 限制高度 */
+            overflow-y: auto;
+            /* 超出滚动 */
+        }
+
+        .custom-options.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* 3. 单个选项样式 */
+        .custom-option {
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .custom-option:last-child {
+            border-bottom: none;
+        }
+
+        .custom-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding-left: 25px;
+            /* 悬停时轻微右移特效 */
+        }
+
+        .custom-option.selected {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* --- 新增：音量调节区域样式 --- */
+        .volume-box {
+            padding: 15px 20px 10px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .volume-icon {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* 自定义滑块样式 */
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* 4. 自定义滚动条 (Webkit) */
+        .custom-options::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-options::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .custom-options::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .custom-options::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 全屏过渡遮罩层 -->
+    <div id="transition-overlay"></div>
+
+    <!-- 视频容器 -->
+    <div id="video-container">
+        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+    </div>
+
+    <!-- 粒子画布 -->
+    <canvas id="ink-canvas"></canvas>
+
+    <!-- UI 层 -->
+    <div id="ui-layer">
+        <button id="btn-3d" class="glass-btn">进入 3D 沉浸模式</button>
+    </div>
+
+    <!-- 右上角：自定义音乐下拉菜单 -->
+    <div class="music-layer-control">
+        <div class="custom-select-wrapper">
+            <!-- 触发按钮 -->
+            <div class="custom-select-trigger" id="music-trigger">
+                <span id="trigger-text">🎵 添加疗愈白噪音</span>
+                <span class="arrow-icon">▼</span>
+            </div>
+            
+            <div class="volume-box" id="volume-box-container">
+                <span class="volume-icon">🔉</span>
+                <!-- 默认音量 0.6，步进 0.01 -->
+                <input type="range" id="volume-slider" class="volume-slider" min="0" max="10" step="0.1" value="1">
+            </div>
+
+            <!-- 下拉选项列表 -->
+            <div class="custom-options" id="music-options">
+                <div class="custom-option" data-value="stop">⛔ 停止播放</div>
+                <!-- 列表项 -->
+                <div class="custom-option" data-value="钵音">🥣 钵音 (Bowl)</div>
+                <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓 (Bell)</div>
+                <div class="custom-option" data-value="滴水">💧 滴水 (Drop)</div>
+                <div class="custom-option" data-value="短笛">🎋 短笛 (Piccolo)</div>
+                <div class="custom-option" data-value="放松">🍃 放松 (Relax)</div>
+                <div class="custom-option" data-value="风铃">🎐 风铃 (Chime)</div>
+                <div class="custom-option" data-value="疗愈">✨ 疗愈 (Heal)</div>
+                <div class="custom-option" data-value="入眠">🌙 入眠 (Sleep)</div>
+                <div class="custom-option" data-value="唯美">🌸 唯美 (Beauty)</div>
+                <div class="custom-option" data-value="小雨">🌧️ 小雨 (Light Rain)</div>
+                <div class="custom-option" data-value="雨声">⛈️ 雨声 (Heavy Rain)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 独立的音频标签 -->
+    <audio id="ambient-audio" loop style="display:none;"></audio>
+
+    <!-- 导航按钮 -->
+    <a id="nav-prev" class="nav-trigger" href="#">
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+        <div class="nav-text">进入上一个<br>疗愈空间</div>
+    </a>
+
+    <a id="nav-next" class="nav-trigger" href="#">
+        <div class="nav-text">进入下一个<br>疗愈空间</div>
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+    </a>
+
+    <!-- 3D Iframe -->
+    <iframe id="viewer-frame" src=""></iframe>
+    <audio id="bg-music" style="display:none;"></audio>
+
+    <script>
+        // --- 1. 资源与配置 ---
+        const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const musicList = ["琅琊神韵", "平湖秋月", "秋湖月夜", "思泉", "鹧鸪飞"];
+
+        // 路径
+        const videoBasePath = "../../static/image_video/video/金/";
+        const musicBasePath = "../../static/music_segment/竹笛/";
+        const maxPlayCount = 8;
+
+        // --- 2. 状态变量 ---
+        let currentVideoPlayCount = 0;
+        let activeVideoId = 1;
+        let currentVideoName = "";
+
+        // --- 3. 获取 DOM ---
+        const video1 = document.getElementById('video-1');
+        const video2 = document.getElementById('video-2');
+        const audioElement = document.getElementById('bg-music');
+        const btn3d = document.getElementById('btn-3d');
+        const viewerFrame = document.getElementById('viewer-frame');
+
+        // --- 4. 视频逻辑 ---
+        function getActiveVideoElement() { return activeVideoId === 1 ? video1 : video2; }
+        function getNextVideoElement() { return activeVideoId === 1 ? video2 : video1; }
+        function getRandomIndex(len) { return Math.floor(Math.random() * len); }
+
+        function crossFadeToNextVideo() {
+            const nextVideo = getNextVideoElement();
+            const currentVideo = getActiveVideoElement();
+            const randomIndex = getRandomIndex(videoList.length);
+            currentVideoName = videoList[randomIndex];
+            nextVideo.src = `${videoBasePath}${currentVideoName}.mp4`;
+            nextVideo.load();
+
+            nextVideo.play().then(() => {
+                nextVideo.classList.add('active');
+                currentVideo.classList.remove('active');
+                activeVideoId = activeVideoId === 1 ? 2 : 1;
+                currentVideoPlayCount = 0;
+                setTimeout(() => { currentVideo.pause(); currentVideo.currentTime = 0; }, 2000);
+            }).catch(e => console.error("视频切换失败:", e));
+        }
+
+        function handleVideoEnded(videoElement) {
+            if (videoElement !== getActiveVideoElement()) return;
+            currentVideoPlayCount++;
+            if (currentVideoPlayCount < maxPlayCount) {
+                videoElement.play().catch(e => { });
+            } else {
+                crossFadeToNextVideo();
+            }
+        }
+
+        video1.addEventListener('ended', () => handleVideoEnded(video1));
+        video2.addEventListener('ended', () => handleVideoEnded(video2));
+
+        // --- 5. 音乐逻辑 ---
+        function loadRandomMusic() {
+            const randomIndex = getRandomIndex(musicList.length);
+            audioElement.src = `${musicBasePath}${encodeURIComponent(musicList[randomIndex])}.mp3`;
+        }
+        audioElement.addEventListener('ended', () => { loadRandomMusic(); audioElement.play(); });
+
+        // --- 6. 初始化 ---
+        function init() {
+            const randomIndex = getRandomIndex(videoList.length);
+            currentVideoName = videoList[randomIndex];
+            video1.src = `${videoBasePath}${currentVideoName}.mp4`;
+
+            loadRandomMusic();
+            video1.play().catch(e => { });
+            attemptMusicAutoPlay();
+
+            // 启动粒子
+            initInkEffects();
+        }
+
+        function attemptMusicAutoPlay() {
+            const playMusic = () => {
+                audioElement.play().then(() => removeInteractionListeners()).catch(() => { });
+            };
+            playMusic();
+            const interactions = ['click', 'mousemove', 'touchstart', 'scroll', 'keydown'];
+            const listener = () => playMusic();
+            interactions.forEach(e => document.addEventListener(e, listener, { once: false, passive: true }));
+            function removeInteractionListeners() {
+                interactions.forEach(e => document.removeEventListener(e, listener));
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+
+        // ==========================================
+        // === 7. 3D 切换逻辑 ===
+        // ==========================================
+        btn3d.addEventListener('click', () => {
+            const viewerUrl = `{% url 'metal_360' %}?id=${currentVideoName}`;
+            viewerFrame.src = viewerUrl;
+            viewerFrame.classList.add('show');
+            btn3d.style.opacity = '0';
+            btn3d.style.pointerEvents = 'none';
+        });
+
+        window.addEventListener('message', (event) => {
+            if (event.data === 'close360') {
+                viewerFrame.classList.remove('show');
+                setTimeout(() => { viewerFrame.src = ""; }, 1000);
+                btn3d.style.opacity = '1';
+                btn3d.style.pointerEvents = 'auto';
+            }
+        });
+
+        // ==========================================
+        // === 8. 粒子特效 (金元素：银白色) ===
+        // ==========================================
+        async function initInkEffects() {
+            console.log("⚪ 初始化金元素粒子...");
+            const canvas = document.getElementById('ink-canvas');
+            const ctx = canvas.getContext('2d');
+            const particles = [];
+            let handLandmarker = undefined;
+            let lastVideoTime = -1;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            try {
+                const { FilesetResolver, HandLandmarker } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/+esm");
+                const vision = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+                );
+                handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+                        delegate: "GPU"
+                    },
+                    runningMode: "VIDEO",
+                    numHands: 2
+                });
+                startWebcam();
+            } catch (error) {
+                console.error("AI Load Error:", error);
+            }
+
+            async function startWebcam() {
+                const video = document.createElement('video');
+                video.setAttribute('autoplay', '');
+                video.setAttribute('playsinline', '');
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+                    video.play();
+                    video.addEventListener('loadeddata', () => predictWebcam(video));
+                } catch (err) {
+                    console.error("Webcam Error:", err);
+                }
+            }
+
+            async function predictWebcam(video) {
+                if (video.currentTime !== lastVideoTime) {
+                    lastVideoTime = video.currentTime;
+                    const startTimeMs = performance.now();
+                    if (handLandmarker) {
+                        const result = handLandmarker.detectForVideo(video, startTimeMs);
+                        if (result.landmarks) {
+                            for (const landmarks of result.landmarks) {
+                                const tip = landmarks[8];
+                                const x = (1 - tip.x) * canvas.width;
+                                const y = tip.y * canvas.height;
+                                for (let i = 0; i < 3; i++) {
+                                    particles.push({
+                                        x: x + (Math.random() - 0.5) * 15,
+                                        y: y + (Math.random() - 0.5) * 15,
+                                        vx: (Math.random() - 0.5) * 2,
+                                        vy: (Math.random() - 0.5) * 2,
+                                        life: 1.0,
+                                        size: Math.random() * 6 + 3,
+                                        // --- 金元素：纯白/银白 ---
+                                        color: `255, 255, 255`
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                drawParticles();
+                window.requestAnimationFrame(() => predictWebcam(video));
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.02;
+                    if (p.life <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+
+                    ctx.fillStyle = `rgba(${p.color}, ${p.life * 0.8})`;
+
+                    // 发光：白光
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
+
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        // ==========================================
+        // === 9. 导航与黑场过渡逻辑 ===
+        // ==========================================
+        (function setupFixedRandomNavigation() {
+            const randomOrder = [
+                "{% url 'earth_pipa' %}",   // 土
+                "{% url 'water_guqin' %}",  // 水
+                "{% url 'metal_zhudi' %}",   // 金
+                "{% url 'wood_xiao' %}",   // 木
+                "{% url 'fire_erhu' %}"     // 火
+            ];
+
+            const overlay = document.getElementById('transition-overlay');
+            setTimeout(() => {
+                if (overlay) overlay.classList.add('fade-out');
+            }, 100);
+
+            const path = window.location.pathname;
+            let currentPage = path.substring(path.lastIndexOf('/') + 1);
+            if (!currentPage) currentPage = "{% url 'metal_zhudi' %}";
+            currentPage = decodeURIComponent(currentPage);
+
+            let currentIndex = randomOrder.indexOf(currentPage);
+            if (currentIndex === -1) currentIndex = 2; // 默认为金
+
+            const prevIndex = (currentIndex - 1 + randomOrder.length) % randomOrder.length;
+            const nextIndex = (currentIndex + 1) % randomOrder.length;
+
+            const prevLink = document.getElementById('nav-prev');
+            const nextLink = document.getElementById('nav-next');
+
+            function handleTransition(e, targetUrl) {
+                e.preventDefault();
+                if (overlay) {
+                    overlay.classList.remove('fade-out');
+                    overlay.classList.add('fade-in');
+                }
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 1200);
+            }
+
+            if (prevLink) {
+                prevLink.setAttribute('href', randomOrder[prevIndex]);
+                prevLink.onclick = (e) => handleTransition(e, randomOrder[prevIndex]);
+            }
+            if (nextLink) {
+                nextLink.setAttribute('href', randomOrder[nextIndex]);
+                nextLink.onclick = (e) => handleTransition(e, randomOrder[nextIndex]);
+            }
+        })();
+
+        // ==========================================
+        // === 核心：自定义下拉菜单 + Web Audio API 增益 ===
+        // ==========================================
+        (function setupCustomDropdown() {
+            const trigger = document.getElementById('music-trigger');
+            const optionsContainer = document.getElementById('music-options');
+            const options = document.querySelectorAll('.custom-option');
+            const triggerText = document.getElementById('trigger-text');
+            const ambientPlayer = document.getElementById('ambient-audio');
+            const ambientBasePath = "../../static/music_segment/bk_music/";
+            
+            const volumeSlider = document.getElementById('volume-slider');
+            const volumeBox = document.getElementById('volume-box-container');
+            const volumeIcon = volumeBox.querySelector('.volume-icon');
+
+            // --- Web Audio API 变量 ---
+            let audioCtx;
+            let gainNode;
+            let track;
+
+            // 初始化音频上下文 (必须在用户交互后调用)
+            function initAudioContext() {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                    
+                    // 创建源节点
+                    track = audioCtx.createMediaElementSource(ambientPlayer);
+                    // 创建增益节点 (放大器)
+                    gainNode = audioCtx.createGain();
+                    
+                    // 连接: 源 -> 放大器 -> 输出设备
+                    track.connect(gainNode).connect(audioCtx.destination);
+                    
+                    // 初始化增益值为滑块当前值
+                    gainNode.gain.value = volumeSlider.value;
+                } else if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+
+            // 1. 点击触发器
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                trigger.classList.toggle('active');
+                optionsContainer.classList.toggle('open');
+            });
+
+            // 2. 音量滑块逻辑 (控制 GainNode)
+            volumeSlider.addEventListener('input', function(e) {
+                const vol = parseFloat(this.value);
+                
+                // 如果音频上下文已创建，直接调整增益
+                if (gainNode) {
+                    gainNode.gain.value = vol;
+                }
+
+                // UI 图标更新
+                if (vol === 0) volumeIcon.textContent = '🔇';
+                else if (vol <= 1) volumeIcon.textContent = '🔉'; // 正常音量
+                else if (vol <= 5) volumeIcon.textContent = '🔊'; // 很大
+                else volumeIcon.textContent = '📢'; // 极大 (爆音警告)
+            });
+
+            // 防止滑块点击关闭菜单
+            volumeBox.addEventListener('click', (e) => e.stopPropagation());
+
+            // 3. 点击选项播放
+            options.forEach(option => {
+                option.addEventListener('click', function () {
+                    const value = this.getAttribute('data-value');
+                    const text = this.textContent;
+
+                    // UI 更新
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    triggerText.textContent = text;
+                    trigger.classList.remove('active');
+                    optionsContainer.classList.remove('open');
+
+                    // 停止逻辑
+                    if (value === "stop") {
+                        ambientPlayer.pause();
+                        ambientPlayer.currentTime = 0;
+                        triggerText.textContent = "🎵 添加疗愈白噪音";
+                        return;
+                    }
+
+                    // 确保 AudioContext 已初始化
+                    initAudioContext();
+
+                    const musicSrc = `${ambientBasePath}${value}.mp3`;
+                    // 只有当源改变时才重置 src，避免重复加载
+                    if (!ambientPlayer.src.includes(encodeURIComponent(value) + ".mp3")) {
+                         ambientPlayer.src = musicSrc;
+                    }
+                    
+                    // 注意：使用 GainNode 时，原生 volume 必须设为 1，完全由 gainNode 控制音量
+                    ambientPlayer.volume = 1.0; 
+
+                    ambientPlayer.play().then(() => {
+                        console.log(`正在播放: ${value}, 增益倍数: ${gainNode.gain.value}`);
+                    }).catch(e => {
+                        console.error("播放失败:", e);
+                    });
+                });
+            });
+
+            // 4. 点击空白关闭
+            window.addEventListener('click', () => {
+                if (optionsContainer.classList.contains('open')) {
+                    trigger.classList.remove('active');
+                    optionsContainer.classList.remove('open');
+                }
+            });
+        })();
+
+    </script>
+</body>
+
+</html>

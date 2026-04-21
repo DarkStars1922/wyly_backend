@@ -427,7 +427,9 @@
         </div>
         
         <footer>
-            <p>© 2025 五音疗愈音乐生成器 | 使用先进的MusicGen技术</p>
+            <p>五音疗愈音乐生成器 | 使用先进的MusicGen技术</p>
+            <p>© 2025 星璇律动. 保留所有权利。</p>
+            <p>AI驱动的歌词、音乐与视频一体化创作平台</p>
         </footer>
     </div>
     
@@ -597,11 +599,11 @@
             let vizInterval = null;
             
             try {
-                console.log('发送 API 请求到 /api/generate/');
+                console.log('发送 API 请求到 /generate/');
                 updateProgress(2, "发送生成请求...");
                 
                 // 发起生成请求
-                const generatePromise = fetch('/api/generate/', {
+                const generatePromise = fetch('/generate/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

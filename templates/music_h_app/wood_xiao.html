@@ -1,0 +1,1114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wood & Guqin Experience - Interactive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            user-select: none;
+        }
+
+        /* 视频层 */
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .bg-video.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        /* 环境生长层 (光晕) */
+        #growth-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(34, 139, 34, 0.4) 70%, rgba(0, 100, 0, 0.8) 100%);
+            transition: opacity 0.5s ease-out;
+            box-shadow: inset 0 0 100px rgba(50, 205, 50, 0.3);
+        }
+
+        /* =========================================
+           === 四周藤蔓层 ===
+           ========================================= */
+        #vine-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40vh;
+            z-index: 4;
+            pointer-events: none;
+            background-image: var(--vine-bottom), var(--vine-bottom), var(--vine-bottom);
+            background-repeat: repeat-x;
+            background-position: 0% 100%, 33% 100%, 66% 100%;
+            background-size: auto 100%, auto 85%, auto 70%;
+            opacity: 0;
+            transform: scaleY(0);
+            transform-origin: bottom;
+        }
+
+        #vine-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40vh;
+            z-index: 4;
+            pointer-events: none;
+            background-image: var(--vine-top), var(--vine-top), var(--vine-top);
+            background-repeat: repeat-x;
+            background-position: 0% 0%, 33% 0%, 66% 0%;
+            background-size: auto 100%, auto 85%, auto 70%;
+            opacity: 0;
+            transform: scaleY(0);
+            transform-origin: top;
+        }
+
+        #vine-left {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 25vw;
+            height: 100%;
+            z-index: 4;
+            pointer-events: none;
+            background-image: var(--vine-left), var(--vine-left), var(--vine-left);
+            background-repeat: repeat-y;
+            background-position: 0% 0%, 0% 33%, 0% 66%;
+            background-size: 100% auto, 85% auto, 70% auto;
+            opacity: 0;
+            transform: scaleX(0);
+            transform-origin: left;
+        }
+
+        #vine-right {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25vw;
+            height: 100%;
+            z-index: 4;
+            pointer-events: none;
+            background-image: var(--vine-right), var(--vine-right), var(--vine-right);
+            background-repeat: repeat-y;
+            background-position: 100% 0%, 100% 33%, 100% 66%;
+            background-size: 100% auto, 85% auto, 70% auto;
+            opacity: 0;
+            transform: scaleX(0);
+            transform-origin: right;
+        }
+
+        /* 粒子画布层 */
+        #ink-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* 交互区域 */
+        #interaction-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 85%;
+            z-index: 20;
+            display: flex;
+        }
+
+        .zone {
+            flex: 1;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* 精灵容器 */
+        #sprite-container {
+            position: absolute;
+            width: var(--sprite-size);
+            height: var(--sprite-size);
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sprite-visual {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: breathe 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(144, 238, 144, 0.6));
+        }
+
+        .sprite-visual.active {
+            animation: active-breathe 0.8s ease-in-out infinite alternate;
+        }
+
+        /* 
+           修改后的动画：增加了 translateY 来实现上下浮动 
+           calc(var(--float-amp) * -1) 表示向上移动
+        */
+        @keyframes breathe {
+            0% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 5px rgba(144, 238, 144, 0.4)) brightness(1);
+            }
+
+            50% {
+                transform: translateY(calc(var(--float-amp) * -1)) scale(1.05);
+                filter: drop-shadow(0 0 15px rgba(144, 238, 144, 0.7)) brightness(1.1);
+            }
+
+            100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 5px rgba(144, 238, 144, 0.4)) brightness(1);
+            }
+        }
+
+        @keyframes active-breathe {
+            0% {
+                transform: translateY(0) scale(1.1);
+                filter: drop-shadow(0 0 20px rgba(144, 238, 144, 0.8)) brightness(1.2);
+            }
+
+            100% {
+                transform: translateY(calc(var(--float-amp) * -1.2)) scale(1.25);
+                /* 动起来时浮动幅度稍微大一点点 */
+                filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.9)) brightness(1.5);
+            }
+        }
+
+        /* UI & Controls */
+        #ui-layer {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            width: 100%;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .glass-btn {
+            pointer-events: auto;
+            padding: 12px 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(80, 220, 100, 0.6);
+        }
+
+        #viewer-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        #viewer-frame.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .nav-trigger {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            z-index: 35;
+            text-decoration: none;
+            opacity: 0.6;
+            transition: all 0.4s ease;
+            padding: 20px;
+        }
+
+        .nav-trigger:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        #nav-prev {
+            left: 20px;
+            flex-direction: row;
+        }
+
+        #nav-next {
+            right: 20px;
+            flex-direction: row-reverse;
+        }
+
+        .arrow-group {
+            display: flex;
+            align-items: center;
+            gap: -5px;
+        }
+
+        .arrow-shape {
+            width: 20px;
+            height: 20px;
+            border-top: 3px solid rgba(255, 255, 255, 0.9);
+            border-right: 3px solid rgba(255, 255, 255, 0.9);
+            transform: rotate(45deg) skew(10deg, 10deg);
+            margin: 0 2px;
+        }
+
+        #nav-prev .arrow-shape {
+            transform: rotate(-135deg) skew(10deg, 10deg);
+        }
+
+        .nav-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin: 0 15px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0 8px;
+        }
+
+        #nav-prev .nav-text {
+            border-left: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 9999;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity 1.2s ease-in-out;
+        }
+
+        #transition-overlay.fade-out {
+            opacity: 0;
+        }
+
+        #transition-overlay.fade-in {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .music-layer-control {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 50;
+            font-family: 'Microsoft YaHei', sans-serif;
+            width: 220px;
+        }
+
+        .custom-select-trigger {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            user-select: none;
+        }
+
+        .custom-select-trigger:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .custom-select-trigger.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 20px 20px 0 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: none;
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 20px 20px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .custom-options.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .volume-box {
+            padding: 15px 20px 10px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: transparent;
+        }
+
+        .volume-icon {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .custom-option {
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .custom-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding-left: 25px;
+        }
+
+        .custom-option.selected {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="transition-overlay"></div>
+
+    <div id="video-container">
+        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+    </div>
+
+    <!-- 环境生长层 -->
+    <div id="growth-overlay"></div>
+
+    <!-- === 四周藤蔓层 === -->
+    <div id="vine-bottom"></div>
+    <div id="vine-top"></div>
+    <div id="vine-left"></div>
+    <div id="vine-right"></div>
+
+    <canvas id="ink-canvas"></canvas>
+
+    <!-- 操作区域 & 精灵 -->
+    <div id="interaction-zones">
+        <div class="zone" data-index="0"></div>
+        <div class="zone" data-index="1"></div>
+        <div class="zone" data-index="2"></div>
+        <div class="zone" data-index="3"></div>
+    </div>
+
+    <div id="sprite-container">
+        <img src="{% static 'sprite/wood_happy.png' %}" class="sprite-visual" alt="精灵">
+    </div>
+
+    <div id="ui-layer">
+        <button id="btn-3d" class="glass-btn">进入 3D 沉浸模式</button>
+    </div>
+
+    <!-- 音乐控件 -->
+    <div class="music-layer-control">
+        <div class="custom-select-wrapper">
+            <div class="custom-select-trigger" id="music-trigger">
+                <span id="trigger-text">🎵 添加疗愈白噪音</span>
+                <span class="arrow-icon">▼</span>
+            </div>
+            <div class="custom-options" id="music-options">
+                <div class="volume-box" id="volume-box-container">
+                    <span class="volume-icon">🔉</span>
+                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="10" step="0.1" value="1">
+                </div>
+                <div class="custom-option" data-value="stop">⛔ 停止播放</div>
+                <div class="custom-option" data-value="钵音">🥣 钵音 (Bowl)</div>
+                <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓 (Bell)</div>
+                <div class="custom-option" data-value="滴水">💧 滴水 (Drop)</div>
+                <div class="custom-option" data-value="短笛">🎋 短笛 (Piccolo)</div>
+                <div class="custom-option" data-value="放松">🍃 放松 (Relax)</div>
+                <div class="custom-option" data-value="风铃">🎐 风铃 (Chime)</div>
+                <div class="custom-option" data-value="疗愈">✨ 疗愈 (Heal)</div>
+                <div class="custom-option" data-value="入眠">🌙 入眠 (Sleep)</div>
+                <div class="custom-option" data-value="唯美">🌸 唯美 (Beauty)</div>
+                <div class="custom-option" data-value="小雨">🌧️ 小雨 (Light Rain)</div>
+                <div class="custom-option" data-value="雨声">⛈️ 雨声 (Heavy Rain)</div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="ambient-audio" loop style="display:none;"></audio>
+
+    <a id="nav-prev" class="nav-trigger" href="#">
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+        <div class="nav-text">进入上一个<br>疗愈空间</div>
+    </a>
+    <a id="nav-next" class="nav-trigger" href="#">
+        <div class="nav-text">进入下一个<br>疗愈空间</div>
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+    </a>
+
+    <iframe id="viewer-frame" src=""></iframe>
+    <audio id="bg-music" loop style="display:none;"></audio>
+    <audio id="hit-music" style="display:none;"></audio>
+
+    <script>
+        // ==========================================
+        // === 0. 全局配置 (可调节参数) ===
+        // ==========================================
+        const SPRITE_MOVE_DURATION = 15.0; // 移动速度
+        const SPRITE_SIZE = 250; // 精灵大小
+        const SPRITE_FLOAT_AMP = 60;  // 精灵上下浮动幅度 (px)
+
+        // 藤蔓生长
+        const VINE_GROW_SPEED = 0.005; // 生长速度
+        const VINE_DECAY_SPEED = 0.005; // 消退速度
+
+        // 音符与浮动
+        const NOTE_PROBABILITY = 0.6; // 0.0 ~ 1.0 (音符出现频率)
+        const NOTE_MIN_SIZE = 40;     // 音符最小尺寸 (px)
+        const NOTE_MAX_SIZE = 70;     // 音符最大尺寸 (px)
+        
+        // --- 藤蔓图片路径 ---
+        const VINE_BOTTOM = "{% static 'growth/wood/bottom.png' %}";
+        const VINE_TOP = "{% static 'growth/wood/top.png' %}";
+        const VINE_LEFT = "{% static 'growth/wood/left.png' %}";
+        const VINE_RIGHT = "{% static 'growth/wood/right.png' %}";
+
+        // --- 应用配置 ---
+        const rootStyle = document.documentElement.style;
+        rootStyle.setProperty('--move-duration', SPRITE_MOVE_DURATION + 's');
+        rootStyle.setProperty('--sprite-size', SPRITE_SIZE + 'px');
+        rootStyle.setProperty('--float-amp', SPRITE_FLOAT_AMP + 'px'); // 注入浮动幅度
+
+        rootStyle.setProperty('--vine-bottom', `url(${VINE_BOTTOM})`);
+        rootStyle.setProperty('--vine-top', `url(${VINE_TOP})`);
+        rootStyle.setProperty('--vine-left', `url(${VINE_LEFT})`);
+        rootStyle.setProperty('--vine-right', `url(${VINE_RIGHT})`);
+
+        // --- 1. 资源与配置 ---
+        const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const musicList = ["半山听雨", "良宵引", "梅花三弄", "箫关山月", "妆台秋思"];
+        const videoBasePath = "../../static/image_video/video/木/";
+        const musicBasePath = "../../static/music_segment/箫/";
+        const maxPlayCount = 8;
+
+        // --- 2. 状态变量 ---
+        let currentVideoPlayCount = 0;
+        let activeVideoId = 1;
+        let currentVideoName = "";
+        let currentBaseMusicIndex = -1;
+
+        // --- 3. 获取 DOM ---
+        const video1 = document.getElementById('video-1');
+        const video2 = document.getElementById('video-2');
+        const bgMusic = document.getElementById('bg-music');
+        const hitMusic = document.getElementById('hit-music');
+
+        // --- 4. 视频逻辑 ---
+        function getActiveVideoElement() { return activeVideoId === 1 ? video1 : video2; }
+        function getNextVideoElement() { return activeVideoId === 1 ? video2 : video1; }
+        function getRandomIndex(len) { return Math.floor(Math.random() * len); }
+
+        function crossFadeToNextVideo() {
+            const nextVideo = getNextVideoElement();
+            const currentVideo = getActiveVideoElement();
+            const randomIndex = getRandomIndex(videoList.length);
+            currentVideoName = videoList[randomIndex];
+            nextVideo.src = `${videoBasePath}${currentVideoName}.mp4`;
+            nextVideo.load();
+            nextVideo.play().then(() => {
+                nextVideo.classList.add('active');
+                currentVideo.classList.remove('active');
+                activeVideoId = activeVideoId === 1 ? 2 : 1;
+                currentVideoPlayCount = 0;
+                setTimeout(() => { currentVideo.pause(); currentVideo.currentTime = 0; }, 2000);
+            }).catch(e => console.error("视频切换失败:", e));
+        }
+
+        function handleVideoEnded(videoElement) {
+            if (videoElement !== getActiveVideoElement()) return;
+            currentVideoPlayCount++;
+            if (currentVideoPlayCount < maxPlayCount) {
+                videoElement.play().catch(e => { });
+            } else {
+                crossFadeToNextVideo();
+            }
+        }
+        video1.addEventListener('ended', () => handleVideoEnded(video1));
+        video2.addEventListener('ended', () => handleVideoEnded(video2));
+
+        // --- 5. 初始背景音乐逻辑 ---
+        function startBaseMusic() {
+            if (currentBaseMusicIndex === -1) {
+                currentBaseMusicIndex = getRandomIndex(musicList.length);
+                const musicName = musicList[currentBaseMusicIndex];
+                bgMusic.src = `${musicBasePath}${encodeURIComponent(musicName)}.mp3`;
+                bgMusic.volume = 0.4;
+            }
+            var playPromise = bgMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(_ => { console.log("背景音乐开始播放"); })
+                    .catch(error => { console.log("等待用户交互后播放音乐..."); });
+            }
+        }
+        bgMusic.addEventListener('ended', () => { startBaseMusic(); });
+
+        // --- 6. 初始化 ---
+        function init() {
+            const randomIndex = getRandomIndex(videoList.length);
+            currentVideoName = videoList[randomIndex];
+            video1.src = `${videoBasePath}${currentVideoName}.mp4`;
+            video1.play().catch(e => { });
+
+            startBaseMusic();
+            attemptMusicAutoPlay();
+            initInkEffects();
+            initSpriteInteraction();
+        }
+
+        function attemptMusicAutoPlay() {
+            const interactions = ['click', 'mousemove', 'touchstart', 'scroll', 'keydown'];
+            const listener = () => {
+                if (bgMusic.paused) bgMusic.play();
+                interactions.forEach(e => document.removeEventListener(e, listener));
+            };
+            interactions.forEach(e => document.addEventListener(e, listener, { once: false, passive: true }));
+        }
+        window.addEventListener('DOMContentLoaded', init);
+
+        // ==========================================
+        // === 7. 精灵交互 (实时操控 + 四周生长) ===
+        // ==========================================
+        function initSpriteInteraction() {
+            const spriteContainer = document.getElementById('sprite-container');
+            const spriteVisual = document.querySelector('.sprite-visual');
+            const growthOverlay = document.getElementById('growth-overlay');
+
+            // 获取四周藤蔓DOM
+            const vineBottom = document.getElementById('vine-bottom');
+            const vineTop = document.getElementById('vine-top');
+            const vineLeft = document.getElementById('vine-left');
+            const vineRight = document.getElementById('vine-right');
+
+            const zones = document.querySelectorAll('.zone');
+            const positions = [12.5, 37.5, 62.5, 87.5];
+
+            let currentPos = 50;
+            let targetPos = 50;
+            let isMoving = false;
+            let activePointerCount = 0;
+            let fadeInterval = null;
+
+            // 藤蔓状态
+            let vineGrowthLevel = 0.0;
+
+            const vineGrowSpeed = VINE_GROW_SPEED;
+            const vineDecaySpeed = VINE_DECAY_SPEED;
+
+            const speedPerFrame = 100 / (SPRITE_MOVE_DURATION * 60);
+
+            function gameLoop() {
+                if (isMoving) {
+                    const diff = targetPos - currentPos;
+                    const step = speedPerFrame;
+                    if (Math.abs(diff) < step) {
+                        currentPos = targetPos;
+                    } else {
+                        currentPos += Math.sign(diff) * step;
+                    }
+                    spriteContainer.style.left = currentPos + '%';
+
+                    if (!spriteVisual.classList.contains('active')) {
+                        spriteVisual.classList.add('active');
+                    }
+                    growthOverlay.style.opacity = 0.8;
+
+                    if (vineGrowthLevel < 1.0) {
+                        vineGrowthLevel += vineGrowSpeed;
+                        if (vineGrowthLevel > 1.0) vineGrowthLevel = 1.0;
+                    }
+
+                    if (Math.random() < 0.3) {
+                        window.dispatchEvent(new CustomEvent('sprite-action', {
+                            detail: { type: 'continuous' }
+                        }));
+                    }
+                } else {
+                    spriteVisual.classList.remove('active');
+                    growthOverlay.style.opacity = 0;
+
+                    if (vineGrowthLevel > 0.0) {
+                        vineGrowthLevel -= vineDecaySpeed;
+                        if (vineGrowthLevel < 0.0) vineGrowthLevel = 0.0;
+                    }
+                }
+
+                // 应用生长状态到四周藤蔓
+                vineBottom.style.opacity = vineGrowthLevel;
+                vineBottom.style.transform = `scaleY(${vineGrowthLevel})`;
+
+                vineTop.style.opacity = vineGrowthLevel;
+                vineTop.style.transform = `scaleY(${vineGrowthLevel})`;
+
+                vineLeft.style.opacity = vineGrowthLevel;
+                vineLeft.style.transform = `scaleX(${vineGrowthLevel})`;
+
+                vineRight.style.opacity = vineGrowthLevel;
+                vineRight.style.transform = `scaleX(${vineGrowthLevel})`;
+
+                requestAnimationFrame(gameLoop);
+            }
+            gameLoop();
+
+            function startMove(index) {
+                targetPos = positions[index];
+                isMoving = true;
+                activePointerCount++;
+                if (bgMusic.paused) { startBaseMusic(); }
+                playHitSound();
+            }
+
+            function stopMove() {
+                activePointerCount--;
+                if (activePointerCount <= 0) {
+                    activePointerCount = 0;
+                    isMoving = false;
+
+                    if (fadeInterval) clearInterval(fadeInterval);
+                    fadeInterval = setInterval(() => {
+                        if (!hitMusic.paused && hitMusic.volume > 0.05) {
+                            hitMusic.volume -= 0.05;
+                        } else {
+                            clearInterval(fadeInterval);
+                            fadeInterval = null;
+                            hitMusic.pause();
+                            hitMusic.currentTime = 0;
+                            hitMusic.volume = 1.0;
+                        }
+                    }, 50);
+                }
+            }
+
+            function playHitSound() {
+                if (fadeInterval) {
+                    clearInterval(fadeInterval);
+                    fadeInterval = null;
+                }
+                hitMusic.volume = 1.0;
+                let hitIndex = currentBaseMusicIndex;
+                while (hitIndex === currentBaseMusicIndex) {
+                    hitIndex = getRandomIndex(musicList.length);
+                }
+                const musicName = musicList[hitIndex];
+                hitMusic.src = `${musicBasePath}${encodeURIComponent(musicName)}.mp3`;
+                hitMusic.currentTime = 0;
+                hitMusic.play().catch(() => { });
+            }
+
+            zones.forEach((zone, idx) => {
+                zone.addEventListener('mousedown', () => startMove(idx));
+                zone.addEventListener('mouseup', stopMove);
+                zone.addEventListener('mouseleave', stopMove);
+                zone.addEventListener('touchstart', (e) => { e.preventDefault(); startMove(idx); });
+                zone.addEventListener('touchend', (e) => { e.preventDefault(); stopMove(); });
+            });
+
+            const keyMap = { '1': 0, '2': 1, '3': 2, '4': 3 };
+            document.addEventListener('keydown', (e) => {
+                if (keyMap.hasOwnProperty(e.key)) {
+                    if (!e.repeat) startMove(keyMap[e.key]);
+                }
+            });
+            document.addEventListener('keyup', (e) => {
+                if (keyMap.hasOwnProperty(e.key)) stopMove();
+            });
+        }
+
+        // ==========================================
+        // === 8. 粒子特效 (彩色音符版) ===
+        // ==========================================
+        async function initInkEffects() {
+            const canvas = document.getElementById('ink-canvas');
+            const ctx = canvas.getContext('2d');
+            const spriteContainer = document.getElementById('sprite-container');
+            const particles = [];
+            let handLandmarker = undefined;
+            let lastVideoTime = -1;
+
+            function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function getSpriteCenter() {
+                const rect = spriteContainer.getBoundingClientRect();
+                return {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+            }
+
+            window.addEventListener('sprite-action', (e) => {
+                const rect = spriteContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                if (e.detail && e.detail.type === 'continuous') {
+                    // 叶子
+                    for (let i = 0; i < 2; i++) {
+                        const startX = centerX + (Math.random() - 0.5) * rect.width * 0.8;
+                        const startY = centerY + (Math.random() - 0.5) * rect.height * 0.8;
+                        particles.push({
+                            type: 'leaf',
+                            x: startX, y: startY,
+                            vx: (Math.random() - 0.5) * 1.5,
+                            vy: -(Math.random() * 1.0 + 0.5),
+                            life: 1.2,
+                            size: Math.random() * 8 + 6,
+                            color: `144, 238, 144`,
+                            angle: Math.random() * Math.PI,
+                            spin: (Math.random() - 0.5) * 0.1
+                        });
+                    }
+                    // 彩色音符 (应用配置)
+                    if (Math.random() < NOTE_PROBABILITY) {
+                        const noteX = centerX + (Math.random() - 0.5) * 50;
+                        const noteY = rect.top + 20;
+                        // 生成随机颜色 (R, G, B)
+                        const r = Math.floor(Math.random() * 200 + 55);
+                        const g = Math.floor(Math.random() * 200 + 55);
+                        const b = Math.floor(Math.random() * 200 + 55);
+
+                        // 计算随机大小
+                        const randomSize = Math.random() * (NOTE_MAX_SIZE - NOTE_MIN_SIZE) + NOTE_MIN_SIZE;
+
+                        particles.push({
+                            type: 'note',
+                            x: noteX, y: noteY,
+                            vx: (Math.random() - 0.5) * 1,
+                            vy: -1.5,
+                            life: 1.5,
+                            size: randomSize,
+                            color: `${r}, ${g}, ${b}`, // 应用随机颜色
+                            text: '♪'
+                        });
+                    }
+                }
+            });
+
+            try {
+                const { FilesetResolver, HandLandmarker } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/+esm");
+                const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm");
+                handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`, delegate: "GPU" },
+                    runningMode: "VIDEO", numHands: 2
+                });
+                startWebcam();
+            } catch (error) { console.error("AI Load Error:", error); }
+
+            async function startWebcam() {
+                const video = document.createElement('video');
+                video.setAttribute('autoplay', ''); video.setAttribute('playsinline', '');
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream; video.play();
+                    video.addEventListener('loadeddata', () => predictWebcam(video));
+                } catch (err) { console.error("Webcam Error:", err); }
+            }
+
+            async function predictWebcam(video) {
+                if (video.currentTime !== lastVideoTime) {
+                    lastVideoTime = video.currentTime;
+                    const startTimeMs = performance.now();
+                    if (handLandmarker) {
+                        const result = handLandmarker.detectForVideo(video, startTimeMs);
+                        if (result.landmarks) {
+                            for (const landmarks of result.landmarks) {
+                                const tip = landmarks[8];
+                                const x = (1 - tip.x) * canvas.width;
+                                const y = tip.y * canvas.height;
+                                for (let i = 0; i < 2; i++) {
+                                    particles.push({
+                                        type: 'ink',
+                                        x: x + (Math.random() - 0.5) * 15,
+                                        y: y + (Math.random() - 0.5) * 15,
+                                        vx: (Math.random() - 0.5) * 2,
+                                        vy: (Math.random() - 0.5) * 2,
+                                        life: 1.0,
+                                        size: Math.random() * 6 + 3,
+                                        color: `80, 220, 100`
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const spritePos = getSpriteCenter();
+                if (Math.random() < 0.3) {
+                    particles.push({
+                        type: 'aura',
+                        x: spritePos.x, y: spritePos.y,
+                        vx: (Math.random() - 0.5) * 1,
+                        vy: (Math.random() - 0.5) * 1,
+                        life: 0.8,
+                        size: Math.random() * 4 + 2,
+                        color: '200, 255, 200'
+                    });
+                }
+                drawParticles();
+                window.requestAnimationFrame(() => predictWebcam(video));
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    if (p.type === 'aura') {
+                        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+                    } else {
+                        p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+                    }
+                    if (p.life <= 0) {
+                        particles.splice(i, 1); continue;
+                    }
+                    ctx.save();
+                    if (p.type === 'note') {
+                        ctx.font = `${p.size}px Arial`;
+                        ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
+                        ctx.fillText(p.text, p.x, p.y);
+                    }
+                    else if (p.type === 'leaf') {
+                        p.angle += p.spin;
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(p.angle);
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, p.size, p.size / 2, 0, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
+                        ctx.fill();
+                    }
+                    else if (p.type === 'aura') {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${p.color}, ${p.life * 0.5})`;
+                        ctx.fill();
+                    }
+                    else {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${p.color}, ${p.life * 0.8})`;
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = "rgba(80, 220, 100, 0.8)";
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+            }
+        }
+
+        // ==========================================
+        // === 9. 导航与 UI (保持不变) ===
+        // ==========================================
+        const btn3d = document.getElementById('btn-3d');
+        const viewerFrame = document.getElementById('viewer-frame');
+        btn3d.addEventListener('click', () => {
+            const viewerUrl = `{% url 'wood_360' %}?id=${currentVideoName}`;
+            viewerFrame.src = viewerUrl;
+            viewerFrame.classList.add('show');
+            btn3d.style.opacity = '0'; btn3d.style.pointerEvents = 'none';
+        });
+        window.addEventListener('message', (event) => {
+            if (event.data === 'close360') {
+                viewerFrame.classList.remove('show');
+                setTimeout(() => { viewerFrame.src = ""; }, 1000);
+                btn3d.style.opacity = '1'; btn3d.style.pointerEvents = 'auto';
+            }
+        });
+
+        (function setupNavigation() {
+            const randomOrder = ["{% url 'earth_pipa' %}", "{% url 'water_guqin' %}", "{% url 'metal_zhudi' %}", "{% url 'wood_xiao' %}", "{% url 'fire_erhu' %}"];
+            const overlay = document.getElementById('transition-overlay');
+            setTimeout(() => { if (overlay) overlay.classList.add('fade-out'); }, 100);
+
+            let currentIndex = 3;
+            const prevIndex = (currentIndex - 1 + randomOrder.length) % randomOrder.length;
+            const nextIndex = (currentIndex + 1) % randomOrder.length;
+
+            const handleTransition = (e, url) => {
+                e.preventDefault();
+                overlay.classList.remove('fade-out'); overlay.classList.add('fade-in');
+                setTimeout(() => window.location.href = url, 1200);
+            };
+
+            const prevLink = document.getElementById('nav-prev');
+            const nextLink = document.getElementById('nav-next');
+            if (prevLink) { prevLink.setAttribute('href', randomOrder[prevIndex]); prevLink.onclick = (e) => handleTransition(e, randomOrder[prevIndex]); }
+            if (nextLink) { nextLink.setAttribute('href', randomOrder[nextIndex]); nextLink.onclick = (e) => handleTransition(e, randomOrder[nextIndex]); }
+        })();
+
+        (function setupCustomDropdown() {
+            const trigger = document.getElementById('music-trigger');
+            const optionsContainer = document.getElementById('music-options');
+            const options = document.querySelectorAll('.custom-option');
+            const triggerText = document.getElementById('trigger-text');
+            const ambientPlayer = document.getElementById('ambient-audio');
+            const ambientBasePath = "../../static/music_segment/bk_music/";
+            const volumeSlider = document.getElementById('volume-slider');
+            const volumeBox = document.getElementById('volume-box-container');
+            let audioCtx, gainNode, track;
+
+            function initAudioContext() {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                    track = audioCtx.createMediaElementSource(ambientPlayer);
+                    gainNode = audioCtx.createGain();
+                    track.connect(gainNode).connect(audioCtx.destination);
+                    gainNode.gain.value = volumeSlider.value;
+                } else if (audioCtx.state === 'suspended') audioCtx.resume();
+            }
+
+            trigger.addEventListener('click', (e) => { e.stopPropagation(); trigger.classList.toggle('active'); optionsContainer.classList.toggle('open'); });
+
+            volumeBox.addEventListener('click', (e) => e.stopPropagation());
+
+            volumeSlider.addEventListener('input', function () { if (gainNode) gainNode.gain.value = this.value; });
+            options.forEach(opt => {
+                opt.addEventListener('click', function () {
+                    const value = this.getAttribute('data-value');
+                    options.forEach(o => o.classList.remove('selected')); this.classList.add('selected');
+                    triggerText.textContent = this.textContent;
+                    trigger.classList.remove('active'); optionsContainer.classList.remove('open');
+                    if (value === "stop") { ambientPlayer.pause(); return; }
+                    initAudioContext();
+                    if (!ambientPlayer.src.includes(encodeURIComponent(value))) ambientPlayer.src = `${ambientBasePath}${value}.mp3`;
+                    ambientPlayer.volume = 1.0; ambientPlayer.play();
+                });
+            });
+            window.addEventListener('click', () => { if (optionsContainer.classList.contains('open')) { trigger.classList.remove('active'); optionsContainer.classList.remove('open'); } });
+        })();
+    </script>
+</body>
+
+</html>

@@ -894,8 +894,8 @@
   <!-- 导航栏 -->
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container">
-      <a class="navbar-brand" href="index.html">
-        <img src="../images/logo.jpg" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;">
+      <a class="navbar-brand" href="{% url 'home' %}">
+        <img src="../../static/images/logo.jpg" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;">
         星璇律动
       </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -904,7 +904,7 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
-            <a class="nav-link" href="index.html">首页</a>
+            <a class="nav-link" href="{% url 'home' %}">首页</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#about-wu-yin">五音疗法</a>
@@ -945,7 +945,7 @@
           <!-- 左侧图片，设置高度100%确保填充整个卡片高度 -->
           <div class="col-lg-5 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(106, 13, 173, 0.1), rgba(106, 13, 173, 0.05));">
             <div class="position-relative h-100 w-100 d-flex align-items-center justify-content-center p-4">
-              <img src="../images/黄帝内经.jpg" alt="古代医籍" class="img-fluid" style="max-height: 400px; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid rgba(106, 13, 173, 0.3); transition: all 0.3s ease;">
+              <img src="../../static/images/黄帝内经.jpg" alt="古代医籍" class="img-fluid" style="max-height: 400px; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid rgba(106, 13, 173, 0.3); transition: all 0.3s ease;">
             </div>
           </div>
           
@@ -988,7 +988,7 @@
           <!-- 右侧图片，但在移动设备上显示在上方 -->
           <div class="col-lg-5 d-flex align-items-center order-lg-2 order-1" style="background: linear-gradient(135deg, rgba(116, 185, 255, 0.1), rgba(116, 185, 255, 0.05));">
             <div class="position-relative h-100 w-100 d-flex align-items-center justify-content-center p-4">
-              <img src="../images/神经科学.jpg" alt="神经科学" class="img-fluid" style="max-height: 400px; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid rgba(116, 185, 255, 0.3); transition: all 0.3s ease;">
+              <img src="../../static/images/神经科学.jpg" alt="神经科学" class="img-fluid" style="max-height: 400px; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid rgba(116, 185, 255, 0.3); transition: all 0.3s ease;">
             </div>
           </div>
         </div>
@@ -1491,27 +1491,27 @@
     const musicData = {
       gong: {
         title: "宫音 - 大地之息",
-        url: "../click_music/cut_土音.wav",
+        url: "../../static/click_music/cut_土音.wav",
         description: "土音深沉，调和脾胃，促进思考与决策"
       },
       shang: {
         title: "商音 - 金石之韵",
-        url: "../click_music/cut_金音.wav",
+        url: "../../static/click_music/cut_金音.wav",
         description: "金音清越，调和肺气，净化心灵"
       },
       jue: {
         title: "角音 - 春木之舞",
-        url: "../click_music/cut_木音.wav",
+        url: "../../static/click_music/cut_木音.wav",
         description: "木音生机，调和肝气，舒展情志"
       },
       zhi: {
         title: "徵音 - 心火之明",
-        url: "../click_music/cut_火音.wav",
+        url: "../../static/click_music/cut_火音.wav",
         description: "火音温暖，调和心气，安神定志"
       },
       yu: {
         title: "羽音 - 流水之智",
-        url: "../click_music/cut_水音.wav",
+        url: "../../static/click_music/cut_水音.wav",
         description: "水音柔润，调和肾气，增强意志"
       }
     };

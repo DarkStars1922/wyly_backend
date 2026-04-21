@@ -6,9 +6,9 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>星璇律动 - AI音乐与视频创作平台</title>
 <!-- 参考 戏剧(新) 项目引入 Bootstrap -->
-<link href="../戏剧(新)/bs/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../static/opera/bs/css/bootstrap.min.css" rel="stylesheet"/>
 <!-- 引入自定义样式 -->
-<link href="../static/css/xingxuanlvdong.css" rel="stylesheet"/>
+<link href="../../static/css/xingxuanlvdong.css" rel="stylesheet"/>
 <!-- 添加额外的音乐视频创作页面样式 -->
 <style>
     /* 音乐视频创作页面特定样式 */
@@ -181,7 +181,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
 <div class="container">
 <a class="navbar-brand" href="xingxuanlvdong.html">
-<img alt="星璇律动 Logo" src="../images/logo.jpg" style="max-height: 40px; margin-right: 10px;"/>
+<img alt="星璇律动 Logo" src="../../static/images/logo.jpg" style="max-height: 40px; margin-right: 10px;"/>
         星璇律动
       </a>
 <button aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-target="#navbarNav" data-toggle="collapse" type="button">
@@ -190,7 +190,7 @@
 <div class="collapse navbar-collapse" id="navbarNav">
 <ul class="navbar-nav ml-auto">
 <li class="nav-item">
-<a class="nav-link" href="xingxuanlvdong.html">首页</a>
+<a class="nav-link" href="{% url 'home' %}">首页</a>
 </li>
 <li class="nav-item active">
 <a class="nav-link" href="#">音乐创作 <span class="sr-only">(current)</span></a>
@@ -215,7 +215,7 @@
 <div class="row">
 <div class="col-md-4">
 <div class="showcase-item">
-<img alt="作品展示" src="../show_picture/1.jpg"/>
+<img alt="作品展示" src="../../static/show_picture/1.jpg"/>
 <div class="showcase-badge">音乐</div>
 <div class="showcase-overlay">
 <h5>星河幻想曲</h5>
@@ -226,7 +226,7 @@
 </div>
 <div class="col-md-4">
 <div class="showcase-item">
-<img alt="作品展示" src="../show_picture/2.jpg"/>
+<img alt="作品展示" src="../../static/show_picture/2.jpg"/>
 <div class="showcase-badge">视频</div>
 <div class="showcase-overlay">
 <h5>水墨江南</h5>
@@ -237,7 +237,7 @@
 </div>
 <div class="col-md-4">
 <div class="showcase-item">
-<img alt="作品展示" src="../show_picture/3.jpg"/>
+<img alt="作品展示" src="../../static/show_picture/3.jpg"/>
 <div class="showcase-badge">音乐+视频</div>
 <div class="showcase-overlay">
 <h5>霓虹都市</h5>
@@ -250,7 +250,7 @@
 <div class="row mt-4">
 <div class="col-md-4">
 <div class="showcase-item">
-<img alt="作品展示" src="../show_picture/5.jpg"/>
+<img alt="作品展示" src="../../static/show_picture/5.jpg"/>
 <div class="showcase-badge">音乐</div>
 <div class="showcase-overlay">
 <h5>山水之间</h5>
@@ -261,7 +261,7 @@
 </div>
 <div class="col-md-4">
 <div class="showcase-item">
-<img alt="作品展示" src="../show_picture/6.jpg"/>
+<img alt="作品展示" src="../../static/show_picture/6.jpg"/>
 <div class="showcase-badge">视频</div>
 <div class="showcase-overlay">
 <h5>梦境漫游</h5>
@@ -272,7 +272,7 @@
 </div>
 <div class="col-md-4">
 <div class="showcase-item">
-<img alt="作品展示" src="../show_picture/4.jpg"/>
+<img alt="作品展示" src="../../static/show_picture/4.jpg"/>
 <div class="showcase-badge">音乐+视频</div>
 <div class="showcase-overlay">
 <h5>四季变奏</h5>

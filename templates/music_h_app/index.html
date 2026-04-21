@@ -23,7 +23,7 @@
       display: inline-block;
       padding-bottom: 0.5rem;
     }
-    
+
     .section-title:after {
       content: '';
       position: absolute;
@@ -35,14 +35,14 @@
       transform: translateX(-50%);
       border-radius: 3px;
     }
-    
+
     .lead-text {
       font-size: 1.2rem;
       max-width: 800px;
       margin: 0 auto 2.5rem;
       color: #d0d0ff;
     }
-    
+
     /* 按钮设计优化 */
     .btn-cta {
       padding: 12px 28px;
@@ -56,7 +56,7 @@
       overflow: hidden;
       z-index: 1;
     }
-    
+
     .btn-cta:before {
       content: '';
       position: absolute;
@@ -68,33 +68,33 @@
       transition: all 0.3s ease;
       z-index: -1;
     }
-    
+
     .btn-cta:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     }
-    
+
     .btn-cta:hover:before {
       width: 100%;
     }
-    
+
     .btn-primary {
       background: linear-gradient(135deg, #6a0dad, #8a2be2);
       border: none;
     }
-    
+
     /* 特性卡片优化 */
     .feature-card {
       border-radius: 12px;
       transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
       overflow: hidden;
     }
-    
+
     .feature-card:hover {
       transform: translateY(-10px);
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
     }
-    
+
     .icon-circle {
       width: 80px;
       height: 80px;
@@ -106,12 +106,12 @@
       background: rgba(255, 255, 255, 0.1);
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
-    
+
     /* 五音疗法进度条和体验优化 */
     .healing-process {
       margin: 50px 0;
     }
-    
+
     .process-steps {
       display: flex;
       justify-content: space-between;
@@ -119,7 +119,7 @@
       max-width: 800px;
       margin: 0 auto 30px;
     }
-    
+
     .process-steps:before {
       content: '';
       position: absolute;
@@ -131,20 +131,21 @@
       transform: translateY(-50%);
       z-index: 1;
     }
-    
+
     .process-progress {
       position: absolute;
       top: 50%;
       left: 0;
       height: 4px;
-      width: 25%; /* 默认第一步 */
+      width: 25%;
+      /* 默认第一步 */
       background: linear-gradient(to right, #6a0dad, #8a2be2);
       transform: translateY(-50%);
       transition: width 0.5s ease;
       z-index: 2;
       border-radius: 4px;
     }
-    
+
     .step {
       width: 50px;
       height: 50px;
@@ -161,34 +162,105 @@
       transition: all 0.3s ease;
       cursor: pointer;
     }
-    
+
     .step.active {
       background: #6a0dad;
       border-color: #fff;
       box-shadow: 0 0 15px rgba(106, 13, 173, 0.5);
     }
-    
+
     .step-content {
       display: none;
       animation: fadeIn 0.5s ease forwards;
     }
-    
+
     .step-content.active {
       display: block;
     }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    /* 下拉菜单容器 */
+    .dropdown-menu {
+      background: rgba(15, 23, 42, 0.95);
+      /* 使用导航栏相同的深色背景 */
+      border-radius: 8px;
+      /* 匹配导航栏圆角 */
+      padding: 5px 0;
+      /* 调整内边距 */
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      /* 柔和的阴影效果 */
+      border: none !important;
+      /* 去掉边框 */
+      min-width: 150px;
+      /* 适当宽度 */
     }
-    
+
+
+    /* 下拉菜单项 */
+    .dropdown-item {
+      color: #d0d0ff !important;
+      /* 使用导航栏文字颜色 */
+      padding: 10px 20px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      text-align: center;
+      /* 居中文本 */
+    }
+
+    .dropdown-item:hover {
+      background: rgba(106, 13, 173, 0.3) !important;
+      /* 紫色悬停效果 */
+      color: white !important;
+      transform: translateX(5px);
+      /* 悬停微移动画 */
+    }
+
+    /* 用户名显示 */
+    #usernameDisplay {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* 下拉按钮样式 */
+    .btn-outline-primary.dropdown-toggle {
+      color: rgba(255, 255, 255, 0.8) !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
+      transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary.dropdown-toggle:hover {
+      color: #fff !important;
+      border-color: rgba(255, 255, 255, 0.4) !important;
+      background: rgba(106, 13, 173, 0.2);
+    }
+
+    /* 下拉箭头动画 */
+    .dropdown-toggle::after {
+      transition: transform 0.3s ease;
+    }
+
+    .show .dropdown-toggle::after {
+      transform: rotate(180deg);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .tones-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       gap: 15px;
       margin-bottom: 30px;
     }
-    
+
     .tone-card {
       background: linear-gradient(135deg, rgba(50, 50, 70, 0.8), rgba(30, 30, 50, 0.8));
       border-radius: 10px;
@@ -200,7 +272,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     .tone-card:before {
       content: '';
       position: absolute;
@@ -210,52 +282,80 @@
       height: 5px;
       transition: all 0.3s ease;
     }
-    
+
     .tone-card:hover {
       transform: translateY(-5px);
     }
-    
+
     .tone-card.active {
       border-color: rgba(255, 255, 255, 0.3);
       box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     }
-    
-    .tone-gong:before { background: linear-gradient(to right, #f0c080, #e0a050); }
-    .tone-shang:before { background: linear-gradient(to right, #e0e0e0, #c0c0d0); }
-    .tone-jue:before { background: linear-gradient(to right, #80c060, #60a040); }
-    .tone-zhi:before { background: linear-gradient(to right, #e05050, #c03030); }
-    .tone-yu:before { background: linear-gradient(to right, #6090e0, #4070c0); }
-    
+
+    .tone-gong:before {
+      background: linear-gradient(to right, #f0c080, #e0a050);
+    }
+
+    .tone-shang:before {
+      background: linear-gradient(to right, #e0e0e0, #c0c0d0);
+    }
+
+    .tone-jue:before {
+      background: linear-gradient(to right, #80c060, #60a040);
+    }
+
+    .tone-zhi:before {
+      background: linear-gradient(to right, #e05050, #c03030);
+    }
+
+    .tone-yu:before {
+      background: linear-gradient(to right, #6090e0, #4070c0);
+    }
+
     .tone-symbol {
       font-size: 2rem;
       font-weight: bold;
       margin-bottom: 10px;
       color: #fff;
     }
-    
-    .tone-gong .tone-symbol { color: #f0c080; }
-    .tone-shang .tone-symbol { color: #e0e0e0; }
-    .tone-jue .tone-symbol { color: #80c060; }
-    .tone-zhi .tone-symbol { color: #e05050; }
-    .tone-yu .tone-symbol { color: #6090e0; }
-    
+
+    .tone-gong .tone-symbol {
+      color: #f0c080;
+    }
+
+    .tone-shang .tone-symbol {
+      color: #e0e0e0;
+    }
+
+    .tone-jue .tone-symbol {
+      color: #80c060;
+    }
+
+    .tone-zhi .tone-symbol {
+      color: #e05050;
+    }
+
+    .tone-yu .tone-symbol {
+      color: #6090e0;
+    }
+
     .tone-title {
       font-size: 1.1rem;
       margin-bottom: 5px;
       font-weight: 500;
     }
-    
+
     .tone-attributes {
       font-size: 0.9rem;
       opacity: 0.8;
       margin-bottom: 10px;
     }
-    
+
     .detail-row {
       display: flex;
       margin-bottom: 15px;
     }
-    
+
     .detail-icon {
       width: 40px;
       height: 40px;
@@ -267,7 +367,7 @@
       margin-right: 15px;
       flex-shrink: 0;
     }
-    
+
     .hero-cta {
       display: inline-block;
       background: linear-gradient(135deg, #6a0dad, #8a2be2);
@@ -281,14 +381,14 @@
       margin-top: 30px;
       transition: all 0.3s ease;
     }
-    
+
     .hero-cta:hover {
       transform: translateY(-5px);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
       color: white;
       text-decoration: none;
     }
-    
+
     /* 播放按钮样式 */
     .play-button {
       position: absolute;
@@ -307,33 +407,33 @@
       color: white;
       border: none;
     }
-    
+
     .play-button:hover {
       background: rgba(255, 255, 255, 0.3);
       transform: scale(1.1);
     }
-    
+
     .tone-card.playing .play-button {
       background: rgba(106, 13, 173, 0.7);
     }
-    
+
     .tone-card.playing .play-button i {
       color: white;
     }
-    
+
     /* 响应式调整 */
     @media (max-width: 768px) {
       .tones-grid {
         grid-template-columns: repeat(2, 1fr);
       }
-      
+
       .process-steps {
         flex-direction: column;
         align-items: flex-start;
         height: 250px;
         margin-left: 25px;
       }
-      
+
       .process-steps:before {
         left: 25px;
         right: auto;
@@ -342,26 +442,26 @@
         width: 4px;
         height: 100%;
       }
-      
+
       .process-progress {
         left: 25px;
         top: 0;
         width: 4px;
         height: 25%;
       }
-      
+
       .step {
         margin-bottom: 20px;
       }
     }
-    
+
     /* 播放状态样式 */
     .playing {
       position: relative;
       overflow: hidden;
       z-index: 1;
     }
-    
+
     .playing::after {
       content: '';
       position: absolute;
@@ -373,14 +473,16 @@
       z-index: -1;
       animation: pulse 3s infinite;
     }
-    
+
     @keyframes pulse {
       0% {
         opacity: 0.3;
       }
+
       50% {
         opacity: 0.5;
       }
+
       100% {
         opacity: 0.3;
       }
@@ -399,10 +501,12 @@
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container">
       <a class="navbar-brand" href="#">
-        <img src="{% static 'images/logo.jpg' %}" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;"> <!-- 嵌入Logo并调整样式 -->
+        <img src="{% static 'images/logo.jpg' %}" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;">
+        <!-- 嵌入Logo并调整样式 -->
         星璇律动
       </a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
@@ -414,9 +518,6 @@
             <a class="nav-link" href="#features">核心功能</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'generate-video' %}">视频创作</a>
-          </li>
-          <li class="nav-item">
             <a class="nav-link" href="#meditation">五音冥想</a>
           </li>
           <li class="nav-item">
@@ -426,12 +527,21 @@
             <a class="nav-link" href="#contact">联系我们</a>
           </li>
           <!-- 导航栏修改 -->
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'login' %}">登录</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'register' %}">注册</a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login_page' %}" id="loginBtn">登录</a>
+            <div class="dropdown" id="userDropdown" style="display: none;">
+              <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <span id="usernameDisplay">用户名</span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/">个人中心</a></li>
+                <li><a class="dropdown-item" href="#" onclick="logout()">退出登录</a></li>
+              </ul>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'register_page' %}" id="registerBtn">注册</a>
+          </li>
         </ul>
       </div>
     </div>
@@ -440,16 +550,20 @@
   <!-- 头部区域 - 可以放一个大气的背景图或视频 -->
   <header style="position: relative; padding-top: 120px; padding-bottom: 100px; text-align: center; overflow: hidden;">
     <!-- 背景视频 -->
-    <video autoplay loop muted playsinline
-      src="{% static 'images/background.mp4' %}"
+    <video autoplay loop muted playsinline src="{% static 'images/background.mp4' %}"
       style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;">
     </video>
     <!-- 半透明遮罩层 -->
-    <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(rgba(15,23,42,0.7), rgba(26,26,46,0.8)); z-index: 1;"></div>
+    <div
+      style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(rgba(15,23,42,0.7), rgba(26,26,46,0.8)); z-index: 1;">
+    </div>
     <!-- 内容层 -->
     <div class="container" style="position: relative; z-index: 2;">
-      <h1 class="display-4" style="color: #fff; text-shadow: 2px 2px 4px #000; font-weight: 700; margin-bottom: 25px;">星璇律动</h1>
-      <p class="lead" style="color: #eee; text-shadow: 1px 1px 2px #000; font-size: 1.4rem; max-width: 800px; margin: 0 auto 40px;">AI驱动的歌词、音乐与视频一体化创作平台，结合传统智慧与现代科技</p>
+      <h1 class="display-4" style="color: #fff; text-shadow: 2px 2px 4px #000; font-weight: 700; margin-bottom: 25px;">
+        星璇律动</h1>
+      <p class="lead"
+        style="color: #eee; text-shadow: 1px 1px 2px #000; font-size: 1.4rem; max-width: 800px; margin: 0 auto 40px;">
+        AI驱动的歌词、音乐与视频一体化创作平台，结合传统智慧与现代科技</p>
       <a href="#features" class="hero-cta">
         探索功能
         <i class="fas fa-arrow-right ml-2"></i>
@@ -501,7 +615,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-4 offset-md-2 mb-4">
+        <div class="col-md-4 mb-4">
           <div class="feature-card">
             <div class="icon-circle">
               <i class="fas fa-spa fa-2x" style="color: #a29bfe;"></i>
@@ -525,6 +639,45 @@
             </div>
           </div>
         </div>
+        <div class="col-md-4 mb-4">
+          <div class="feature-card">
+            <div class="icon-circle">
+              <i class="fas fa-lightbulb fa-2x" style="color: #f368e0;"></i>
+            </div>
+            <h4 class="text-center mb-3">智慧疗愈</h4>
+            <p>基于五音疗法的音乐疗愈版块。在互动中感受音乐，疗愈身心。</p>
+            <div class="text-center">
+              <a href="{% url 'mindfulness' %}" class="btn btn-primary btn-cta mt-3">开始体验</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4 offset-md-4" id="cyber-avatar-card" style="display: none;">
+          <div class="feature-card">
+            <div class="icon-circle">
+              <i class="fas fa-user-astronaut fa-2x" style="color: #0abde3;"></i>
+            </div>
+            <h4 class="text-center mb-3">赛博形象</h4>
+            <p>定制专属您的AI虚拟数字分身，打破次元壁，开启元宇宙互动新体验。</p>
+            <div class="text-center">
+              <a href="{% url 'saibo' %}" class="btn btn-primary btn-cta mt-3">立即体验</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 登录提示卡片 -->
+        <div class="col-md-4 mb-4 offset-md-4" id="login-prompt-card">
+          <div class="feature-card"
+            style="background: linear-gradient(135deg, rgba(60,60,80,0.6), rgba(40,40,60,0.6));">
+            <div class="icon-circle">
+              <i class="fas fa-lock fa-2x" style="color: #888;"></i>
+            </div>
+            <h4 class="text-center mb-3">专属功能</h4>
+            <p class="text-center">登录后解锁更多高级功能</p>
+            <div class="text-center">
+              <a href="{% url 'login_page' %}" class="btn btn-outline-light btn-cta mt-3">立即登录</a>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -532,11 +685,13 @@
     <section id="meditation" class="content-section">
       <h2 class="text-center section-title mb-3">五音疗法冥想音乐</h2>
       <p class="text-center lead-text">沉浸于传统智慧与前沿AI的融合体验，平衡身心，调和情志</p>
-      
+
       <div class="row mb-5 align-items-center">
         <div class="col-lg-6">
-          <h4 style="color: #a29bfe; border-bottom: 1px solid rgba(162, 155, 254, 0.3); padding-bottom: 10px; margin-bottom: 20px;">古老智慧与现代科技的完美结合</h4>
-          
+          <h4
+            style="color: #a29bfe; border-bottom: 1px solid rgba(162, 155, 254, 0.3); padding-bottom: 10px; margin-bottom: 20px;">
+            古老智慧与现代科技的完美结合</h4>
+
           <div class="detail-row">
             <div class="detail-icon">
               <i class="fas fa-history" style="color: #a29bfe;"></i>
@@ -546,7 +701,7 @@
               <p>源自《黄帝内经》的五音疗法，结合现代神经科学，精准调节身心状态。</p>
             </div>
           </div>
-          
+
           <div class="detail-row">
             <div class="detail-icon">
               <i class="fas fa-brain" style="color: #a29bfe;"></i>
@@ -556,7 +711,7 @@
               <p>音频通过傅里叶分析严格验证，8-12赫兹α波促进深度放松与专注状态。</p>
             </div>
           </div>
-          
+
           <div class="detail-row">
             <div class="detail-icon">
               <i class="fas fa-heart" style="color: #a29bfe;"></i>
@@ -567,11 +722,11 @@
             </div>
           </div>
         </div>
-        
+
         <div class="col-lg-6 mt-4 mt-lg-0">
           <div class="healing-process">
             <h4 class="text-center mb-4">五音疗法的体验流程</h4>
-            
+
             <div class="process-steps">
               <div class="process-progress" id="process-bar"></div>
               <div class="step active" data-step="1">1</div>
@@ -579,22 +734,22 @@
               <div class="step" data-step="3">3</div>
               <div class="step" data-step="4">4</div>
             </div>
-            
+
             <div class="step-content active" data-step="1">
               <h5>选择适合您的五音</h5>
               <p>根据您的情绪状态与身体需求，选择最适合的五音类型</p>
             </div>
-            
+
             <div class="step-content" data-step="2">
               <h5>描述您的冥想偏好</h5>
               <p>输入您期望的冥想场景、情绪和音乐元素</p>
             </div>
-            
+
             <div class="step-content" data-step="3">
               <h5>AI生成个性化音乐</h5>
               <p>算法根据您的选择和描述，创作专属冥想音乐</p>
             </div>
-            
+
             <div class="step-content" data-step="4">
               <h5>沉浸式冥想体验</h5>
               <p>舒适环境中聆听，感受身心状态的和谐转变</p>
@@ -616,7 +771,7 @@
               <div class="tone-attributes">脾 · 土 · 思</div>
               <div style="font-size: 0.9rem; margin-top: 5px;">沉静思考<br>增强决策力</div>
             </div>
-            
+
             <div class="tone-card tone-shang" data-tone="shang">
               <button class="play-button" data-tone="shang">
                 <i class="fas fa-play"></i>
@@ -626,7 +781,7 @@
               <div class="tone-attributes">肺 · 金 · 忧</div>
               <div style="font-size: 0.9rem; margin-top: 5px;">释放悲忧<br>净化心灵</div>
             </div>
-            
+
             <div class="tone-card tone-jue" data-tone="jue">
               <button class="play-button" data-tone="jue">
                 <i class="fas fa-play"></i>
@@ -636,7 +791,7 @@
               <div class="tone-attributes">肝 · 木 · 怒</div>
               <div style="font-size: 0.9rem; margin-top: 5px;">化解愤怒<br>舒展生机</div>
             </div>
-            
+
             <div class="tone-card tone-zhi" data-tone="zhi">
               <button class="play-button" data-tone="zhi">
                 <i class="fas fa-play"></i>
@@ -646,7 +801,7 @@
               <div class="tone-attributes">心 · 火 · 喜</div>
               <div style="font-size: 0.9rem; margin-top: 5px;">安神定志<br>喜悦平和</div>
             </div>
-            
+
             <div class="tone-card tone-yu" data-tone="yu">
               <button class="play-button" data-tone="yu">
                 <i class="fas fa-play"></i>
@@ -689,7 +844,8 @@
 
       <div class="row">
         <div class="col-md-8 offset-md-2 text-center">
-          <div class="feature-card" style="background: linear-gradient(135deg, rgba(60, 60, 80, 0.8), rgba(40, 40, 60, 0.8));">
+          <div class="feature-card"
+            style="background: linear-gradient(135deg, rgba(60, 60, 80, 0.8), rgba(40, 40, 60, 0.8));">
             <h4 class="mb-4">体验五音冥想</h4>
             <p class="mb-4">选择您的情绪状态与需求，让AI为您创作专属的冥想音乐</p>
             <a href="{% url 'meditation-music' %}" class="btn btn-primary btn-cta btn-lg">
@@ -712,7 +868,8 @@
         </div>
         <div class="col-md-6 text-center">
           <!-- 可以放一张平台示意图或概念图 -->
-          <img src="{% static 'images/pingtai.jpg' %}" alt="平台概念图" class="img-fluid rounded" style="max-width: 80%; border: 1px solid #444; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);">
+          <img src="{% static 'images/pingtai.jpg' %}" alt="平台概念图" class="img-fluid rounded"
+            style="max-width: 80%; border: 1px solid #444; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);">
         </div>
       </div>
     </section>
@@ -742,48 +899,48 @@
   <script src="{% static 'opera/bs/js/bootstrap.bundle.min.js' %}"></script>
   <!-- Font Awesome 图标库 (可选, 如果需要图标) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
-  
+
   <!-- 自定义JS -->
   <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
       // 五音疗法进度条和步骤交互
-      $('.step').click(function() {
+      $('.step').click(function () {
         const step = $(this).data('step');
-        
+
         // 更新进度条
         $('#process-bar').css('width', (step * 25) + '%');
-        
+
         // 更新步骤状态
         $('.step').removeClass('active');
-        $('.step').each(function() {
+        $('.step').each(function () {
           if ($(this).data('step') <= step) {
             $(this).addClass('active');
           }
         });
-        
+
         // 显示对应内容
         $('.step-content').removeClass('active');
         $('.step-content[data-step="' + step + '"]').addClass('active');
       });
-      
+
       // 五音卡片交互
-      $('.tone-card').click(function() {
+      $('.tone-card').click(function () {
         $('.tone-card').removeClass('active');
         $(this).addClass('active');
       });
-      
+
       // 平滑滚动
-      $('a[href^="#"]').on('click', function(e) {
+      $('a[href^="#"]').on('click', function (e) {
         e.preventDefault();
-        
+
         const target = this.hash;
         const $target = $(target);
-        
+
         $('html, body').animate({
           'scrollTop': $target.offset().top - 80
         }, 800, 'swing');
       });
-      
+
       // 五音示例音乐数据
       const musicData = {
         gong: {
@@ -812,47 +969,47 @@
           description: "水音柔润，调和肾气，增强意志"
         }
       };
-      
+
       // 创建音频元素
       let audio = new Audio();
       let currentTone = null;
       let isPlaying = false;
-      
+
       // 播放按钮点击事件
-      $('.play-button').click(function(e) {
+      $('.play-button').click(function (e) {
         e.stopPropagation(); // 阻止事件冒泡到卡片
         const tone = $(this).data('tone');
-        
+
         // 如果点击的是当前正在播放的按钮
         if (currentTone === tone && isPlaying) {
           pauseMusic(tone);
           return;
         }
-        
+
         // 停止其他音乐
         pauseAllMusic();
-        
+
         // 播放新音乐
         playMusic(tone);
       });
-      
+
       // 播放音乐
       function playMusic(tone) {
         // 设置音频源
         audio.src = musicData[tone].url;
         audio.load();
-        
+
         // 播放音乐
         audio.play()
           .then(() => {
             isPlaying = true;
             currentTone = tone;
-            
+
             // 更新UI
             $('.tone-card').removeClass('playing');
             $(`.tone-card[data-tone="${tone}"]`).addClass('playing');
             $(`.play-button[data-tone="${tone}"] i`).removeClass('fa-play').addClass('fa-pause');
-            
+
             // 显示播放状态
             showPlayingIndicator(tone);
           })
@@ -861,40 +1018,40 @@
             alert("音乐播放失败，请检查网络连接或稍后再试");
           });
       }
-      
+
       // 暂停音乐
       function pauseMusic(tone) {
         audio.pause();
         isPlaying = false;
-        
+
         // 更新UI
         $(`.tone-card[data-tone="${tone}"]`).removeClass('playing');
         $(`.play-button[data-tone="${tone}"] i`).removeClass('fa-pause').addClass('fa-play');
-        
+
         // 移除播放状态指示器
         hidePlayingIndicator();
       }
-      
+
       // 暂停所有音乐
       function pauseAllMusic() {
         if (isPlaying) {
           audio.pause();
           isPlaying = false;
-          
+
           // 更新所有UI
           $('.tone-card').removeClass('playing');
           $('.play-button i').removeClass('fa-pause').addClass('fa-play');
-          
+
           // 移除播放状态指示器
           hidePlayingIndicator();
         }
       }
-      
+
       // 显示播放状态指示器
       function showPlayingIndicator(tone) {
         // 移除可能存在的旧指示器
         hidePlayingIndicator();
-        
+
         // 创建播放状态指示器
         const indicator = $(`
           <div class="alert alert-primary d-flex align-items-center" role="alert" id="playing-indicator" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000; max-width: 300px;">
@@ -908,27 +1065,180 @@
             </button>
           </div>
         `);
-        
+
         // 添加到页面
         $('body').append(indicator);
-        
+
         // 停止按钮事件
-        $('#stop-playing').click(function() {
+        $('#stop-playing').click(function () {
           pauseAllMusic();
         });
       }
-      
+
       // 隐藏播放状态指示器
       function hidePlayingIndicator() {
         $('#playing-indicator').remove();
       }
-      
+
       // 监听音频结束事件
-      audio.addEventListener('ended', function() {
+      audio.addEventListener('ended', function () {
         pauseAllMusic();
       });
     });
+
+    // 获取 CSRF Token 的函数
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // 更新登录状态显示函数
+    function updateLoginStatus() {
+      const username = localStorage.getItem('username');
+      const loginBtn = document.getElementById('loginBtn');
+      const userDropdown = document.getElementById('userDropdown');
+      const registerBtn = document.getElementById('registerBtn');
+      const cyberAvatarCard = document.getElementById('cyber-avatar-card');
+      const loginPromptCard = document.getElementById('login-prompt-card');
+
+      if (username) {
+        // 用户已登录
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (registerBtn) registerBtn.style.display = 'none';
+        if (userDropdown) {
+          userDropdown.style.display = 'inline-block';
+          document.getElementById('usernameDisplay').innerHTML = `<i class="fas fa-user-circle me-1"></i> ${username}`;
+        }
+        // 显示赛博形象卡片，隐藏登录提示
+        if (cyberAvatarCard) {
+          cyberAvatarCard.style.display = 'block';
+        }
+        if (loginPromptCard) {
+          loginPromptCard.style.display = 'none';
+        }
+      } else {
+        // 用户未登录
+        if (userDropdown) userDropdown.style.display = 'none';
+        if (loginBtn) {
+          loginBtn.style.display = 'inline-block';
+          loginBtn.textContent = '登录';
+          loginBtn.href = '/login/';
+        }
+        if (registerBtn) {
+          registerBtn.style.display = 'inline-block';
+          registerBtn.textContent = '注册';
+          registerBtn.href = '/register/';
+        }
+        // 隐藏赛博形象卡片，显示登录提示
+        if (cyberAvatarCard) {
+          cyberAvatarCard.style.display = 'none';
+        }
+        if (loginPromptCard) {
+          loginPromptCard.style.display = 'block';
+        }
+      }
+    }
+
+
+    // 登录成功显示用户名和赛博形象卡片
+    document.addEventListener('DOMContentLoaded', () => {
+      const username = localStorage.getItem('username');
+      const loginBtn = document.getElementById('loginBtn');
+      const userDropdown = document.getElementById('userDropdown');
+      const registerBtn = document.getElementById('registerBtn');
+      const cyberAvatarCard = document.getElementById('cyber-avatar-card');
+      const loginPromptCard = document.getElementById('login-prompt-card');
+
+      if (username) {
+        if (loginBtn) loginBtn.style.display = 'none';
+        registerBtn.style.display = 'none'; // 隐藏注册按钮
+        if (userDropdown) {
+          userDropdown.style.display = 'inline-block';
+          document.getElementById('usernameDisplay').innerHTML = `<i class="fas fa-user-circle me-1"></i> ${username}`;
+        }
+        // 显示赛博形象卡片
+        if (cyberAvatarCard) {
+          cyberAvatarCard.style.display = 'block';
+        }
+        if (loginPromptCard) loginPromptCard.style.display = 'none';
+      } else {
+        if (userDropdown) userDropdown.style.display = 'none';
+        if (loginBtn) {
+          loginBtn.style.display = 'inline-block';
+          loginBtn.textContent = '登录';
+          loginBtn.href = '/login/';
+          registerBtn.style.display = 'inline-block';
+          registerBtn.textContent = '注册';
+          registerBtn.href = '/register/';
+        }
+        // 隐藏赛博形象卡片
+        if (cyberAvatarCard) {
+          cyberAvatarCard.style.display = 'none';
+        }
+        if (loginPromptCard) loginPromptCard.style.display = 'block';
+      }
+    });
+
+
+    // 退出登录函数
+    function logout() {
+      fetch('/api/logout/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // 清除本地存储
+            localStorage.removeItem('username');
+
+            // 更新界面状态
+            updateLoginStatus();
+
+            // 重新显示"登录"按钮，隐藏用户下拉菜单和赛博形象卡片
+            const loginBtn = document.getElementById('loginBtn');
+            const userDropdown = document.getElementById('userDropdown');
+            const registerBtn = document.getElementById('registerBtn');
+            const cyberAvatarCard = document.getElementById('cyber-avatar-card');
+
+            if (userDropdown) userDropdown.style.display = 'none';
+            if (cyberAvatarCard) cyberAvatarCard.style.display = 'none';
+
+            if (loginBtn) {
+              loginBtn.style.display = 'inline-block';
+              loginBtn.textContent = '登录';
+              loginBtn.href = '/login/';
+              registerBtn.style.display = 'inline-block';
+              registerBtn.textContent = '注册';
+              registerBtn.href = '/register/';
+            }
+
+            // 可选：刷新页面
+            // location.reload();
+          } else {
+            alert('退出失败：' + (data.message || '未知错误'));
+          }
+        })
+        .catch(error => {
+          console.error('退出请求失败', error);
+          alert('网络错误，退出失败');
+        });
+    }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
