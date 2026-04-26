@@ -232,7 +232,7 @@
       '励志': ['巅峰', '征程', '飞翔', '梦想']
     };
 
-    // 禁用的歌名（避免与知名歌曲重名）
+    // 禁用的歌名
     const bannedNames = [
       '七里香', '青花瓷', '双截棍', '稻香', '晴天', '夜曲', '告白气球', // 周杰伦
       '可惜没如果', '那些你很冒险的梦', '修炼爱情', // 林俊杰
@@ -254,7 +254,7 @@
     // 增强型结构识别算法 - 按顺序标记版本
     const structureRegex = /^\s*\[?(verse|chorus|bridge|pre-chorus|outro|intro|主歌|副歌|桥段|前奏|间奏|尾奏)\s*\d*\]?/i;
 
-    // 语义分析判断段落类型 - 统一返回 verse 类型
+    // 语义分析判断段落类型 - 统一返回verse类型
     function detectSectionType(text) {
       text = text.toLowerCase().trim();
       // 无论是否有明确标记，统一按 verse 处理，后续分配顺序编号
@@ -268,16 +268,12 @@
           var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
           var firstSheetName = workbook.SheetNames[0];
           var worksheet = workbook.Sheets[firstSheetName];
-
-          // Convert sheet to JSON to filter blank rows
           var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          // Filter out blank rows (rows where all cells are empty, null, or undefined)
           var filteredData = jsonData.filter(row =>
             row.some(cell => cell !== '' && cell !== null && cell !== undefined)
           );
 
-          // Convert filtered JSON back to CSV
-          var csv = XLSX.utils.aoa_to_sheet(filteredData); // Create a new sheet from filtered array of arrays
+          var csv = XLSX.utils.aoa_to_sheet(filteredData);
           csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
           return csv;
         } catch (e) {
@@ -414,8 +410,7 @@
       );
     };
 
-    // 歌词分析器类 - 基于LyricAnalyzer实现
-
+    // 歌词分析器类-基于LyricAnalyzer实现
     class LyricAnalyzer {
       constructor(language = 'zh') {
         this.language = language;
@@ -492,7 +487,6 @@
 
 
     // 歌词分析组件
-
     const LyricAnalysis = ({ lyrics, isOpen, onClose, appreciation }) => {
       if (!isOpen || !lyrics || typeof lyrics !== 'string') return null;
 
@@ -813,7 +807,7 @@
       const lines = lyrics.split('\n');
       let separatorIndex = -1;
 
-      // 查找 ----- 分隔符
+      // 分隔符
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (line === '---') {
@@ -1167,11 +1161,11 @@
         自由: "不限定严格的押韵模式，根据内容自然押韵"
       };
 
-      // 从歌词中提取歌名（通常是第一行）
+      // 从歌词中提取歌名
       const extractSongNameFromLyrics = (lyrics) => {
         if (!lyrics) return '';
 
-        // 尝试从歌词中提取标题（通常是第一行，且不是结构标记如[Verse]）
+        // 尝试从歌词中提取标题
         const lines = lyrics.split('\n').filter(line => line.trim());
         for (const line of lines) {
           const trimmedLine = line.trim();
@@ -1193,12 +1187,12 @@
           return userProvidedName.trim();
         }
 
-        // 检查歌词第一行是否是歌名（通常以**歌名**或类似格式出现）
+        // 检查歌词第一行是否是歌名
         if (lyrics) {
           const lines = lyrics.split('\n').filter(line => line.trim());
           const firstLine = lines[0]?.trim() || '';
 
-          // 检查是否是标题格式（如 **歌名** 或 # 歌名）
+          // 检查是否是标题格式
           const titleMatch = firstLine.match(/^\s*[\*#]+\s*([^\*#]+?)\s*[\*#]*\s*$/);
           if (titleMatch && titleMatch[1] && !bannedNames.includes(titleMatch[1].trim())) {
             return titleMatch[1].trim();
@@ -1515,7 +1509,7 @@
                     <button
                       className="px-3 py-1 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 rounded text-sm flex items-center btn-glow"
                       onClick={() => {
-                        window.location.href = "{% url 'music_visualizer_enhanced'%}"; // 请替换为你的播放网页链接
+                        window.location.href = "{% url 'music_visualizer_enhanced'%}";
                       }}
                     >
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -12,3 +12,5 @@ __pycache__/
 static/
 staticfiles/
 static_update.txt
+/static.zip
+/code.zip

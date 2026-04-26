@@ -146,7 +146,7 @@ AUTH_USER_MODEL = 'music_h_app.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'rest_framework.authentication.SessionAuthentication',  # 注释此行
+        # 'rest_framework.authentication.SessionAuthentication', 
         'rest_framework.authentication.BasicAuthentication',
     ]
 }

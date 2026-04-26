@@ -19,7 +19,7 @@ from django.urls import path,include
 from django.views.generic import RedirectView
 
 urlpatterns = [
-    path('', include('music_h_app.urls')),  # 添加这一行
+    path('', include('music_h_app.urls')), 
     path('admin/', admin.site.urls),
     path('',include('music_h_app.urls')),
 ]

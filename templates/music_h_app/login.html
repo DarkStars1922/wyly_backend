@@ -420,7 +420,6 @@
             }
         }
     </style>
-    <!-- 保留原head内容 -->
     <meta name="csrf-token" content="{{ csrf_token }}">
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
 </head>
@@ -429,7 +428,7 @@
     <div class="decoration circle"></div>
     <div class="decoration rectangle"></div>
 
-    <!-- 成功跳转屏幕 -->
+    <!-- 成功跳转 -->
     <div class="success-screen" id="successScreen">
         <div class="success-content">
             <i class="fas fa-check-circle fa-5x mb-4" style="color: var(--success); animation: pulse 2s infinite;"></i>
@@ -516,26 +515,26 @@
         document.getElementById('loginForm').addEventListener('submit', function (e) {
             console.log("登录表单被提交");
             e.preventDefault();
-            e.stopPropagation(); // 添加这行阻止事件冒泡
+            e.stopPropagation(); // 阻止事件冒泡
 
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
 
             if (!username) {
                 showError('loginUsername', '请输入用户名');
-                return false; // 添加 return false
+                return false; 
             }
 
             if (!password) {
                 showError('loginPassword', '请输入密码');
-                return false; // 添加 return false
+                return false; 
             }
 
             fetch('/api/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')  // 如果后端未加 @csrf_exempt
+                    'X-CSRFToken': getCookie('csrftoken') 
                 },
                 body: JSON.stringify({
                     username: username,
@@ -547,7 +546,7 @@
                     console.log("后端返回数据：", data);
                     console.log("data.success 的类型是：", typeof data.success);
                     if (data.success == true) {
-                        localStorage.setItem('username', data.username);  // 添加这一行
+                        localStorage.setItem('username', data.username); 
                         showSuccess('登录成功！');
                     } else {
                         showLoginError(data.message || '用户名或密码错误');
@@ -557,10 +556,10 @@
                     alert('网络错误，请稍后再试');
                 });
 
-            return false; // 添加 return false
+            return false; 
         });
 
-        // 获取 CSRF Token 的函数
+        // 获取CSRF Token的函数
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -684,8 +683,6 @@
             window.location.href = '/register/';
         });
     </script>
-    <!-- 添加JS文件 -->
-    <!-- <script src="{% static 'js/auth.js' %}"></script> -->
 </body>
 
 </html>
