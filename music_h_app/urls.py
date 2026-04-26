@@ -60,4 +60,6 @@ urlpatterns = [
     path('wood_360/', views.wood_360_page, name='wood_360'),
     # 赛博形象
     path('saibo/', views.saibo_page, name='saibo'),
+    # 疗愈总结页
+    path('report_page/', views.report_page, name='report_page'),
 ]

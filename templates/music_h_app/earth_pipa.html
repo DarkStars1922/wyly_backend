@@ -5,8 +5,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth & Erhu Experience</title>
+    <title>Earth & Pipa Experience - Interactive</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/healing_tracker.js' %}"></script>
 
     <style>
         body,
@@ -17,6 +18,9 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
 
         /* 视频层 */
@@ -38,6 +42,7 @@
             object-fit: cover;
             opacity: 0;
             transition: opacity 2s ease-in-out;
+            pointer-events: none;
         }
 
         .bg-video.active {
@@ -45,7 +50,71 @@
             z-index: 2;
         }
 
-        /* 粒子画布层 (在视频之上，UI之下) */
+        /* 环境遮罩 */
+        #growth-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(184, 134, 11, 0.3) 70%, rgba(101, 67, 33, 0.7) 100%);
+            transition: opacity 0.5s ease-out;
+        }
+
+        /* 宝石生长层 */
+        .gem-layer {
+            position: absolute;
+            z-index: 4;
+            pointer-events: none;
+            opacity: 0;
+            background-repeat: repeat;
+            transition: opacity 0.3s ease;
+        }
+
+        #gem-bottom {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 22vh;
+            background-repeat: repeat-x;
+            background-size: 15vw 100%;
+            transform: translateY(100%);
+        }
+
+        #gem-top {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 22vh;
+            background-repeat: repeat-x;
+            background-size: 15vw 100%;
+            transform: translateY(-100%);
+        }
+
+        #gem-left {
+            top: 0;
+            left: 0;
+            width: 20vw;
+            height: 100%;
+            background-repeat: repeat-y;
+            background-size: 100% 15vh;
+            transform: translateX(-100%);
+        }
+
+        #gem-right {
+            top: 0;
+            right: 0;
+            width: 20vw;
+            height: 100%;
+            background-repeat: repeat-y;
+            background-size: 100% 15vh;
+            transform: translateX(100%);
+        }
+
+        /* 画布 */
         #ink-canvas {
             position: absolute;
             top: 0;
@@ -53,18 +122,124 @@
             width: 100%;
             height: 100%;
             z-index: 5;
-            /* 高于视频 */
             pointer-events: none;
-            /* 让鼠标穿透 */
         }
 
-        /* UI 层 */
+        /* 交互区域 */
+        #interaction-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80%;
+            z-index: 20;
+            display: flex;
+        }
+
+        .zone {
+            flex: 1;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .zone-highlight {
+            background: linear-gradient(to bottom, transparent, rgba(218, 165, 32, 0.15) 50%, transparent);
+            box-shadow: inset 0 0 40px rgba(218, 165, 32, 0.1);
+        }
+
+        /* 精灵容器 */
+        #sprite-container {
+            position: absolute;
+            width: var(--sprite-size);
+            height: var(--sprite-size);
+            top: 85%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: top 0.05s linear, left 0.05s linear;
+        }
+
+        .sprite-visual {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: breathe 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(218, 165, 32, 0.6));
+        }
+
+        .sprite-visual.active {
+            animation: active-breathe 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(calc(var(--float-amp) * -1)) scale(1.05);
+            }
+        }
+
+        @keyframes active-breathe {
+            0% {
+                transform: translateY(0) scale(1.1);
+                filter: drop-shadow(0 0 20px rgba(218, 165, 32, 0.8));
+            }
+
+            100% {
+                transform: translateY(calc(var(--float-amp) * -1.2)) scale(1.25);
+                filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.9));
+            }
+        }
+
+        /* 目标图标与反馈 */
+        #target-icon-layer {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 25;
+            display: none;
+            pointer-events: none;
+        }
+
+        .target-instrument {
+            width: 70px;
+            height: 70px;
+            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9));
+        }
+
+        .icon-hint {
+            margin-top: 8px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #DAA520, 0 0 10px #DAA520;
+            animation: pulseHint 1s infinite alternate;
+        }
+
+        @keyframes pulseHint {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.1);
+            }
+        }
+
+        /* UI层 */
         #ui-layer {
             position: absolute;
             bottom: 50px;
             left: 0;
             width: 100%;
-            z-index: 10;
+            z-index: 100;
             display: flex;
             justify-content: center;
             pointer-events: none;
@@ -88,20 +263,20 @@
         .glass-btn:hover {
             background: rgba(255, 255, 255, 0.25);
             transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(218, 165, 32, 0.6);
         }
 
-        /* Iframe 容器 */
         #viewer-frame {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             border: none;
-            z-index: 20;
+            z-index: 1000;
             opacity: 0;
             pointer-events: none;
+            background: #000;
             transition: opacity 1s ease;
         }
 
@@ -110,7 +285,7 @@
             pointer-events: auto;
         }
 
-        /* 切换*/
+        /* 导航样式 */
         .nav-trigger {
             position: absolute;
             top: 50%;
@@ -118,8 +293,7 @@
             display: flex;
             align-items: center;
             cursor: pointer;
-            z-index: 30;
-            /* 最高层级 */
+            z-index: 35;
             text-decoration: none;
             opacity: 0.6;
             transition: all 0.4s ease;
@@ -131,7 +305,6 @@
             transform: translateY(-50%) scale(1.05);
         }
 
-        /* 位置定义 */
         #nav-prev {
             left: 20px;
             flex-direction: row;
@@ -142,129 +315,102 @@
             flex-direction: row-reverse;
         }
 
-        /* 箭头容器 */
         .arrow-group {
             display: flex;
             align-items: center;
-            gap: -5px;
-            /* 让箭头紧凑一点 */
         }
 
-        /* 钝角箭头绘制 (使用 border 旋转) */
         .arrow-shape {
             width: 20px;
             height: 20px;
             border-top: 3px solid rgba(255, 255, 255, 0.9);
             border-right: 3px solid rgba(255, 255, 255, 0.9);
             transform: rotate(45deg) skew(10deg, 10deg);
-            /* skew 让直角变成钝角 */
             margin: 0 2px;
         }
 
-        /* 左箭头方向调整 */
         #nav-prev .arrow-shape {
             transform: rotate(-135deg) skew(10deg, 10deg);
         }
 
-        /* 箭头淡化效果 (从外向里淡化) */
-        /* 右侧按钮：最左边的箭头最淡 */
-        #nav-next .arrow-shape:nth-child(1) {
-            opacity: 0.3;
-        }
-
-        #nav-next .arrow-shape:nth-child(2) {
-            opacity: 0.6;
-        }
-
-        #nav-next .arrow-shape:nth-child(3) {
-            opacity: 1.0;
-        }
-
-        /* 左侧按钮：最右边的箭头最淡 */
-        #nav-prev .arrow-shape:nth-child(3) {
-            opacity: 0.3;
-        }
-
-        #nav-prev .arrow-shape:nth-child(2) {
-            opacity: 0.6;
-        }
-
-        #nav-prev .arrow-shape:nth-child(1) {
-            opacity: 1.0;
-        }
-
-        /* 文字标注样式 */
         .nav-text {
             color: rgba(255, 255, 255, 0.9);
             font-family: 'Microsoft YaHei', sans-serif;
             font-size: 14px;
             letter-spacing: 1px;
             margin: 0 15px;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             writing-mode: vertical-rl;
-            /* 竖排文字，更有意境 */
             text-orientation: upright;
             height: 120px;
-            /* 限制高度 */
             display: flex;
             align-items: center;
             justify-content: center;
             border-left: 1px solid rgba(255, 255, 255, 0.2);
-            /* 装饰线 */
             padding: 0 8px;
         }
 
-        /* 左右两侧装饰线位置微调 */
         #nav-prev .nav-text {
             border-left: none;
             border-right: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        #transition-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            /* 纯黑背景 */
-            z-index: 9999;
-            /* 确保覆盖所有内容，包括iframe和按钮 */
-            opacity: 1;
-            /* 初始状态为全黑 (页面还没加载完时) */
+        /* 反馈文字 */
+        .feedback-text {
+            position: absolute;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #FFD700;
+            text-shadow: 0 0 10px #fff, 0 0 20px #DAA520;
+            z-index: 100;
             pointer-events: none;
-            /* 默认不阻挡鼠标，JS控制何时阻挡 */
-            transition: opacity 1.2s ease-in-out;
-            /* 1.2秒慢速过渡，非常柔和 */
+            display: none;
+            transform: translate(-50%, -50%);
         }
 
-        /* 当页面加载完成后，添加这个类让遮罩消失 */
-        #transition-overlay.fade-out {
-            opacity: 0;
+        .feedback-anim {
+            animation: floatUpFade 0.8s ease-out forwards;
         }
 
-        /* 准备离开页面时，添加这个类让遮罩显现 */
-        #transition-overlay.fade-in {
-            opacity: 1;
-            pointer-events: auto;
-            /* 阻挡鼠标防止重复点击 */
+        @keyframes floatUpFade {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+
+            20% {
+                transform: translate(-50%, calc(-50% - 10px)) scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, calc(-50% - 40px)) scale(1);
+                opacity: 0;
+            }
         }
 
-        /* =========================================
-           新增：高级自定义下拉菜单样式 (完全模拟)
-           ========================================= */
+        /* 引导页 */
+        #prompt-page {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9990;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.5s;
+        }
+
+        /* 白噪音 */
         .music-layer-control {
             position: absolute;
             top: 30px;
             right: 30px;
-            z-index: 50;
-            /* 必须高于其他元素 */
-            font-family: 'Microsoft YaHei', sans-serif;
+            z-index: 150;
             width: 220px;
-            /* 设定宽度 */
         }
 
-        /* 1. 触发按钮 (收起状态) */
         .custom-select-trigger {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -272,634 +418,470 @@
             border-radius: 20px;
             padding: 12px 20px;
             color: white;
-            font-size: 0.95rem;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            user-select: none;
         }
 
-        .custom-select-trigger:hover {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-        }
-
-        .custom-select-trigger.active {
-            background: rgba(255, 255, 255, 0.25);
-            border-radius: 20px 20px 0 0;
-            /* 展开时下方直角 */
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* 小箭头动画 */
-        .arrow-icon {
-            transition: transform 0.3s ease;
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-
-        .custom-select-trigger.active .arrow-icon {
-            transform: rotate(180deg);
-        }
-
-        /* 2. 下拉选项容器 (展开状态) */
         .custom-options {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
             background: rgba(20, 20, 20, 0.85);
-            /* 深色半透明背景，对比度更高 */
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-top: none;
             backdrop-filter: blur(15px);
             border-radius: 0 0 20px 20px;
             overflow: hidden;
             opacity: 0;
             visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            max-height: 300px;
-            /* 限制高度 */
+            transition: 0.3s;
+            max-height: 350px;
             overflow-y: auto;
-            /* 超出滚动 */
         }
 
         .custom-options.open {
             opacity: 1;
             visibility: visible;
-            transform: translateY(0);
         }
 
-        /* 3. 单个选项样式 */
         .custom-option {
             padding: 12px 20px;
             color: rgba(255, 255, 255, 0.8);
             cursor: pointer;
-            transition: all 0.2s ease;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .custom-option:last-child {
-            border-bottom: none;
         }
 
         .custom-option:hover {
             background: rgba(255, 255, 255, 0.15);
             color: #fff;
-            padding-left: 25px;
-            /* 悬停时轻微右移特效 */
         }
 
-        .custom-option.selected {
-            background: rgba(255, 255, 255, 0.25);
-            color: #fff;
-            font-weight: bold;
+        #btn-report {
+            padding: 10px 20px;
+            background: rgba(218, 165, 32, 0.1);
+            border: 1px solid rgba(218, 165, 32, 0.3);
         }
 
-        /* --- 新增：音量调节区域样式 --- */
-        .volume-box {
-            padding: 15px 20px 10px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .volume-icon {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        /* 自定义滑块样式 */
-        .volume-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            background: #fff;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.2s;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        .volume-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-
-        /* 4. 自定义滚动条 (Webkit) */
-        .custom-options::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .custom-options::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        .custom-options::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        .custom-options::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
+        #btn-report:hover {
+            background: rgba(218, 165, 32, 0.2);
+            box-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+            border-color: rgba(218, 165, 32, 0.6);
         }
     </style>
 </head>
 
 <body>
+    <!-- 一个精致的报告图标 -->
+    <div id="report-trigger-container" class="absolute top-8 left-8 z-[150] pointer-events-none">
+        <button id="btn-report" class="glass-btn flex items-center gap-2 pointer-events-auto group">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-yellow-500 group-hover:scale-110 transition-transform" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="text-sm font-medium tracking-widest">结束疗愈 · 查看报告</span>
+        </button>
+    </div>
+    <!-- 转场遮罩 -->
+    <div id="transition-overlay"
+        style="position: fixed; inset: 0; background: #000; z-index: 9999; pointer-events: none; transition: 1.2s; opacity: 1;">
+    </div>
 
-    <!-- 全屏过渡遮罩层 -->
-    <div id="transition-overlay"></div>
-
+    <!-- 视频背景 -->
     <div id="video-container">
         <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
         <video id="video-2" class="bg-video" muted playsinline autoplay></video>
     </div>
 
-    <!-- 粒子画布 -->
+    <!-- 宝石与光晕特效 -->
+    <div id="growth-overlay"></div>
+    <div id="gem-bottom" class="gem-layer"></div>
+    <div id="gem-top" class="gem-layer"></div>
+    <div id="gem-left" class="gem-layer"></div>
+    <div id="gem-right" class="gem-layer"></div>
+
     <canvas id="ink-canvas"></canvas>
 
+    <!-- 交互区域 -->
+    <div id="interaction-zones">
+        <div class="zone" data-index="0"></div>
+        <div class="zone" data-index="1"></div>
+        <div class="zone" data-index="2"></div>
+        <div class="zone" data-index="3"></div>
+    </div>
+
+    <!-- 精灵 -->
+    <div id="sprite-container">
+        <img src="{% static 'sprite/earth_happy.png' %}" class="sprite-visual" alt="精灵">
+    </div>
+
+    <!-- 引导页 -->
+    <div id="prompt-page">
+        <div class="flex flex-col items-center">
+            <div class="text-white text-3xl mb-4"><span
+                    style="color:#DAA520; font-size:4rem; font-weight:bold;">土</span>空间</div>
+            <div class="text-gray-200 text-xl mb-8 flex items-center gap-2">当出现 <img
+                    src="{% static 'instrumentsIcon/pipa.png' %}" style="width:45px;"> 时，3s内点击或长按！</div>
+            <button id="start-btn" class="glass-btn" style="pointer-events: auto;">准备好了</button>
+        </div>
+    </div>
+
+    <!-- 目标图标 -->
+    <div id="target-icon-layer">
+        <div id="icon-normal" class="flex flex-col items-center">
+            <img src="{% static 'instrumentsIcon/pipa.png' %}" class="target-instrument">
+            <div id="icon-hint" class="icon-hint">点击!</div>
+        </div>
+        <div id="icon-miss" style="color: #FF6347; font-size: 2.5rem; font-weight: bold; display:none;">MISS!</div>
+    </div>
+
+    <div id="feedback-text" class="feedback-text">Great!</div>
+
+    <!-- UI 层 -->
     <div id="ui-layer">
         <button id="btn-3d" class="glass-btn">进入 3D 沉浸模式</button>
     </div>
 
-    <!-- 右上角：自定义音乐下拉菜单 -->
+    <!-- 音乐控制 -->
     <div class="music-layer-control">
-        <div class="custom-select-wrapper">
-            <!-- 触发按钮 -->
-            <div class="custom-select-trigger" id="music-trigger">
-                <span id="trigger-text">🎵 添加疗愈白噪音</span>
-                <span class="arrow-icon">▼</span>
+        <div class="custom-select-trigger" id="music-trigger">
+            <span id="trigger-text">🎵 添加疗愈白噪音</span><span>▼</span>
+        </div>
+        <div class="custom-options" id="music-options">
+            <div class="p-4 border-b border-white/10">
+                <input type="range" id="volume-slider"
+                    class="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" min="0" max="1" step="0.05"
+                    value="0.5">
             </div>
-
-            <!-- 下拉选项列表 -->
-            <div class="custom-options" id="music-options">
-                <div class="volume-box" id="volume-box-container">
-                    <span class="volume-icon">🔉</span>
-                    <!-- 默认音量 0.6，步进 0.01 -->
-                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="10" step="0.1" value="1">
-                </div>
-                <div class="custom-option" data-value="stop">⛔ 停止播放</div>
-                <!-- 列表项 -->
-                <div class="custom-option" data-value="钵音">🥣 钵音 (Bowl)</div>
-                <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓 (Bell)</div>
-                <div class="custom-option" data-value="滴水">💧 滴水 (Drop)</div>
-                <div class="custom-option" data-value="短笛">🎋 短笛 (Piccolo)</div>
-                <div class="custom-option" data-value="放松">🍃 放松 (Relax)</div>
-                <div class="custom-option" data-value="风铃">🎐 风铃 (Chime)</div>
-                <div class="custom-option" data-value="疗愈">✨ 疗愈 (Heal)</div>
-                <div class="custom-option" data-value="入眠">🌙 入眠 (Sleep)</div>
-                <div class="custom-option" data-value="唯美">🌸 唯美 (Beauty)</div>
-                <div class="custom-option" data-value="小雨">🌧️ 小雨 (Light Rain)</div>
-                <div class="custom-option" data-value="雨声">⛈️ 雨声 (Heavy Rain)</div>
-            </div>
+            <div class="custom-option" data-value="stop">⛔ 停止播放</div>
+            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">💧 滴水</div>
+            <div class="custom-option" data-value="短笛">🎋 短笛</div>
+            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="风铃">🎐 风铃</div>
+            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
+            <div class="custom-option" data-value="入眠">🌙 入眠</div>
+            <div class="custom-option" data-value="唯美">🌸 唯美</div>
+            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
+            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
         </div>
     </div>
 
-    <!-- 独立的音频标签 -->
-    <audio id="ambient-audio" loop style="display:none;"></audio>
-
-    <!-- 左侧导航：上一个空间 -->
+    <!-- 导航栏 -->
     <a id="nav-prev" class="nav-trigger" href="#">
         <div class="arrow-group">
             <div class="arrow-shape"></div>
             <div class="arrow-shape"></div>
-            <div class="arrow-shape"></div>
         </div>
-        <div class="nav-text">进入上一个<br>疗愈空间</div>
+        <div class="nav-text">上一个空间</div>
     </a>
-
-    <!-- 右侧导航：下一个空间 -->
     <a id="nav-next" class="nav-trigger" href="#">
-        <div class="nav-text">进入下一个<br>疗愈空间</div>
+        <div class="nav-text">下一个空间</div>
         <div class="arrow-group">
             <div class="arrow-shape"></div>
             <div class="arrow-shape"></div>
-            <div class="arrow-shape"></div>
         </div>
     </a>
 
+    <audio id="ambient-audio" loop style="display:none;"></audio>
+    <audio id="bg-music" loop style="display:none;"></audio>
+    <audio id="hit-music" style="display:none;"></audio>
     <iframe id="viewer-frame" src=""></iframe>
-    <audio id="bg-music" style="display:none;"></audio>
 
     <script>
-        // --- 原有的视频/音频逻辑 ---
+        //  1. 全局配置
+        const SPRITE_MOVE_SPEED = 0.2; // 精灵移动速度
+        const SPRITE_SIZE = 250; // 精灵大小
+        const SPRITE_FLOAT_AMP = 60; // 精灵浮动幅度
+        const GEM_GROW_SPEED = 0.01; // 宝石增长速度
+
+        const NOTE_SPAWN_PROBABILITY = 0.8; // 音符产生频率
+        const NOTE_FLOAT_SPEED = 2.0; // 音符浮动速度
+        const NOTE_MIN_SIZE = 45; // 音符最小大小
+        const NOTE_MAX_SIZE = 65; // 音符最大大小
+
+        document.documentElement.style.setProperty('--sprite-size', SPRITE_SIZE + 'px');
+        document.documentElement.style.setProperty('--float-amp', SPRITE_FLOAT_AMP + 'px');
+
+        window.onload = () => { // 初始化healingTracker
+            HealingTracker.initSpace("土 (琵琶)");
+        };
+
+        // 生成宝石
+        function generateGemSVG(c1, c2) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="50,5 90,50 50,95 10,50" fill="${c1}" opacity="0.8" /><polygon points="50,5 90,50 50,50" fill="${c2}" opacity="0.6" /></svg>`;
+            return `url("data:image/svg+xml;base64,${btoa(svg)}")`;
+        }
+        const gemPattern = generateGemSVG('#B8860B', '#FFD700');
+        document.querySelectorAll('.gem-layer').forEach(el => el.style.backgroundImage = gemPattern);
+
+        // 2. 音视频逻辑
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8];
         const musicList = ["高山流水", "塞上曲", "十面埋伏", "夕阳箫鼓", "阳春白雪"];
         const videoBasePath = "../../static/image_video/video/土/";
         const musicBasePath = "../../static/music_segment/琵琶/";
-        const maxPlayCount = 8;
 
-        let currentVideoPlayCount = 0;
-        let activeVideoId = 1;
-        let currentVideoName = "";
+        const v1 = document.getElementById('video-1'), v2 = document.getElementById('video-2');
+        const bgAudio = document.getElementById('bg-music'), hitMusic = document.getElementById('hit-music');
+        let activeVid = 1, currentVidName = "1", playCount = 0;
 
-        const video1 = document.getElementById('video-1');
-        const video2 = document.getElementById('video-2');
-        const audioElement = document.getElementById('bg-music');
-        const btn3d = document.getElementById('btn-3d');
-        const viewerFrame = document.getElementById('viewer-frame');
-
-        function getActiveVideoElement() { return activeVideoId === 1 ? video1 : video2; }
-        function getNextVideoElement() { return activeVideoId === 1 ? video2 : video1; }
-        function getRandomIndex(len) { return Math.floor(Math.random() * len); }
-
-        function crossFadeToNextVideo() {
-            const nextVideo = getNextVideoElement();
-            const currentVideo = getActiveVideoElement();
-            const randomIndex = getRandomIndex(videoList.length);
-            currentVideoName = videoList[randomIndex];
-            nextVideo.src = `${videoBasePath}${currentVideoName}.mp4`;
-            nextVideo.load();
-            nextVideo.play().then(() => {
-                nextVideo.classList.add('active');
-                currentVideo.classList.remove('active');
-                activeVideoId = activeVideoId === 1 ? 2 : 1;
-                currentVideoPlayCount = 0;
-                setTimeout(() => { currentVideo.pause(); currentVideo.currentTime = 0; }, 2000);
-            }).catch(e => console.error("Video switch error:", e));
+        function initBackground() {
+            currentVidName = videoList[Math.floor(Math.random() * videoList.length)];
+            v1.src = `${videoBasePath}${currentVidName}.mp4`;
+            v1.play().catch(() => { });
+            playRandomBGM();
         }
 
-        function handleVideoEnded(videoElement) {
-            if (videoElement !== getActiveVideoElement()) return;
-            currentVideoPlayCount++;
-            if (currentVideoPlayCount < maxPlayCount) {
-                videoElement.play().catch(e => { });
+        function crossFade() {
+            const next = activeVid === 1 ? v2 : v1;
+            const curr = activeVid === 1 ? v1 : v2;
+            currentVidName = videoList[Math.floor(Math.random() * videoList.length)];
+            next.src = `${videoBasePath}${currentVidName}.mp4`;
+            next.play().then(() => {
+                next.classList.add('active'); curr.classList.remove('active');
+                activeVid = activeVid === 1 ? 2 : 1; playCount = 0;
+                setTimeout(() => { curr.pause(); }, 2000);
+            });
+        }
+
+        [v1, v2].forEach(v => v.onended = () => {
+            playCount++;
+            if (playCount < 8) v.play(); else crossFade();
+        });
+
+        function playRandomBGM() {
+            bgAudio.src = `${musicBasePath}${encodeURIComponent(musicList[Math.floor(Math.random() * musicList.length)])}.mp3`;
+            bgAudio.volume = 0.4; bgAudio.play().catch(() => { });
+        }
+        bgAudio.onended = playRandomBGM;
+
+        // 3. 核心交互
+        let targetData = { show: false, x: 50, y: 50, zoneIndex: 0, status: 'normal', type: 'click' };
+        let currentPos = { x: 50, y: 85 }, targetPos = { x: 50, y: 85 };
+        let isMoving = false, gemLvl = 0, interruptCnt = 0;
+        let iconTimer, fadeInterval, particles = [];
+
+        const zones = document.querySelectorAll('.zone');
+        const iconLayer = document.getElementById('target-icon-layer');
+        const iconHint = document.getElementById('icon-hint');
+
+        document.getElementById('start-btn').onclick = () => {
+            document.getElementById('prompt-page').style.opacity = '0';
+            setTimeout(() => { document.getElementById('prompt-page').style.display = 'none'; initBackground(); generateNext(); }, 500);
+        };
+
+        function generateNext() {
+            const zi = Math.floor(Math.random() * 4);
+            const x = [18, 38, 62, 82][zi] + (Math.random() * 6 - 3);
+            const y = 25 + Math.random() * 40;
+            const type = Math.random() > 0.5 ? 'click' : 'longpress';
+
+            interruptCnt = 0;
+            targetData = { show: true, x, y, zoneIndex: zi, status: 'normal', type };
+
+            iconLayer.style.display = 'block'; iconLayer.style.left = `${x}%`; iconLayer.style.top = `${y}%`;
+            document.getElementById('icon-normal').style.display = 'flex';
+            document.getElementById('icon-miss').style.display = 'none';
+            iconHint.innerText = type === 'click' ? '点击!' : '长按!';
+
+            zones.forEach((z, i) => z.classList.toggle('zone-highlight', i === zi));
+            iconTimer = setTimeout(doMiss, 3000);
+        }
+
+        function doMiss() {
+            targetData.status = 'miss';
+            if (window.HealingTracker) HealingTracker.logMiss(); 
+            document.getElementById('icon-normal').style.display = 'none';
+            document.getElementById('icon-miss').style.display = 'block';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            setTimeout(() => { iconLayer.style.display = 'none'; generateNext(); }, 1000);
+        }
+
+        function onDown(idx) {
+            if (!targetData.show || targetData.status !== 'normal' || targetData.zoneIndex !== idx) return;
+            clearTimeout(iconTimer);
+            if (targetData.type === 'click') {
+                currentPos = { x: targetData.x, y: targetData.y };
+                spawnParticles('burst');
+                finish('Great!');
             } else {
-                crossFadeToNextVideo();
+                targetPos = { x: targetData.x, y: targetData.y };
+                isMoving = true; iconHint.innerText = '保持!';
+                playHitSound();
             }
         }
 
-        video1.addEventListener('ended', () => handleVideoEnded(video1));
-        video2.addEventListener('ended', () => handleVideoEnded(video2));
-
-        function loadRandomMusic() {
-            const randomIndex = getRandomIndex(musicList.length);
-            audioElement.src = `${musicBasePath}${encodeURIComponent(musicList[randomIndex])}.mp3`;
-        }
-        audioElement.addEventListener('ended', () => { loadRandomMusic(); audioElement.play(); });
-
-        function init() {
-            const randomIndex = getRandomIndex(videoList.length);
-            currentVideoName = videoList[randomIndex];
-            video1.src = `${videoBasePath}${currentVideoName}.mp4`;
-            loadRandomMusic();
-            video1.play().catch(e => { });
-            attemptMusicAutoPlay();
-
-            initInkEffects();
+        function onUp() {
+            if (targetData.type === 'click' || !isMoving) return;
+            isMoving = false; interruptCnt++; iconHint.innerText = '长按!';
+            fadeOutHit();
+            iconTimer = setTimeout(doMiss, 3000);
         }
 
-        function attemptMusicAutoPlay() {
-            const playMusic = () => { audioElement.play().then(() => removeInteractionListeners()).catch(() => { }); };
-            playMusic();
-            const interactions = ['click', 'mousemove', 'touchstart', 'keydown'];
-            const listener = () => playMusic();
-            interactions.forEach(e => document.addEventListener(e, listener, { once: false, passive: true }));
-            function removeInteractionListeners() { interactions.forEach(e => document.removeEventListener(e, listener)); }
+        zones.forEach((z, i) => {
+            z.onmousedown = () => onDown(i);
+            z.ontouchstart = (e) => { e.preventDefault(); onDown(i); };
+        });
+        window.onmouseup = onUp; window.ontouchend = onUp;
+
+        function finish(txt) {
+            if (txt === 'Great!' || txt === 'Good!' || txt === 'Perfect!') {
+                HealingTracker.logHit(); // 在healingTracker中记录
+            }
+            isMoving = false; targetData.show = false;
+            iconLayer.style.display = 'none';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            fadeOutHit();
+            const fb = document.getElementById('feedback-text');
+            fb.innerText = txt || (interruptCnt === 0 ? 'Great!' : 'Good!');
+            fb.style.left = `${currentPos.x}%`; fb.style.top = `${currentPos.y}%`;
+            fb.style.display = 'block'; fb.classList.add('feedback-anim');
+            setTimeout(() => { fb.style.display = 'none'; fb.classList.remove('feedback-anim'); generateNext(); }, 800);
         }
 
-        window.addEventListener('DOMContentLoaded', init);
+        function playHitSound() {
+            hitMusic.src = `${musicBasePath}${encodeURIComponent(musicList[Math.floor(Math.random() * musicList.length)])}.mp3`;
+            hitMusic.volume = 1; hitMusic.play();
+        }
+        function fadeOutHit() {
+            clearInterval(fadeInterval);
+            fadeInterval = setInterval(() => {
+                if (hitMusic.volume > 0.1) hitMusic.volume -= 0.1;
+                else { clearInterval(fadeInterval); hitMusic.pause(); }
+            }, 50);
+        }
 
-        // --- 3D Iframe 逻辑 ---
-        btn3d.addEventListener('click', () => {
-            const viewerUrl = `{% url 'earth_360' %}?id=${currentVideoName}`;
-            viewerFrame.src = viewerUrl;
-            viewerFrame.classList.add('show');
+        // 4. 动画循环与粒子
+        const canvas = document.getElementById('ink-canvas'), ctx = canvas.getContext('2d');
+        window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+        window.onresize();
+
+        function spawnParticles(type) {
+            const cx = canvas.width * (currentPos.x / 100), cy = canvas.height * (currentPos.y / 100);
+            let amt = type === 'burst' ? 15 : 1;
+            for (let i = 0; i < amt; i++) {
+                particles.push({
+                    x: cx, y: cy, vx: (Math.random() - 0.5) * 3, vy: -Math.random() * NOTE_FLOAT_SPEED - 1,
+                    life: 1, size: Math.random() * 20 + 20,
+                    color: `rgb(${Math.random() * 155 + 100},${Math.random() * 155 + 100},50)`,
+                    text: ['♪', '♫', '♬'][Math.floor(Math.random() * 3)]
+                });
+            }
+        }
+
+        function gameLoop() {
+            if (isMoving) {
+                const dx = targetPos.x - currentPos.x, dy = targetPos.y - currentPos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < SPRITE_MOVE_SPEED) finish();
+                else { currentPos.x += (dx / dist) * SPRITE_MOVE_SPEED; currentPos.y += (dy / dist) * SPRITE_MOVE_SPEED; }
+                gemLvl = Math.min(1, gemLvl + GEM_GROW_SPEED);
+                if (Math.random() < 0.4) spawnParticles('cont');
+            } else {
+                gemLvl = Math.max(0, gemLvl - 0.02);
+            }
+
+            const s = document.getElementById('sprite-container');
+            s.style.left = `${currentPos.x}%`; s.style.top = `${currentPos.y}%`;
+            document.querySelector('.sprite-visual').classList.toggle('active', isMoving);
+            document.getElementById('growth-overlay').style.opacity = gemLvl * 0.7;
+
+            // 宝石平移逻辑
+            const offset = (1 - gemLvl) * 100;
+            document.querySelectorAll('.gem-layer').forEach(g => {
+                g.style.opacity = gemLvl;
+                if (g.id === 'gem-bottom') g.style.transform = `translateY(${offset}%)`;
+                else if (g.id === 'gem-top') g.style.transform = `translateY(-${offset}%)`;
+                else if (g.id === 'gem-left') g.style.transform = `translateX(-${offset}%)`;
+                else if (g.id === 'gem-right') g.style.transform = `translateX(${offset}%)`;
+            });
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+                if (p.life <= 0) return particles.splice(i, 1);
+                ctx.globalAlpha = p.life; ctx.font = `${p.size}px Arial`; ctx.fillStyle = p.color;
+                ctx.fillText(p.text, p.x, p.y);
+            });
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+
+        // 5. UI交互
+        const btn3d = document.getElementById('btn-3d'), vf = document.getElementById('viewer-frame');
+        btn3d.onclick = () => {
+            const vid = currentVidName || '1';
+            vf.src = `{% url 'earth_360' %}?id=${vid}`;
+            vf.classList.add('show');
             btn3d.style.opacity = '0';
             btn3d.style.pointerEvents = 'none';
-        });
+        };
 
-        window.addEventListener('message', (event) => {
-            if (event.data === 'close360') {
-                viewerFrame.classList.remove('show');
-                setTimeout(() => { viewerFrame.src = ""; }, 1000);
+        window.onmessage = (e) => {
+            if (e.data === 'close360') {
+                vf.classList.remove('show');
+                setTimeout(() => { vf.src = ""; }, 1000);
                 btn3d.style.opacity = '1';
                 btn3d.style.pointerEvents = 'auto';
             }
-        });
+        };
 
-        // ==========================================
-        // === 3. 水墨粒子特效逻辑 (颜色修改版) ===
-        // ==========================================
-        async function initInkEffects() {
-            console.log("🎨 初始化粒子效果...");
-            const canvas = document.getElementById('ink-canvas');
-            const ctx = canvas.getContext('2d');
-            const particles = [];
-            let handLandmarker = undefined;
-            let lastVideoTime = -1;
-
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', resize);
-            resize();
-
-            try {
-                const { FilesetResolver, HandLandmarker } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/+esm");
-                const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
-                );
-
-                handLandmarker = await HandLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
-                        delegate: "GPU"
-                    },
-                    runningMode: "VIDEO",
-                    numHands: 2
-                });
-                console.log("✅ AI 模型加载完成");
-                startWebcam();
-            } catch (error) {
-                console.error("❌ MediaPipe 加载失败:", error);
-            }
-
-            async function startWebcam() {
-                const video = document.createElement('video');
-                video.setAttribute('autoplay', '');
-                video.setAttribute('playsinline', '');
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    video.srcObject = stream;
-                    video.play();
-                    video.addEventListener('loadeddata', () => {
-                        predictWebcam(video);
-                    });
-                } catch (err) {
-                    console.error("❌ 摄像头错误:", err);
-                }
-            }
-
-            async function predictWebcam(video) {
-                if (video.currentTime !== lastVideoTime) {
-                    lastVideoTime = video.currentTime;
-                    const startTimeMs = performance.now();
-                    if (handLandmarker) {
-                        const result = handLandmarker.detectForVideo(video, startTimeMs);
-
-                        if (result.landmarks) {
-                            for (const landmarks of result.landmarks) {
-                                const tip = landmarks[8];
-                                const x = (1 - tip.x) * canvas.width;
-                                const y = tip.y * canvas.height;
-
-                                for (let i = 0; i < 3; i++) {
-                                    particles.push({
-                                        x: x + (Math.random() - 0.5) * 15,
-                                        y: y + (Math.random() - 0.5) * 15,
-                                        vx: (Math.random() - 0.5) * 2,
-                                        vy: (Math.random() - 0.5) * 2,
-                                        life: 1.0,
-                                        size: Math.random() * 6 + 3,
-                                        // --- 修改颜色 1: 粒子本体 ---
-                                        // 234, 186, 60 是暖金黄色
-                                        color: `234, 186, 60`
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-                drawParticles();
-                window.requestAnimationFrame(() => predictWebcam(video));
-            }
-
-            function drawParticles() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    const p = particles[i];
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.life -= 0.02;
-
-                    if (p.life <= 0) {
-                        particles.splice(i, 1);
-                        continue;
-                    }
-
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-
-                    // 粒子本体颜色
-                    ctx.fillStyle = `rgba(${p.color}, ${p.life * 0.8})`;
-
-                    // --- 修改颜色 2: 发光颜色 ---
-                    ctx.shadowBlur = 20;
-                    // 这里也改成同样的金黄色
-                    ctx.shadowColor = "rgba(234, 186, 60, 0.9)";
-
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
-            }
-        }
-
-        // ==========================================
-        // === 核心：既定随机顺序 + 黑场过渡逻辑 ===
-        // ==========================================
-        (function setupFixedRandomNavigation() {
-            // --- 1. 定义顺序 ---
-            const randomOrder = [
-                "{% url 'earth_pipa' %}",   // 土
-                "{% url 'water_guqin' %}",  // 水
-                "{% url 'metal_zhudi' %}",   // 金
-                "{% url 'wood_xiao' %}",   // 木
-                "{% url 'fire_erhu' %}"     // 火
-            ];
-
-            // --- 2. 页面加载淡入效果 ---
-            const overlay = document.getElementById('transition-overlay');
-            // 稍微延迟一点点执行，确保浏览器渲染了黑色背景，防止闪烁
+        const spaces = ["{% url 'earth_pipa' %}",
+            "{% url 'water_guqin' %}",
+            "{% url 'metal_zhudi' %}",
+            "{% url 'wood_xiao' %}",
+            "{% url 'fire_erhu' %}"];
+        function nav(idx) {
+            document.getElementById('transition-overlay').style.opacity = '1';
             setTimeout(() => {
-                if (overlay) overlay.classList.add('fade-out');
-            }, 100);
+                HealingTracker.captureAndGo(spaces[idx]);
+            }, 1000);
+        }
+        document.getElementById('nav-prev').onclick = (e) => { e.preventDefault(); nav(2); };
+        document.getElementById('nav-next').onclick = (e) => { e.preventDefault(); nav(1); };
+        setTimeout(() => document.getElementById('transition-overlay').style.opacity = '0', 100);
 
-            // --- 3. 计算跳转链接 ---
-            const path = window.location.pathname;
-            let currentPage = path.substring(path.lastIndexOf('/') + 1);
-            if (!currentPage) currentPage = "{% url 'earth_pipa' %}";
-            currentPage = decodeURIComponent(currentPage);
+        // 白噪音菜单
+        const mt = document.getElementById('music-trigger'), mo = document.getElementById('music-options');
+        mt.onclick = (e) => { e.stopPropagation(); mo.classList.toggle('open'); mt.classList.toggle('active'); };
+        document.querySelectorAll('.custom-option').forEach(opt => {
+            opt.onclick = function () {
+                const val = this.dataset.value;
+                document.getElementById('trigger-text').innerText = this.innerText;
+                mo.classList.remove('open');
+                if (val === 'stop') return document.getElementById('ambient-audio').pause();
+                const aa = document.getElementById('ambient-audio');
+                aa.src = `../../static/music_segment/bk_music/${val}.mp3`;
+                aa.volume = document.getElementById('volume-slider').value;
+                aa.play();
+            };
+        });
+        window.onclick = () => mo.classList.remove('open');
 
-            let currentIndex = randomOrder.indexOf(currentPage);
-            if (currentIndex === -1) currentIndex = 0;
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportBtn = document.getElementById('btn-report');
+            if (reportBtn) {
+                reportBtn.onclick = (e) => {
+                    e.preventDefault();
 
-            const prevIndex = (currentIndex - 1 + randomOrder.length) % randomOrder.length;
-            const nextIndex = (currentIndex + 1) % randomOrder.length;
+                    // 播放转场动画
+                    const overlay = document.getElementById('transition-overlay');
+                    if (overlay) overlay.style.opacity = '1';
 
-            const prevLink = document.getElementById('nav-prev');
-            const nextLink = document.getElementById('nav-next');
-
-            // --- 4. 封装跳转函数 (核心优化) ---
-            function handleTransition(e, targetUrl) {
-                e.preventDefault(); // 阻止立即跳转
-
-                // 1. 移除 fade-out，让 opacity 变回 1 (变黑)
-                // 或者直接加 fade-in 类
-                if (overlay) {
-                    overlay.classList.remove('fade-out');
-                    overlay.classList.add('fade-in');
-                }
-
-                // 2. 等待过渡动画结束 (1.2秒) 后再跳转
-                setTimeout(() => {
-                    window.location.href = targetUrl;
-                }, 1200); // 这里的 1200 对应 CSS 里的 transition 时间
+                    // 调用追踪器保存数据并跳转
+                    setTimeout(() => {
+                        if (window.HealingTracker) {
+                            HealingTracker.captureAndGo("{% url 'report_page' %}");
+                        } else {
+                            window.location.href = "{% url 'report_page' %}";
+                        }
+                    }, 1000);
+                };
             }
-
-            // --- 5. 绑定点击事件 ---
-            if (prevLink) {
-                // 不再直接设置 href，而是通过 JS 控制
-                prevLink.setAttribute('href', randomOrder[prevIndex]); // 保留 href 用于右键新标签打开等原生行为
-                prevLink.onclick = (e) => handleTransition(e, randomOrder[prevIndex]);
-
-                // 提示文字增加具体目标名称（可选）
-                // console.log(`Prev: ${randomOrder[prevIndex]}`);
-            }
-
-            if (nextLink) {
-                nextLink.setAttribute('href', randomOrder[nextIndex]);
-                nextLink.onclick = (e) => handleTransition(e, randomOrder[nextIndex]);
-            }
-        })();
-
-        // ==========================================
-        // === 核心：自定义下拉菜单 + Web Audio API 增益 ===
-        // ==========================================
-        (function setupCustomDropdown() {
-            const trigger = document.getElementById('music-trigger');
-            const optionsContainer = document.getElementById('music-options');
-            const options = document.querySelectorAll('.custom-option');
-            const triggerText = document.getElementById('trigger-text');
-            const ambientPlayer = document.getElementById('ambient-audio');
-            const ambientBasePath = "../../static/music_segment/bk_music/";
-            
-            const volumeSlider = document.getElementById('volume-slider');
-            const volumeBox = document.getElementById('volume-box-container');
-            const volumeIcon = volumeBox.querySelector('.volume-icon');
-
-            // --- Web Audio API 变量 ---
-            let audioCtx;
-            let gainNode;
-            let track;
-
-            // 初始化音频上下文 (必须在用户交互后调用)
-            function initAudioContext() {
-                if (!audioCtx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    audioCtx = new AudioContext();
-                    
-                    // 创建源节点
-                    track = audioCtx.createMediaElementSource(ambientPlayer);
-                    // 创建增益节点 (放大器)
-                    gainNode = audioCtx.createGain();
-                    
-                    // 连接: 源 -> 放大器 -> 输出设备
-                    track.connect(gainNode).connect(audioCtx.destination);
-                    
-                    // 初始化增益值为滑块当前值
-                    gainNode.gain.value = volumeSlider.value;
-                } else if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-            }
-
-            // 1. 点击触发器
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                trigger.classList.toggle('active');
-                optionsContainer.classList.toggle('open');
-            });
-
-            // 2. 音量滑块逻辑 (控制 GainNode)
-            volumeSlider.addEventListener('input', function(e) {
-                const vol = parseFloat(this.value);
-                
-                // 如果音频上下文已创建，直接调整增益
-                if (gainNode) {
-                    gainNode.gain.value = vol;
-                }
-
-                // UI 图标更新
-                if (vol === 0) volumeIcon.textContent = '🔇';
-                else if (vol <= 1) volumeIcon.textContent = '🔉'; // 正常音量
-                else if (vol <= 5) volumeIcon.textContent = '🔊'; // 很大
-                else volumeIcon.textContent = '📢'; // 极大 (爆音警告)
-            });
-
-            // 防止滑块点击关闭菜单
-            volumeBox.addEventListener('click', (e) => e.stopPropagation());
-
-            // 3. 点击选项播放
-            options.forEach(option => {
-                option.addEventListener('click', function () {
-                    const value = this.getAttribute('data-value');
-                    const text = this.textContent;
-
-                    // UI 更新
-                    options.forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                    triggerText.textContent = text;
-                    trigger.classList.remove('active');
-                    optionsContainer.classList.remove('open');
-
-                    // 停止逻辑
-                    if (value === "stop") {
-                        ambientPlayer.pause();
-                        ambientPlayer.currentTime = 0;
-                        triggerText.textContent = "🎵 添加疗愈白噪音";
-                        return;
-                    }
-
-                    // 确保 AudioContext 已初始化
-                    initAudioContext();
-
-                    const musicSrc = `${ambientBasePath}${value}.mp3`;
-                    // 只有当源改变时才重置 src，避免重复加载
-                    if (!ambientPlayer.src.includes(encodeURIComponent(value) + ".mp3")) {
-                         ambientPlayer.src = musicSrc;
-                    }
-                    
-                    // 注意：使用 GainNode 时，原生 volume 必须设为 1，完全由 gainNode 控制音量
-                    ambientPlayer.volume = 1.0; 
-
-                    ambientPlayer.play().then(() => {
-                        console.log(`正在播放: ${value}, 增益倍数: ${gainNode.gain.value}`);
-                    }).catch(e => {
-                        console.error("播放失败:", e);
-                    });
-                });
-            });
-
-            // 4. 点击空白关闭
-            window.addEventListener('click', () => {
-                if (optionsContainer.classList.contains('open')) {
-                    trigger.classList.remove('active');
-                    optionsContainer.classList.remove('open');
-                }
-            });
-        })();
+        });
     </script>
 </body>
 

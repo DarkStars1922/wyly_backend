@@ -134,3 +134,6 @@ def wood_360_page(request):
 
 def saibo_page(request):
     return render(request, 'music_h_app/saibo.html')
+
+def report_page(request):
+    return render(request, 'music_h_app/report_page.html') 

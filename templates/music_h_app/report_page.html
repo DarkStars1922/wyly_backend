@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>疗愈总结报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #010810;
+            --card-bg: rgba(2, 12, 27, 0.85);
+            --cyan: #00f2ff;
+            --indigo: #818cf8;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-image:
+                radial-gradient(circle at 50% 20%, #0a192f 0%, #010810 100%),
+                linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        .tech-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 242, 255, 0.15);
+            backdrop-filter: blur(15px);
+            position: relative;
+            border-radius: 4px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .tech-card::after {
+            content: "";
+            position: absolute;
+            top: -1px;
+            left: 5%;
+            width: 90%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            box-shadow: 0 0 15px var(--cyan);
+        }
+
+        .space-tag {
+            padding: 4px 14px;
+            font-size: 12px;
+            background: rgba(0, 242, 255, 0.08);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            color: var(--cyan);
+            font-family: monospace;
+        }
+
+        .tech-dot {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: var(--cyan);
+            box-shadow: 0 0 12px var(--cyan);
+            margin-right: 12px;
+        }
+
+        .giant-number {
+            background: linear-gradient(to bottom, #fff, var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.3));
+        }
+    </style>
+</head>
+
+<body class="p-8 lg:p-12 max-w-[95%] lg:max-w-7xl mx-auto pb-32">
+
+    <!-- 顶部页眉 -->
+    <header class="flex justify-between items-end mb-20 border-b-2 border-cyan-900/30 pb-10">
+        <div>
+            <h1 class="text-6xl font-black tracking-tighter text-white flex items-center gap-6">
+                疗愈总结报告
+            </h1>
+        </div>
+        <div class="flex flex-row items-center gap-8">
+            <div class="text-right flex flex-col items-end gap-4">
+                <p class="text-lg text-slate-400 font-medium tracking-wide">
+                    <span id="session-date" class="font-mono text-slate-300"></span>
+                </p>
+                <div
+                    class="px-10 py-3 rounded-md bg-indigo-500/20 border-2 border-indigo-500/40 shadow-[0_0_25px_rgba(99,102,241,0.15)]">
+                    <span class="text-2xl font-bold text-indigo-300 tracking-[0.2em]">
+                        星璇律动 · 智慧疗愈
+                    </span>
+                </div>
+            </div>
+
+            <div class="border-l-2 border-white/5 pl-8">
+                <img src="{% static 'images/logo.jpg' %}" alt="星璇律动 Logo"
+                    class="h-32 w-32 object-contain drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]">
+            </div>
+        </div>
+    </header>
+
+    <!-- 核心数据看板 -->
+    <section class="grid grid-cols-3 gap-10 mb-16">
+        <div class="tech-card p-10 flex flex-col items-center group transition-all hover:bg-cyan-500/5">
+            <p class="text-lg uppercase tracking-[0.3em] text-slate-300 mb-4 font-bold">总时长 / TIME</p>
+            <p id="total-time" class="text-7xl font-black giant-number font-mono">0s</p>
+        </div>
+        <div class="tech-card p-10 flex flex-col items-center group transition-all hover:bg-emerald-500/5">
+            <p class="text-lg uppercase tracking-[0.3em] text-slate-300 mb-4 font-bold">有效共鸣 / HITS</p>
+            <p id="total-hits" class="text-7xl font-black giant-number font-mono">0</p>
+        </div>
+        <div class="tech-card p-10 flex flex-col items-center group transition-all hover:bg-cyan-500/5">
+            <p class="text-lg uppercase tracking-[0.3em] text-slate-300 mb-4 font-bold">状态稳度 / STABILITY</p>
+            <p id="avg-stability" class="text-7xl font-black giant-number font-mono">0%</p>
+        </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <!-- 空间日志 -->
+        <div class="lg:col-span-4 space-y-10">
+            <h3 class="text-2xl font-bold text-cyan-500 uppercase tracking-[0.2em] flex items-center mb-6">
+                <span class="tech-dot"></span> 空间足迹漫游日志
+            </h3>
+            <div id="history-list" class="space-y-6"></div>
+
+            <div class="tech-card p-6 border-slate-800">
+                <p class="text-[20px] font-mono text-cyan-900 mb-4 tracking-tighter font-bold">诊断状态</p>
+                <div class="grid grid-cols-4 gap-2">
+                    <div class="h-2 bg-cyan-500 shadow-[0_0_10px_var(--cyan)]"></div>
+                    <div class="h-2 bg-cyan-500"></div>
+                    <div class="h-2 bg-cyan-500"></div>
+                    <div class="h-2 bg-cyan-900/30"></div>
+                </div>
+                <p class="text-[15px] text-slate-500 mt-4 font-mono font-medium">系统已根据历史共振频率自动对齐...</p>
+            </div>
+        </div>
+
+        <div class="lg:col-span-8 space-y-12">
+            <div class="tech-card p-10">
+                <div class="flex justify-between items-center mb-10">
+                    <h3 class="text-2xl font-bold text-slate-300 uppercase tracking-[0.2em] flex items-center">
+                        <span class="tech-dot"></span> 情绪共鸣实时波形图
+                    </h3>
+                    <div class="flex items-center gap-4">
+                        <span class="flex items-center gap-2 text-[15px] text-emerald-500 font-bold"><span
+                                class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span> 系统在线</span>
+                        <span class="text-lg text-slate-600 font-mono font-bold">实时状态评估</span>
+                    </div>
+                </div>
+                <div class="h-[400px] w-full">
+                    <canvas id="emotionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="tech-card p-12 bg-cyan-950/20 ring-1 ring-cyan-500/30">
+                <div class="flex items-center gap-6 mb-8">
+                    <div
+                        class="flex items-center justify-center w-12 h-12 rounded bg-cyan-500/20 text-cyan-400 shadow-[0_0_20px_rgba(0,242,255,0.3)]">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold tracking-widest text-cyan-100">AI 疗愈师总结报告</h3>
+                    </div>
+                </div>
+                <div class="pl-8 border-l-4 border-cyan-500/40 py-2">
+                    <p id="ai-summary"
+                        class="text-xl leading-[2.2] text-slate-200 tracking-wide text-justify font-medium"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部按钮 -->
+    <div class="mt-20 text-center pb-20">
+        <button onclick="location.href='/'"
+            class="px-20 py-5 border-2 border-cyan-500 text-cyan-400 text-lg font-black tracking-[0.5em] uppercase hover:bg-cyan-500/10 transition-all active:scale-95 shadow-[0_0_30px_rgba(0,242,255,0.1)] rounded-sm">
+            结束本次疗愈
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const history = JSON.parse(localStorage.getItem('healing_history') || '[]');
+            const initialEmotion = localStorage.getItem('healing_initial_emotion');
+            const samples = JSON.parse(localStorage.getItem('healing_emotion_samples') || '[]');
+
+            let totalTime = 0, totalHits = 0, totalInterrupts = 0, totalMisses = 0;
+            const listContainer = document.getElementById('history-list');
+
+            history.forEach(item => {
+                totalTime += item.duration;
+                totalHits += item.hits;
+                totalInterrupts += item.interrupts;
+                totalMisses += item.misses;
+
+                let statusText = ""; let statusColor = "";
+                if (item.hits === 0 && item.misses === 0) { statusText = "待激活"; statusColor = "text-slate-500"; }
+                else if (item.misses >= (item.hits + 2)) { statusText = "失调"; statusColor = "text-rose-400"; }
+                else if (item.interrupts > 2) { statusText = "波动"; statusColor = "text-amber-400"; }
+                else { statusText = "稳定"; statusColor = "text-emerald-400"; }
+
+                const card = document.createElement('div');
+                card.className = 'tech-card p-6 bg-slate-900/50 border-slate-800 hover:border-cyan-500/60 transition-all';
+                card.innerHTML = `
+                    <p class="text-sm font-bold text-cyan-500 mb-4 tracking-widest uppercase">${item.name} 空间</p>
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <span class="space-tag font-bold">⏱ 累计停留时长 ${item.duration}s</span>
+                        <span class="space-tag font-bold text-emerald-400">有效交互 ${item.hits}</span>
+                        <span class="space-tag font-bold text-rose-400">MISS ${item.misses}</span>
+                    </div>
+                    <div class="flex justify-start items-center pt-4 border-t border-white/5">
+                        <span class="text-xs text-slate-300 font-mono tracking-widest uppercase font-bold">状态评估：</span>
+                        <span class="text-sm font-black ${statusColor} tracking-tighter uppercase">${statusText}</span>
+                    </div>`;
+                listContainer.appendChild(card);
+            });
+
+            const totalActions = totalHits + totalMisses;
+            const hitRate = totalActions > 0 ? (totalHits / totalActions) * 100 : 0;
+            const stabilityScore = Math.round(Math.max(0, (hitRate * 0.7) - (totalInterrupts * 10)));
+
+            document.getElementById('avg-stability').innerText = stabilityScore + '%';
+            document.getElementById('total-time').innerText = totalTime + 's';
+            document.getElementById('total-hits').innerText = totalHits;
+            document.getElementById('session-date').innerText = "报告生成时间: " + new Date().toLocaleString().toUpperCase();
+
+            // AI 总结
+            const emotionZh = { 'angry': '焦躁', 'sad': '低落', 'neutral': '平静', 'happy': '愉悦' };
+            let analysisText = `识别到您以“${emotionZh[initialEmotion] || '中性'}”心境开启本次疗愈。`;
+            if (totalActions === 0) analysisText += "漫游过程中未检测到有效交互，可能您正处于深度沉浸观赏状态。";
+            else if (hitRate < 30) analysisText += `在漫游中尝试了${totalActions}次共鸣，但仅成功捕捉${totalHits}次。这反映出当前身心频率与旋律存在明显失调，难以进入同频状态。`;
+            else if (hitRate < 70) analysisText += `在漫游中完成了${totalHits}次共鸣。交互表现尚可，但捕捉节奏时出现了一定的迟滞。`;
+            else analysisText += `在漫游中精准完成了${totalHits}次成功共鸣。操作行云流水，显示出极强的专注力与韵律感。`;
+
+            if (stabilityScore < 40) analysisText += " 整体状态稳度较低，心境仍有显著波动。建议后续尝试更慢节奏、长线条的“羽”调曲目。";
+            else if (stabilityScore < 80) analysisText += " 状态稳度良好，基本维持了心境平衡。";
+            else analysisText += " 状态极度稳定，身心频率已达成高度契合，已成功进入深度疗愈区间。";
+
+            document.getElementById('ai-summary').innerText = analysisText;
+
+            // 图表加高展示
+            let chartDataPoints = samples.map(e => (e === 'happy' ? 90 : (e === 'neutral' ? 80 : 40)));
+            history.forEach(item => {
+                let spaceScore = 80 + (item.hits * 2) - (item.misses * 6) - (item.interrupts * 4);
+                chartDataPoints.push(Math.max(20, Math.min(100, spaceScore)));
+            });
+
+            const ctx = document.getElementById('emotionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartDataPoints.map((_, i) => i),
+                    datasets: [{
+                        data: chartDataPoints,
+                        borderColor: '#00f2ff',
+                        borderWidth: 4,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: (context) => {
+                            const g = context.chart.ctx.createLinearGradient(0, 0, 0, 400);
+                            g.addColorStop(0, 'rgba(0, 242, 255, 0.3)');
+                            g.addColorStop(1, 'rgba(0, 242, 255, 0)');
+                            return g;
+                        },
+                        pointRadius: 4,
+                        pointBackgroundColor: '#00f2ff',
+                        pointBorderColor: '#010810',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            display: true, min: 0, max: 100,
+                            grid: { color: 'rgba(0, 242, 255, 0.05)', lineWidth: 1 },
+                            ticks: { color: '#334155', font: { size: 12, family: 'monospace', weight: 'bold' }, stepSize: 20 }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+    <footer class="mt-24 pb-12 text-center space-y-3 border-t border-white/5 pt-10">
+        <p class="text-sm text-slate-500 tracking-widest font-medium">
+            © 2025 星璇律动. 保留所有权利。
+        </p>
+        <p class="text-xs text-slate-600 tracking-[0.4em] uppercase font-bold">
+            AI驱动的歌词、音乐与视频一体化创作平台
+        </p>
+    </footer>
+</body>
+
+</html>

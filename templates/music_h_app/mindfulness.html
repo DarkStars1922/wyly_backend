@@ -159,7 +159,7 @@
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0,0,0,0.9); /* 加深背景，增强沉浸感 */
+      background: rgba(0,0,0,0.9);
       backdrop-filter: blur(15px);
       display: flex;
       flex-direction: column;
@@ -168,7 +168,7 @@
       z-index: 20;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.8s ease; /* 渐变时间加长，更柔和 */
+      transition: opacity 0.8s ease; 
     }
 
     .result-overlay.show {
@@ -267,12 +267,11 @@
       <!-- 状态提示 -->
       <div class="loading-text" id="statusText">正在初始化 AI 模型...</div>
 
-      <!-- 结果覆盖层 (自动跳转版) -->
+      <!-- 结果覆盖层 -->
       <div class="result-overlay" id="resultOverlay">
         <div class="result-card">
           <div class="emotion-icon" id="resultIcon">✨</div>
           <h2 class="result-title" id="resultTitle">识别完成</h2>
-          <!-- 这里将显示：您当前的情绪状态为... -->
           <p class="result-desc" id="resultDesc"></p>
           
           <!-- 加载动画 -->
@@ -299,7 +298,7 @@
       'water': "{% url 'water_guqin' %}"    // 水 - 恐
     };
 
-    // ---------------- 逻辑代码 ----------------
+    // 逻辑代码
 
     const video = document.getElementById('video');
     const cameraWrapper = document.getElementById('cameraWrapper');
@@ -316,7 +315,7 @@
     let emotionSamples = [];
     let canvas; // 仅用于后台计算
 
-    // 映射关系 (element 用于查找 URL，zh 用于显示文本)
+    // 映射关系
     const emotionMap = {
       'angry':     { element: 'wood',  zh: '怒', icon: '😠' },
       'disgusted': { element: 'wood',  zh: '厌', icon: '😣' },
@@ -324,7 +323,7 @@
       'surprised': { element: 'fire',  zh: '惊', icon: '😲' },
       'sad':       { element: 'metal', zh: '悲', icon: '😢' },
       'fearful':   { element: 'water', zh: '恐', icon: '😨' },
-      'neutral':   { element: 'earth', zh: '平稳', icon: '😐' } // 这里将“思”改为“平稳”，读起来更通顺，或者改回“思”
+      'neutral':   { element: 'earth', zh: '平稳', icon: '😐' } 
     };
 
     // 1. 初始化
@@ -371,11 +370,11 @@
       if (!canvas) canvas = faceapi.createCanvasFromMedia(video);
 
       let scanTime = 0;
-      const maxScanTime = 3000; // 缩短为3秒采样，体验更敏捷
+      const maxScanTime = 3000;
       const intervalTime = 200;
 
       detectionInterval = setInterval(async () => {
-        // 后台检测，不绘制到屏幕上，保持界面整洁
+        // 后台检测
         const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
         
         if (detections.length > 0) {
@@ -414,11 +413,16 @@
           dominantEmotion = em;
         }
       });
+
+      localStorage.setItem('healing_startTime', Date.now()); // 识别结束时的时间
+      localStorage.setItem('healing_initial_emotion', dominantEmotion); // 初始情绪
+      localStorage.setItem('healing_emotion_samples', JSON.stringify(emotionSamples)); 
+      localStorage.setItem('healing_history', JSON.stringify([])); // 空间访问历史
       
       showResultAndRedirect(dominantEmotion);
     }
 
-    // 5. 显示结果并自动跳转 (核心修改)
+    // 5. 显示结果并自动跳转
     function showResultAndRedirect(emotion) {
       const data = emotionMap[emotion] || emotionMap['neutral'];
       const targetUrl = SPACE_URLS[data.element];
@@ -426,9 +430,6 @@
       // 设置UI内容
       resultIcon.innerText = data.icon;
       resultTitle.innerText = "识别完成";
-      
-      // 按照您的要求设置文案
-      // "您当前的情绪状态为..，正在进入您的专属疗愈空间"
       resultDesc.innerHTML = `您当前的情绪状态为 <strong>${data.zh}</strong><br>正在进入您的专属疗愈空间...`;
 
       // 显示全屏遮罩
@@ -441,7 +442,7 @@
       }, 3000);
     }
 
-    // 辅助：五行中文名 (备用)
+    // 辅助：五行中文名
     const elementDisplayNames = {
       'wood': '木', 'fire': '火', 'earth': '土', 'metal': '金', 'water': '水'
     };
