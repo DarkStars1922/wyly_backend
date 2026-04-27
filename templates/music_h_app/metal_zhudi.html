@@ -909,8 +909,8 @@
 
         // 音视频资源配置
         const musicList = ["琅琊神韵", "平湖秋月", "秋湖月夜", "思泉", "鹧鸪飞"];
-        const videoBasePath = "../../static/image_video/video/金/";
-        const musicBasePath = "../../static/music_segment/竹笛/";
+        const videoBasePath = "{% static 'image_video/video/金/' %}";
+        const musicBasePath = "{% static 'music_segment/竹笛/' %}";
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 十个背景视频
         const maxPlayCount = 8; // 一个视频播放次数
         const video1 = document.getElementById('video-1');
@@ -1235,7 +1235,7 @@
                 }
 
                 // 切换新音频并播放
-                ambientAudio.src = `../../static/music_segment/bk_music/${val}.mp3`;
+                ambientAudio.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
                 ambientAudio.volume = volSlider.value;
                 ambientAudio.play().catch(err => console.error("音频播放失败:", err));
             });

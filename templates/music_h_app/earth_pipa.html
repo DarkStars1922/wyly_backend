@@ -621,8 +621,8 @@
         // 2. 音视频逻辑
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8];
         const musicList = ["高山流水", "塞上曲", "十面埋伏", "夕阳箫鼓", "阳春白雪"];
-        const videoBasePath = "../../static/image_video/video/土/";
-        const musicBasePath = "../../static/music_segment/琵琶/";
+        const videoBasePath = "{% static 'image_video/video/土/' %}";
+        const musicBasePath = "{% static 'music_segment/琵琶/' %}";
 
         const v1 = document.getElementById('video-1'), v2 = document.getElementById('video-2');
         const bgAudio = document.getElementById('bg-music'), hitMusic = document.getElementById('hit-music');
@@ -854,7 +854,7 @@
                 mo.classList.remove('open');
                 if (val === 'stop') return document.getElementById('ambient-audio').pause();
                 const aa = document.getElementById('ambient-audio');
-                aa.src = `../../static/music_segment/bk_music/${val}.mp3`;
+                aa.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
                 aa.volume = document.getElementById('volume-slider').value;
                 aa.play();
             };

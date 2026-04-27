@@ -525,8 +525,8 @@
 
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
         const musicList = ["二泉映月", "光明行", "良宵", "十面埋伏", "月夜"];
-        const videoBasePath = "../../static/image_video/video/火/";
-        const musicBasePath = "../../static/music_segment/二胡/";
+        const videoBasePath = "{% static 'image_video/video/火/' %}";
+        const musicBasePath = "{% static 'music_segment/二胡/' %}";
 
         let activeVideoId = 1;
         let currentVideoName = "1";
@@ -547,7 +547,7 @@
             const lantern = document.createElement('div');
             lantern.className = 'lantern';
             const imgIndex = (i % 4) + 1;
-            lantern.style.backgroundImage = `url("../../static/growth/fire/${imgIndex}.png")`;
+            lantern.style.backgroundImage = `url("{% static 'growth/fire/' %}${imgIndex}.png")`;
             lantern.style.left = (Math.random() * 90 + 5) + '%';
             lanternPool.push({ el: lantern, speedFactor: 0.5 + Math.random() * 0.8, y: -100, active: false });
             lanternContainer.appendChild(lantern);
@@ -869,7 +869,7 @@
                     document.getElementById('trigger-text').innerText = this.innerText;
                     options.classList.remove('open');
                     if (val === 'stop') { ambient.pause(); return; }
-                    ambient.src = `../../static/music_segment/bk_music/${val}.mp3`;
+                    ambient.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
                     ambient.volume = slider.value;
                     ambient.play();
                 };

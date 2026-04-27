@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-CN">
 
@@ -6,8 +7,8 @@
   <meta content="IE=edge" http-equiv="X-UA-Compatible" />
   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
   <title>星璇律动 - AI音乐与视频创作平台</title>
-  <link href="../../static/opera/bs/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="../../static/css/xingxuanlvdong.css" rel="stylesheet" />
+  <link href="{% static 'opera/bs/css/bootstrap.min.css' %}" rel="stylesheet" />
+  <link href="{% static 'css/xingxuanlvdong.css' %}" rel="stylesheet" />
   <style>
     .creation-workspace {
       background: rgba(20, 25, 45, 0.7);
@@ -235,7 +236,7 @@
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container">
       <a class="navbar-brand" href="{% url 'home' %}">
-        <img alt="星璇律动 Logo" src="../../static/images/logo.jpg" style="max-height: 40px; margin-right: 10px;" />
+        <img alt="星璇律动 Logo" src="{% static 'images/logo.jpg' %}" style="max-height: 40px; margin-right: 10px;" />
         星璇律动
       </a>
       <button aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
@@ -270,7 +271,7 @@
       <div class="row">
         <div class="col-md-4">
           <div class="showcase-item">
-            <img alt="作品展示" src="../../static/show_picture/1.jpg" />
+            <img alt="作品展示" src="{% static 'show_picture/1.jpg' %}" />
             <div class="showcase-badge">音乐</div>
             <div class="showcase-overlay">
               <h5>星河幻想曲</h5>
@@ -281,7 +282,7 @@
         </div>
         <div class="col-md-4">
           <div class="showcase-item">
-            <img alt="作品展示" src="../../static/show_picture/2.jpg" />
+            <img alt="作品展示" src="{% static 'show_picture/2.jpg' %}" />
             <div class="showcase-badge">视频</div>
             <div class="showcase-overlay">
               <h5>水墨江南</h5>
@@ -292,7 +293,7 @@
         </div>
         <div class="col-md-4">
           <div class="showcase-item">
-            <img alt="作品展示" src="../../static/show_picture/3.jpg" />
+            <img alt="作品展示" src="{% static 'show_picture/3.jpg' %}" />
             <div class="showcase-badge">音乐+视频</div>
             <div class="showcase-overlay">
               <h5>霓虹都市</h5>
@@ -305,7 +306,7 @@
       <div class="row mt-4">
         <div class="col-md-4">
           <div class="showcase-item">
-            <img alt="作品展示" src="../../static/show_picture/5.jpg" />
+            <img alt="作品展示" src="{% static 'show_picture/5.jpg' %}" />
             <div class="showcase-badge">音乐</div>
             <div class="showcase-overlay">
               <h5>山水之间</h5>
@@ -316,7 +317,7 @@
         </div>
         <div class="col-md-4">
           <div class="showcase-item">
-            <img alt="作品展示" src="../../static/show_picture/6.jpg" />
+            <img alt="作品展示" src="{% static 'show_picture/6.jpg' %}" />
             <div class="showcase-badge">视频</div>
             <div class="showcase-overlay">
               <h5>梦境漫游</h5>
@@ -327,7 +328,7 @@
         </div>
         <div class="col-md-4">
           <div class="showcase-item">
-            <img alt="作品展示" src="../../static/show_picture/4.jpg" />
+            <img alt="作品展示" src="{% static 'show_picture/4.jpg' %}" />
             <div class="showcase-badge">音乐+视频</div>
             <div class="showcase-overlay">
               <h5>四季变奏</h5>
@@ -348,8 +349,8 @@
       <p>AI驱动的歌词、音乐与视频一体化创作平台</p>
     </div>
   </footer>
-  <script src="../戏剧(新)/bs/js/jquery.js"></script>
-  <script src="../戏剧(新)/bs/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{% static 'opera/bs/js/bootstrap.bundle.min.js' %}"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
 </body>
 

@@ -826,8 +826,8 @@
 
         // 音视频资源配置
         const musicList = ["半山听雨", "良宵引", "梅花三弄", "箫关山月", "妆台秋思"];
-        const videoBasePath = "../../static/image_video/video/木/";
-        const musicBasePath = "../../static/music_segment/箫/";
+        const videoBasePath = "{% static 'image_video/video/木/' %}";
+        const musicBasePath = "{% static 'music_segment/箫/' %}";
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 十个背景视频
         const maxPlayCount = 8; // 一个视频播放次数
         const video1 = document.getElementById('video-1');
@@ -1137,7 +1137,7 @@
                 }
 
                 // 切换新音频并播放
-                ambientAudio.src = `../../static/music_segment/bk_music/${val}.mp3`;
+                ambientAudio.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
                 ambientAudio.volume = volSlider.value;
                 ambientAudio.play().catch(err => console.error("音频播放失败:", err));
             });
