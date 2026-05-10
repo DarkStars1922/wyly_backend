@@ -39,6 +39,9 @@
     }
 
     .btn-cta {
+      white-space: nowrap !important;
+      display: inline-block;
+      min-width: 140px;
       padding: 12px 28px;
       font-size: 1.05rem;
       border-radius: 50px;
@@ -468,6 +471,181 @@
         opacity: 0.3;
       }
     }
+
+    /* 智慧疗愈大卡片特有样式 */
+    .featured-card {
+      background: linear-gradient(135deg, rgba(85, 239, 196, 0.15), rgba(162, 155, 254, 0.15), rgba(253, 121, 168, 0.15));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      padding: 40px !important;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      animation: breathing-glow 4s infinite ease-in-out;
+      cursor: pointer;
+    }
+
+    @keyframes breathing-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(162, 155, 254, 0.2);
+        border-color: rgba(162, 155, 254, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 40px rgba(85, 239, 196, 0.4);
+        border-color: rgba(85, 239, 196, 0.5);
+      }
+    }
+
+    /* 互动轮盘 */
+    .healing-wheel-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      flex-shrink: 0;
+    }
+
+    .healing-wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      animation: rotate-wheel 20s infinite linear;
+      position: relative;
+    }
+
+    .featured-card:hover .healing-wheel,
+    .featured-card:hover .wheel-dot {
+      animation-play-state: paused;
+    }
+
+    @keyframes reverse-rotate {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(-360deg);
+      }
+    }
+
+    .wheel-dot {
+      position: absolute;
+      width: 45px;
+      height: 45px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      transition: all 0.3s;
+      animation: reverse-rotate 20s infinite linear;
+    }
+
+    /* 轮盘五个点的位置 */
+    .dot-1 {
+      /* 宫-脾 */
+      top: -20px;
+      left: 77px;
+      color: #f0c080;
+    }
+
+    .dot-2 {
+      /* 商-肺 */
+      top: 45px;
+      right: -20px;
+      color: #e0e0e0;
+    }
+
+    .dot-3 {
+      /* 角-肝 */
+      bottom: -15px;
+      right: 20px;
+      color: #80c060;
+    }
+
+    .dot-4 {
+      /* 徵-心 */
+      bottom: -15px;
+      left: 20px;
+      color: #e05050;
+    }
+
+    .dot-5 {
+      /* 羽-肾 */
+      top: 45px;
+      left: -20px;
+      color: #6090e0;
+    }
+
+    .wheel-dot:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      z-index: 10;
+    }
+
+    .wheel-dot:hover span {
+      transform: scale(1.2);
+      display: inline-block;
+      transition: transform 0.3s;
+    }
+
+    /* 动态音波 */
+    .visualizer {
+      display: flex;
+      align-items: flex-end;
+      height: 30px;
+      gap: 3px;
+      margin-top: 15px;
+    }
+
+    .bar {
+      width: 4px;
+      height: 5px;
+      background: #a29bfe;
+      border-radius: 2px;
+      animation: wave 1s infinite ease-in-out;
+    }
+
+    @keyframes wave {
+
+      0%,
+      100% {
+        height: 5px;
+      }
+
+      50% {
+        height: 25px;
+      }
+    }
+
+    @keyframes rotate-wheel {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 响应式微调 */
+    @media (max-width: 768px) {
+      .featured-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .healing-wheel-container {
+        margin-bottom: 30px;
+      }
+    }
   </style>
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="stylesheet" href="{% static 'css/xingxuanlvdong.css' %}">
@@ -554,104 +732,107 @@
     <section id="features" class="content-section">
       <h2 class="text-center section-title mb-3">核心功能</h2>
       <p class="text-center lead-text">一站式创意表达平台，融合AI技术与艺术创作</p>
+
       <div class="row">
+        <!-- 智慧疗愈大卡片 -->
+        <div class="col-12 mb-4">
+          <div class="feature-card featured-card" onclick="window.location.href='{% url 'mindfulness' %}'">
+            <div class="healing-wheel-container">
+              <div class="healing-wheel">
+                <div class="wheel-dot dot-1"><span>宫</span><small>脾</small></div>
+                <div class="wheel-dot dot-2"><span>商</span><small>肺</small></div>
+                <div class="wheel-dot dot-3"><span>角</span><small>肝</small></div>
+                <div class="wheel-dot dot-4"><span>徵</span><small>心</small></div>
+                <div class="wheel-dot dot-5"><span>羽</span><small>肾</small></div>
+              </div>
+              <div style="position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align: center;">
+                <i class="fas fa-lightbulb fa-3x" style="color: #f368e0; filter: drop-shadow(0 0 10px #f368e0);"></i>
+              </div>
+            </div>
+
+            <div class="featured-info px-md-5 flex-grow-1">
+              <h3 style="color: #fff; font-weight: 700; letter-spacing: 2px;">✨智慧疗愈✨</h3>
+              <p style="font-size: 1.1rem; color: #d0d0ff; margin: 15px 0;">
+                基于中医五音疗法的音乐疗愈版块。AI实时生成调理波形，在互动中感受音乐的能量，精准疗愈身心状态。</p>
+              <div class="visualizer">
+                <div class="bar" style="animation-delay: 0.1s"></div>
+                <div class="bar" style="animation-delay: 0.3s"></div>
+                <div class="bar" style="animation-delay: 0.2s"></div>
+                <div class="bar" style="animation-delay: 0.5s"></div>
+                <div class="bar" style="animation-delay: 0.4s"></div>
+                <span class="ml-3 small" style="color: #a29bfe; line-height: 30px;">AI疗愈已就绪... </span>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <a href="{% url 'mindfulness' %}" class="btn btn-primary btn-cta"
+                style="background: linear-gradient(135deg, #f368e0, #a29bfe); border: none; padding: 15px 40px;">
+                立即体验
+              </a>
+            </div>
+          </div>
+        </div>
         <div class="col-md-4 mb-4">
           <div class="feature-card">
-            <div class="icon-circle">
-              <i class="fas fa-pencil-alt fa-2x" style="color: #ff6b6b;"></i>
-            </div>
+            <div class="icon-circle"><i class="fas fa-pencil-alt fa-2x" style="color: #ff6b6b;"></i></div>
             <h4 class="text-center mb-3">AI歌词创作</h4>
             <p>基于主题、情感、风格，智能生成高质量歌词。</p>
-            <div class="text-center">
-              <a href="{% url 'lyric-api' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
-            </div>
+            <div class="text-center"><a href="{% url 'lyric-api' %}" class="btn btn-primary btn-cta mt-3">开始创作</a></div>
           </div>
         </div>
         <div class="col-md-4 mb-4">
           <div class="feature-card">
-            <div class="icon-circle">
-              <i class="fas fa-music fa-2x" style="color: #48dbfb;"></i>
-            </div>
+            <div class="icon-circle"><i class="fas fa-music fa-2x" style="color: #48dbfb;"></i></div>
             <h4 class="text-center mb-3">AI音乐生成</h4>
             <p>根据歌词或情绪，自动谱曲、编曲，生成多种风格音乐。</p>
-            <div class="text-center">
-              <a href="{% url 'generate-music' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
+            <div class="text-center"><a href="{% url 'generate-music' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
             </div>
           </div>
         </div>
         <div class="col-md-4 mb-4">
           <div class="feature-card">
-            <div class="icon-circle">
-              <i class="fas fa-video fa-2x" style="color: #1dd1a1;"></i>
-            </div>
+            <div class="icon-circle"><i class="fas fa-video fa-2x" style="color: #1dd1a1;"></i></div>
             <h4 class="text-center mb-3">AI视频合成</h4>
             <p>结合歌词与音乐，智能匹配素材，生成可视化音乐视频。</p>
-            <div class="text-center">
-              <a href="{% url 'generate-video' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
+            <div class="text-center"><a href="{% url 'generate-video' %}" class="btn btn-primary btn-cta mt-3">开始创作</a>
             </div>
           </div>
         </div>
         <div class="col-md-4 mb-4">
           <div class="feature-card">
-            <div class="icon-circle">
-              <i class="fas fa-spa fa-2x" style="color: #a29bfe;"></i>
-            </div>
+            <div class="icon-circle"><i class="fas fa-spa fa-2x" style="color: #a29bfe;"></i></div>
             <h4 class="text-center mb-3">五音疗法冥想</h4>
-            <p>基于中医五音疗法理论，AI生成个性化冥想音乐，平衡身心。</p>
-            <div class="text-center">
-              <a href="{% url 'meditation-music' %}" class="btn btn-primary btn-cta mt-3">开始体验</a>
-            </div>
+            <p>基于中医五音理论，AI生成个性化冥想音乐，平衡身心。</p>
+            <div class="text-center"><a href="{% url 'meditation-music' %}"
+                class="btn btn-primary btn-cta mt-3">开始体验</a></div>
           </div>
         </div>
         <div class="col-md-4 mb-4">
           <div class="feature-card">
-            <div class="icon-circle">
-              <i class="fas fa-images fa-2x" style="color: #f368e0;"></i>
-            </div>
+            <div class="icon-circle"><i class="fas fa-images fa-2x" style="color: #f368e0;"></i></div>
             <h4 class="text-center mb-3">优秀作品展示</h4>
             <p>浏览社区精选音乐与视频作品，获取灵感与创作素材。</p>
-            <div class="text-center">
-              <a href="{% url 'showcase' %}" class="btn btn-primary btn-cta mt-3">查看作品</a>
-            </div>
+            <div class="text-center"><a href="{% url 'showcase' %}" class="btn btn-primary btn-cta mt-3">查看作品</a></div>
           </div>
         </div>
-        <div class="col-md-4 mb-4">
+        <!-- 赛博形象 -->
+        <div class="col-md-4 mb-4" id="cyber-avatar-card" style="display: none;">
           <div class="feature-card">
-            <div class="icon-circle">
-              <i class="fas fa-lightbulb fa-2x" style="color: #f368e0;"></i>
-            </div>
-            <h4 class="text-center mb-3">智慧疗愈</h4>
-            <p>基于五音疗法的音乐疗愈版块。在互动中感受音乐，疗愈身心。</p>
-            <div class="text-center">
-              <a href="{% url 'mindfulness' %}" class="btn btn-primary btn-cta mt-3">开始体验</a>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4 mb-4 offset-md-4" id="cyber-avatar-card" style="display: none;">
-          <div class="feature-card">
-            <div class="icon-circle">
-              <i class="fas fa-user-astronaut fa-2x" style="color: #0abde3;"></i>
-            </div>
+            <div class="icon-circle"><i class="fas fa-user-astronaut fa-2x" style="color: #0abde3;"></i></div>
             <h4 class="text-center mb-3">赛博形象</h4>
-            <p>定制专属您的AI虚拟数字分身，打破次元壁，开启元宇宙互动新体验。</p>
-            <div class="text-center">
-              <a href="{% url 'saibo' %}" class="btn btn-primary btn-cta mt-3">立即体验</a>
-            </div>
+            <p>定制专属AI虚拟数字分身，打破次元壁，开启元宇宙互动新体验。</p>
+            <div class="text-center"><a href="{% url 'saibo' %}" class="btn btn-primary btn-cta mt-3">立即体验</a></div>
           </div>
         </div>
-
-        <!-- 登录提示卡片 -->
-        <div class="col-md-4 mb-4 offset-md-4" id="login-prompt-card">
+        <!-- 登录提示 -->
+        <div class="col-md-4 mb-4" id="login-prompt-card">
           <div class="feature-card"
             style="background: linear-gradient(135deg, rgba(60,60,80,0.6), rgba(40,40,60,0.6));">
-            <div class="icon-circle">
-              <i class="fas fa-lock fa-2x" style="color: #888;"></i>
-            </div>
+            <div class="icon-circle"><i class="fas fa-lock fa-2x" style="color: #888;"></i></div>
             <h4 class="text-center mb-3">专属功能</h4>
-            <p class="text-center">登录后解锁更多高级功能</p>
-            <div class="text-center">
-              <a href="{% url 'login_page' %}" class="btn btn-outline-light btn-cta mt-3">立即登录</a>
-            </div>
+            <p class="text-center">登录后解锁“赛博形象”等更多高级功能</p>
+            <div class="text-center"><a href="{% url 'login_page' %}"
+                class="btn btn-outline-light btn-cta mt-3">立即登录</a></div>
           </div>
         </div>
       </div>
