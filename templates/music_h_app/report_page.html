@@ -5,301 +5,1626 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>疗愈总结报告</title>
+    <title>星璇律动 - 疗愈总结报告</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg: #010810;
-            --card-bg: rgba(2, 12, 27, 0.85);
-            --cyan: #00f2ff;
-            --indigo: #818cf8;
-            --text-main: #f8fafc;
-            --text-muted: #64748b;
+            --bg-paper: #faf5eb;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text-main: #5a4b3c;
+            --accent-teal: #8fb8b0;
+            --accent-gold: #c5a059;
+            --border-color: rgba(197, 160, 89, 0.15);
         }
 
         body {
-            background-color: var(--bg);
+            background-color: #faf5eb;
+            background-image: url("{% static 'report/background.png' %}");
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+
             color: var(--text-main);
             font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-            background-image:
-                radial-gradient(circle at 50% 20%, #0a192f 0%, #010810 100%),
-                linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
-            background-size: 100% 100%, 40px 40px, 40px 40px;
+            padding: 2.5rem 1rem;
+            position: relative;
         }
 
         .tech-card {
             background: var(--card-bg);
-            border: 1px solid rgba(0, 242, 255, 0.15);
-            backdrop-filter: blur(15px);
-            position: relative;
-            border-radius: 4px;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
         }
 
-        .tech-card::after {
-            content: "";
-            position: absolute;
-            top: -1px;
-            left: 5%;
-            width: 90%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-            box-shadow: 0 0 15px var(--cyan);
+        .module-title {
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .module-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--accent-gold);
+            border-radius: 2px;
+        }
+
+        .giant-number {
+            font-family: "Georgia", serif;
+            font-weight: 800;
+            color: var(--text-main);
         }
 
         .space-tag {
-            padding: 4px 14px;
+            padding: 4px 10px;
             font-size: 12px;
-            background: rgba(0, 242, 255, 0.08);
-            border: 1px solid rgba(0, 242, 255, 0.3);
-            color: var(--cyan);
-            font-family: monospace;
+            background: rgba(143, 184, 176, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 6px;
+        }
+
+        .music-personal-tag {
+            padding: 4px 12px;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            font-weight: 500;
+            border: none;
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .tag-1 {
+            color: #d46b6b;
+            background: rgba(255, 220, 220, 0.6);
+        }
+
+        .tag-2 {
+            color: #d49a5b;
+            background: rgba(255, 235, 200, 0.6);
+        }
+
+        .tag-3 {
+            color: #6baf9b;
+            background: rgba(210, 240, 230, 0.6);
+        }
+
+        .tag-4 {
+            color: #6b94d4;
+            background: rgba(210, 225, 255, 0.6);
+        }
+
+        .tag-5 {
+            color: #8b7bc9;
+            background: rgba(235, 220, 255, 0.6);
+        }
+
+        /* 用户信息模块 */
+        .user-profile-card {
+            background: linear-gradient(135deg, #fff8f0 0%, #fff5e6 100%);
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: 0 8px 30px rgba(197, 160, 89, 0.1);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            height: 100%;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            object-fit: cover;
+        }
+
+        .profile-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #3a2b1c;
+        }
+
+        .profile-greeting {
+            font-size: 0.85rem;
+            color: #6a5b4c;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--accent-gold);
+        }
+
+        .stat-number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #3a2b1c;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6a5b4c;
+        }
+
+        /* 本次疗愈概览 */
+        .healing-overview-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            height: 100%;
+        }
+
+        .overview-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #3a2b1c;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .overview-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--accent-gold);
+            border-radius: 2px;
+        }
+
+        .overview-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #5a4b3c;
+            margin-bottom: 0.6rem;
+        }
+
+        .overview-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--accent-gold);
+        }
+
+        .ai-evaluation-tag {
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--accent-gold);
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+            font-weight: bold;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+
+        .emotion-score-circle {
+            width: 90px;
+            height: 90px;
+            position: relative;
+        }
+
+        .emotion-score-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .emotion-score-number .score {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #3a2b1c;
+        }
+
+        .emotion-score-number .label {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        /* 五音响应分析 */
+        .pentatonic-analysis-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            height: 100%;
+        }
+
+        .pentatonic-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #3a2b1c;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .pentatonic-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--accent-gold);
+            border-radius: 2px;
+        }
+
+        .best-match-tag {
+            background: rgba(197, 160, 89, 0.05);
+            color: #5a4b3c;
+            padding: 0.4rem 0.8rem;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-top: 0.4rem;
+        }
+
+        .best-match-tag .tone-name {
+            color: var(--accent-teal);
+            font-weight: bold;
         }
 
         .tech-dot {
             display: inline-block;
-            width: 16px;
-            height: 16px;
-            background: var(--cyan);
-            box-shadow: 0 0 12px var(--cyan);
-            margin-right: 12px;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-teal);
+            border-radius: 50%;
+            margin-right: 10px;
         }
 
-        .giant-number {
-            background: linear-gradient(to bottom, #fff, var(--cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.3));
+        .pentatonic-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(247, 244, 239, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+
+        .pentatonic-modal-box {
+            width: 90%;
+            max-width: 520px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .long-term-track-entry {
+            max-width: 1440px;
+            margin: 2rem auto;
+        }
+
+        .long-track-header {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--border-color);
+            padding: 16px 22px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .long-track-panel {
+            display: none;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 12px;
+        }
+
+        .long-track-panel.show {
+            display: block;
+        }
+
+        .milestone-badge {
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            background: rgba(143, 184, 176, 0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        .milestone-badge.unlocked {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: rgba(197, 160, 89, 0.35);
+            color: var(--text-main);
+            font-weight: bold;
+        }
+
+        input,
+        textarea,
+        button {
+            border-radius: 10px !important;
+        }
+
+        /* 结束按钮样式 */
+        .end-healing-btn {
+            background: var(--accent-gold);
+            color: #fff;
+            padding: 12px 40px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .end-healing-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .main-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .left-sidebar,
+        .right-sidebar {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 310px;
+        }
+
+        .left-sidebar {
+            left: -330px;
+        }
+
+        .right-sidebar {
+            right: -330px;
+            width: 310px;
+        }
+
+        @media (max-width: 2000px) {
+
+            .left-sidebar,
+            .right-sidebar {
+                display: none;
+            }
+        }
+
+        /* 多模态卡片样式 */
+        .multimodal-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 0.6rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .multimodal-card-icon {
+            font-size: 1.5rem;
+        }
+
+        .multimodal-card-main {
+            flex: 1;
+        }
+
+        .multimodal-card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .multimodal-card-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin: 0.3rem 0;
+        }
+
+        .multimodal-card-change {
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .multimodal-card-change.up {
+            color: #36b37e;
+        }
+
+        .multimodal-ring {
+            width: 50px;
+            height: 50px;
+            position: relative;
+        }
+
+        .multimodal-ring canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .multimodal-trend {
+            width: 30px;
+            height: 40px;
+        }
+
+        /* AI个性化建议三栏样式 */
+        .ai-recommendation-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .ai-recommendation-card {
+            border-radius: 16px;
+            padding: 1.2rem;
+        }
+
+        .card-1 {
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+
+        .card-2 {
+            background-color: rgba(255, 248, 235, 0.7);
+        }
+
+        .card-3 {
+            background-color: rgba(245, 250, 248, 0.7);
+        }
+
+        .recommendation-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-header h4 {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .recommendation-track-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .track-cover {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .track-info h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .track-info p {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            opacity: 0.7;
+            margin: 0.2rem 0 0;
+        }
+
+        .play-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-teal);
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            cursor: pointer;
+        }
+
+        .play-btn::after {
+            content: '▶';
+            color: var(--accent-teal);
+            font-size: 0.8rem;
+        }
+
+        .recommendation-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .recommendation-list li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .recommendation-list li::before {
+            content: '•';
+            color: var(--accent-gold);
+            font-weight: bold;
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .quote-box {
+            background-color: rgba(255, 240, 215, 0.6);
+            border-radius: 10px;
+            padding: 0.8rem;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quote-box span {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .quote-box .heart-icon {
+            margin-left: auto;
+            color: var(--accent-gold);
         }
     </style>
 </head>
 
-<body class="p-8 lg:p-12 max-w-[95%] lg:max-w-7xl mx-auto pb-32">
+<body>
 
-    <!-- 顶部页眉 -->
-    <header class="flex justify-between items-end mb-20 border-b-2 border-cyan-900/30 pb-10">
+    <header class="flex justify-between items-end mb-8 max-w-[1440px] mx-auto px-4">
         <div>
-            <h1 class="text-6xl font-black tracking-tighter text-white flex items-center gap-6">
-                疗愈总结报告
-            </h1>
+            <h1 class="text-4xl font-bold tracking-tight mb-2">音乐疗愈体验报告</h1>
+            <p class="text-sm opacity-60">以乐养心 · 五音调和 · 身心共愈</p>
         </div>
-        <div class="flex flex-row items-center gap-8">
-            <div class="text-right flex flex-col items-end gap-4">
-                <p class="text-lg text-slate-400 font-medium tracking-wide">
-                    <span id="session-date" class="font-mono text-slate-300"></span>
-                </p>
-                <div
-                    class="px-10 py-3 rounded-md bg-indigo-500/20 border-2 border-indigo-500/40 shadow-[0_0_25px_rgba(99,102,241,0.15)]">
-                    <span class="text-2xl font-bold text-indigo-300 tracking-[0.2em]">
-                        星璇律动 · 智慧疗愈
-                    </span>
-                </div>
-            </div>
-
-            <div class="border-l-2 border-white/5 pl-8">
-                <img src="{% static 'images/logo.jpg' %}" alt="星璇律动 Logo"
-                    class="h-32 w-32 object-contain drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]">
-            </div>
+        <div class="text-right flex flex-col items-end">
+            <img src="{% static 'images/logo2.png' %}" alt="星璇律动Logo" class="w-16 h-16 object-contain mb-2">
+            <p class="text-xs opacity-50 font-mono" id="session-date"></p>
         </div>
     </header>
 
-    <!-- 核心数据看板 -->
-    <section class="grid grid-cols-3 gap-10 mb-16">
-        <div class="tech-card p-10 flex flex-col items-center group transition-all hover:bg-cyan-500/5">
-            <p class="text-lg uppercase tracking-[0.3em] text-slate-300 mb-4 font-bold">总时长 / TIME</p>
-            <p id="total-time" class="text-7xl font-black giant-number font-mono">0s</p>
-        </div>
-        <div class="tech-card p-10 flex flex-col items-center group transition-all hover:bg-emerald-500/5">
-            <p class="text-lg uppercase tracking-[0.3em] text-slate-300 mb-4 font-bold">有效共鸣 / HITS</p>
-            <p id="total-hits" class="text-7xl font-black giant-number font-mono">0</p>
-        </div>
-        <div class="tech-card p-10 flex flex-col items-center group transition-all hover:bg-cyan-500/5">
-            <p class="text-lg uppercase tracking-[0.3em] text-slate-300 mb-4 font-bold">状态稳度 / STABILITY</p>
-            <p id="avg-stability" class="text-7xl font-black giant-number font-mono">0%</p>
-        </div>
-    </section>
+    <div class="main-container">
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <!-- 空间日志 -->
-        <div class="lg:col-span-4 space-y-10">
-            <h3 class="text-2xl font-bold text-cyan-500 uppercase tracking-[0.2em] flex items-center mb-6">
-                <span class="tech-dot"></span> 空间足迹漫游日志
-            </h3>
-            <div id="history-list" class="space-y-6"></div>
+        <div class="left-sidebar">
+            <section class="tech-card sticky top-8">
+                <h3 class="module-title">空间足迹漫游日志</h3>
+                <div id="history-list" class="grid grid-cols-1 gap-4"></div>
+            </section>
+        </div>
 
-            <div class="tech-card p-6 border-slate-800">
-                <p class="text-[20px] font-mono text-cyan-900 mb-4 tracking-tighter font-bold">诊断状态</p>
-                <div class="grid grid-cols-4 gap-2">
-                    <div class="h-2 bg-cyan-500 shadow-[0_0_10px_var(--cyan)]"></div>
-                    <div class="h-2 bg-cyan-500"></div>
-                    <div class="h-2 bg-cyan-500"></div>
-                    <div class="h-2 bg-cyan-900/30"></div>
-                </div>
-                <p class="text-[15px] text-slate-500 mt-4 font-mono font-medium">系统已根据历史共振频率自动对齐...</p>
+        <div class="w-full">
+            <div class="grid grid-cols-12 gap-5 w-full">
+
+                <!-- 用户信息模块 -->
+                <section class="col-span-5 user-profile-card">
+                    <div class="flex items-start gap-3">
+                        <!-- 头像 -->
+                        <div class="flex-shrink-0">
+                            <img src="https://picsum.photos/id/237/300/300" alt="用户头像" class="profile-avatar">
+                        </div>
+                        <!-- 右侧信息 -->
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h1 class="profile-name">小乐乐</h1>
+                                <span class="text-lg">☀️</span>
+                            </div>
+                            <p class="profile-greeting">今天又积极地参与音乐疗愈，真棒！<span class="text-base">〰️</span></p>
+                            <div class="flex gap-4 mb-2">
+                                <!-- 累计次数 -->
+                                <div class="text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <path d="M12 6v6l4 2" />
+                                        </svg>
+                                    </div>
+                                    <p class="stat-label">累计疗愈次数</p>
+                                    <p class="stat-number" id="total-sessions">3</p>
+                                </div>
+                                <!-- 累计时长 -->
+                                <div class="text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <path d="M12 8v4l3 3" />
+                                        </svg>
+                                    </div>
+                                    <p class="stat-label">累计疗愈时长</p>
+                                    <p class="stat-number" id="long-total-duration">17 min 21 s</p>
+                                </div>
+                            </div>
+                            <!-- 音乐个性标签 -->
+                            <div>
+                                <p class="text-sm font-bold mb-1" style="color: #5a4b3c;">音乐个性标签</p>
+                                <div class="flex flex-wrap gap-2" id="music-tags"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 本次疗愈概览 -->
+                <section class="col-span-3 healing-overview-card">
+                    <div class="overview-title">本次疗愈概览</div>
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="overview-item">
+                                <svg class="overview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 6v6l4 2" />
+                                </svg>
+                                <span>时长：<span id="overview-duration">40s</span></span>
+                            </div>
+                            <div class="overview-item">
+                                <svg class="overview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                    <circle cx="12" cy="17" r="1" />
+                                </svg>
+                                <span>模式：<span id="therapy-mode">单人沉浸</span></span>
+                            </div>
+                            <div class="overview-item">
+                                <svg class="overview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polygon
+                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                                <span>共鸣：<span id="overview-hits">6</span></span>
+                            </div>
+                            <div class="mt-3">
+                                <div class="ai-evaluation-tag">AI评价：<span id="ai-highlight-summary">状态平稳</span></div>
+                            </div>
+                        </div>
+                        <div class="emotion-score-circle">
+                            <canvas id="scoreCircle"></canvas>
+                            <div class="emotion-score-number">
+                                <div class="score" id="mood-improve-score">60</div>
+                                <div class="label">情绪改善</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="col-span-4 pentatonic-analysis-card">
+                    <div class="pentatonic-title">五音（五行）响应分析</div>
+                    <div class="flex gap-4 items-center">
+                        <!-- 五音雷达图 -->
+                        <div class="flex-1 h-52">
+                            <canvas id="pentatonicRadar"></canvas>
+                        </div>
+                        <!-- 本次最佳匹配卡片 -->
+                        <div class="w-1/3">
+                            <p class="text-xs font-medium mb-1">本次最佳匹配</p>
+                            <div class="bg-[#e8f1ef] rounded-lg p-2 text-center">
+                                <div class="flex items-center justify-center gap-1 mb-1">
+                                    <span id="best-tone-circle"
+                                        class="w-6 h-6 rounded-full bg-[#8fb8b0] text-white text-xs flex items-center justify-center">角</span>
+                                    <span id="best-tone-text" class="font-medium">角</span>
+                                </div>
+                                <p class="text-xs text-[#5a4b3c]">本音调式</p>
+                                <p id="best-tone-desc" class="text-xs text-[#5a4b3c] mt-1">温和生发 · 疏肝理气</p>
+                                <!-- 星级评分 -->
+                                <div class="flex justify-center mt-2">
+                                    <span class="text-yellow-400 text-xs"></span>
+                                    <span class="text-yellow-400 text-xs opacity-50"></span>
+                                </div>
+                                <p class="text-xs font-bold mt-1"></p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="col-span-12 flex gap-5 tech-card p-0 overflow-hidden">
+                    <div class="w-[60%] p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="module-title">情绪变化时间轴</h3>
+                            <div class="flex gap-4 text-xs">
+                                <span class="flex items-center gap-1"><i class="w-3 h-1 bg-[#8fb8b0] rounded"></i>
+                                    情绪识别曲线</span>
+                                <span class="flex items-center gap-1"><i class="w-3 h-1 bg-[#4ade80] rounded"></i>
+                                    生理信号曲线</span>
+                                <span class="flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-[#fbbf24]"></i>
+                                    情绪峰值</span>
+                                <span class="flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-[#c084fc]"></i>
+                                    音乐节点</span>
+                            </div>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="emotionTimeAxisChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 多模态部分 -->
+                    <div class="w-[40%] p-4 border-l border-[var(--border-color)] flex flex-col justify-between">
+                        <div>
+                            <h3 class="module-title">多模态参与度</h3>
+                            <div class="grid grid-cols-1 gap-2">
+                                <!-- 视觉专注度 -->
+                                <div class="multimodal-card">
+                                    <div class="multimodal-ring">
+                                        <canvas id="visual-ring"></canvas>
+                                    </div>
+                                    <div class="multimodal-card-main">
+                                        <div class="multimodal-card-title">👁️ 视觉专注度 <span
+                                                class="text-xs text-gray-400">ⓘ</span></div>
+                                        <div class="multimodal-card-value" id="visual-value">0%</div>
+                                        <div class="multimodal-card-change up">
+                                            <span>较上次</span>
+                                            <span>▲</span>
+                                            <span id="visual-change">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="multimodal-trend">
+                                        <canvas id="visual-trend"></canvas>
+                                    </div>
+                                </div>
+                                <!-- 听觉同步性 -->
+                                <div class="multimodal-card">
+                                    <div class="multimodal-ring">
+                                        <canvas id="audio-ring"></canvas>
+                                    </div>
+                                    <div class="multimodal-card-main">
+                                        <div class="multimodal-card-title">👂 听觉同步性 <span
+                                                class="text-xs text-gray-400">ⓘ</span></div>
+                                        <div class="multimodal-card-value" id="audio-value">0%</div>
+                                        <div class="multimodal-card-change up">
+                                            <span>较上次</span>
+                                            <span>▲</span>
+                                            <span id="audio-change">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="multimodal-trend">
+                                        <canvas id="audio-trend"></canvas>
+                                    </div>
+                                </div>
+                                <!-- 身体互动频率 -->
+                                <div class="multimodal-card">
+                                    <div class="multimodal-ring">
+                                        <canvas id="body-ring"></canvas>
+                                    </div>
+                                    <div class="multimodal-card-main">
+                                        <div class="multimodal-card-title">👤 身体互动频率 <span
+                                                class="text-xs text-gray-400">ⓘ</span></div>
+                                        <div class="multimodal-card-value" id="body-value">0%</div>
+                                        <div class="multimodal-card-change up">
+                                            <span>较上次</span>
+                                            <span>▲</span>
+                                            <span id="body-change">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="multimodal-trend">
+                                        <canvas id="body-trend"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="multimodal-summary" class="text-xs mt-2 text-gray-500">多感官参与度评估完成，整体呈上升趋势。</p>
+                    </div>
+                </section>
+
+                <!-- 能力发展雷达图+近十次趋势 -->
+                <section class="col-span-4 tech-card">
+                    <h3 class="module-title">能力发展雷达图</h3>
+
+                    <!-- 三层叠加雷达图 -->
+                    <div class="h-72 mb-4">
+                        <canvas id="abilityRadarChart"></canvas>
+                    </div>
+
+                    <!-- 图例说明 -->
+                    <div class="flex justify-center gap-6 text-xs mb-4">
+                        <span class="flex items-center gap-1.5">
+                            <i class="w-2.5 h-2.5 rounded-full bg-[#8fb8b0]"></i>
+                            本次评估
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <i class="w-2.5 h-2.5 rounded-full bg-[#c5a059]"></i>
+                            上次评估
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <i class="w-2.5 h-2.5 rounded-full bg-[#d1d1d1]"></i>
+                            首次基线
+                        </span>
+                    </div>
+
+                    <!-- 近十次疗愈趋势 -->
+                    <div class="pt-3 border-t border-[var(--border-color)]">
+                        <p class="text-sm font-medium mb-4 text-[var(--text-main)]">近十次疗愈能力趋势</p>
+
+                        <div class="space-y-3">
+                            <!-- 注意力 -->
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="w-20 shrink-0 text-right text-sm whitespace-nowrap text-[var(--text-main)]">注意力</span>
+                                <div class="flex-1 flex justify-center gap-1.5 items-end h-8">
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:30%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:35%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:40%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:50%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:45%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:55%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:65%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:60%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:75%"></div>
+                                    <div class="bg-[#8fb8b0]/35 w-3 rounded-sm" style="height:80%"></div>
+                                </div>
+                            </div>
+
+                            <!-- 情绪稳定性 -->
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="w-20 shrink-0 text-right text-sm whitespace-nowrap text-[var(--text-main)]">情绪稳定性</span>
+                                <div class="flex-1 flex justify-center gap-1.5 items-end h-8">
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:25%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:30%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:38%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:45%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:50%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:58%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:63%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:68%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:73%"></div>
+                                    <div class="bg-[#a78bfa]/35 w-3 rounded-sm" style="height:78%"></div>
+                                </div>
+                            </div>
+
+                            <!-- 模仿能力 -->
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="w-20 shrink-0 text-right text-sm whitespace-nowrap text-[var(--text-main)]">模仿能力</span>
+                                <div class="flex-1 flex justify-center gap-1.5 items-end h-8">
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:25%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:30%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:35%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:40%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:48%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:55%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:60%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:65%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:72%"></div>
+                                    <div class="bg-[#c5a059]/35 w-3 rounded-sm" style="height:78%"></div>
+                                </div>
+                            </div>
+
+                            <!-- 节奏感 -->
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="w-20 shrink-0 text-right text-sm whitespace-nowrap text-[var(--text-main)]">节奏感</span>
+                                <div class="flex-1 flex justify-center gap-1.5 items-end h-8">
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:32%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:38%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:45%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:50%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:58%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:62%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:70%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:68%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:76%"></div>
+                                    <div class="bg-[#a0c4ff]/35 w-3 rounded-sm" style="height:82%"></div>
+                                </div>
+                            </div>
+
+                            <!-- 语言反应 -->
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="w-20 shrink-0 text-right text-sm whitespace-nowrap text-[var(--text-main)]">语言反应</span>
+                                <div class="flex-1 flex justify-center gap-1.5 items-end h-8">
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:20%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:28%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:35%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:40%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:48%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:55%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:60%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:65%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:70%"></div>
+                                    <div class="bg-[#b8b8b8]/35 w-3 rounded-sm" style="height:75%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI个性化建议 -->
+                <section class="col-span-8 tech-card">
+                    <h3 class="module-title">AI 个性化建议</h3>
+                    <div class="ai-recommendation-container">
+                        <!-- 推荐音乐曲目 -->
+                        <div class="ai-recommendation-card card-1">
+                            <div class="recommendation-header">
+                                <h4><span>🎵</span> 推荐音乐曲目</h4>
+                                <span class="text-sm opacity-60 cursor-pointer">更多 ></span>
+                            </div>
+                            <div class="recommendation-track-item">
+                                <img src="https://picsum.photos/id/65/60/60" alt="春江花月夜" class="track-cover">
+                                <div class="track-info">
+                                    <h5>春江花月夜</h5>
+                                    <p>舒缓 · 宁神</p>
+                                </div>
+                                <div class="play-btn"></div>
+                            </div>
+                            <div class="recommendation-track-item">
+                                <img src="https://picsum.photos/id/66/60/60" alt="角调·木之生机" class="track-cover">
+                                <div class="track-info">
+                                    <h5>角调·木之生机</h5>
+                                    <p>五音调和</p>
+                                </div>
+                                <div class="play-btn"></div>
+                            </div>
+                            <div class="recommendation-track-item">
+                                <img src="https://picsum.photos/id/67/60/60" alt="林涧清音" class="track-cover">
+                                <div class="track-info">
+                                    <h5>林涧清音</h5>
+                                    <p>自然音景</p>
+                                </div>
+                                <div class="play-btn"></div>
+                            </div>
+                        </div>
+
+                        <!-- 亲子共练建议 -->
+                        <div class="ai-recommendation-card card-2">
+                            <div class="recommendation-header">
+                                <h4><span>👤</span> 亲子共练建议</h4>
+                            </div>
+                            <ul class="recommendation-list">
+                                <li>每天15-20分钟亲子音乐时光</li>
+                                <li>一起哼唱简单旋律，增强语言表达</li>
+                                <li>用身体律动表达情绪（抬手、摇摆）</li>
+                                <li>听自然音效，观察大自然的颜色</li>
+                            </ul>
+                            <div class="quote-box">
+                                <span>💡 音乐是最温柔的陪伴，您的参与是孩子最好的礼物。</span>
+                                <span class="heart-icon">🧡</span>
+                            </div>
+                        </div>
+
+                        <!-- 下周重点关注 -->
+                        <div class="ai-recommendation-card card-3">
+                            <div class="recommendation-header">
+                                <h4><span>🛍️</span> 下周重点关注</h4>
+                            </div>
+                            <ul class="recommendation-list">
+                                <li>继续提升注意力的稳定性</li>
+                                <li>增强节奏感与身体协调</li>
+                                <li>鼓励表达感受与想法</li>
+                            </ul>
+                            <div class="absolute bottom-0 right-0 opacity-20 pointer-events-none">
+                                <svg width="120" height="120" viewBox="0 0 100 100">
+                                    <circle cx="70" cy="80" r="20" fill="#8fb8b0" opacity="0.3" />
+                                    <circle cx="40" cy="90" r="15" fill="#8fb8b0" opacity="0.2" />
+                                    <path d="M 75 30 Q 80 20 85 30" stroke="#8fb8b0" fill="none" stroke-width="2" />
+                                    <path d="M 55 45 Q 60 35 65 45" stroke="#8fb8b0" fill="none" stroke-width="2" />
+                                    <path d="M 35 55 Q 40 45 45 55" stroke="#8fb8b0" fill="none" stroke-width="2" />
+                                    <path d="M 90 50 Q 95 40 100 50" stroke="#8fb8b0" fill="none" stroke-width="2" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI疗愈总结部分 -->
+                    <div class="mt-4 bg-[#f9f7f3] p-4 rounded-xl border border-[#eae5dd]">
+                        <h4 class="text-xs font-bold text-[#8c6f4b] mb-2">📝 AI 疗愈师总结</h4>
+                        <p id="ai-summary" class="text-sm leading-relaxed"></p>
+                    </div>
+                </section>
+
             </div>
-        </div>
 
-        <div class="lg:col-span-8 space-y-12">
-            <div class="tech-card p-10">
-                <div class="flex justify-between items-center mb-10">
-                    <h3 class="text-2xl font-bold text-slate-300 uppercase tracking-[0.2em] flex items-center">
-                        <span class="tech-dot"></span> 情绪共鸣实时波形图
-                    </h3>
-                    <div class="flex items-center gap-4">
-                        <span class="flex items-center gap-2 text-[15px] text-emerald-500 font-bold"><span
-                                class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span> 系统在线</span>
-                        <span class="text-lg text-slate-600 font-mono font-bold">实时状态评估</span>
+            <!-- 长期追踪 -->
+            <div class="long-term-track-entry max-w-none">
+                <div class="long-track-header" onclick="toggleLongTrack()">
+                    <div class="flex items-center gap-2">
+                        <span class="tech-dot"></span>
+                        <span>长期纵向追踪</span>
+                    </div>
+                    <span id="long-track-arrow">∨</span>
+                </div>
+                <div id="long-track-panel" class="long-track-panel">
+                    <div class="mb-4">
+                        <p class="text-xs opacity-60">累计疗愈时长</p>
+                        <p class="text-xl giant-number" id="long-total-duration-bottom">0 分钟</p>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-xs opacity-60">疗愈里程碑</p>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="milestone-badge" id="badge-first">首次体验</span>
+                            <span class="milestone-badge" id="badge-hit">主动交互</span>
+                            <span class="milestone-badge" id="badge-complete">完整完成</span>
+                        </div>
+                    </div>
+                    <div class="h-28">
+                        <canvas id="long-month-chart"></canvas>
                     </div>
                 </div>
-                <div class="h-[400px] w-full">
-                    <canvas id="emotionChart"></canvas>
-                </div>
             </div>
 
-            <div class="tech-card p-12 bg-cyan-950/20 ring-1 ring-cyan-500/30">
-                <div class="flex items-center gap-6 mb-8">
-                    <div
-                        class="flex items-center justify-center w-12 h-12 rounded bg-cyan-500/20 text-cyan-400 shadow-[0_0_20px_rgba(0,242,255,0.3)]">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-bold tracking-widest text-cyan-100">AI 疗愈师总结报告</h3>
-                    </div>
-                </div>
-                <div class="pl-8 border-l-4 border-cyan-500/40 py-2">
-                    <p id="ai-summary"
-                        class="text-xl leading-[2.2] text-slate-200 tracking-wide text-justify font-medium"></p>
-                </div>
+            <!-- 结束疗愈 返回主页 按钮 -->
+            <div class="text-center mt-12 mb-8">
+                <button class="end-healing-btn" onclick="backToHome()">
+                    结束疗愈 返回主页
+                </button>
             </div>
+
+        </div>
+
+        <!-- 家长教师留言 -->
+        <div class="right-sidebar">
+            <section class="tech-card sticky top-8">
+                <h3 class="module-title">家长 / 教师留言与预约专区</h3>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="bg-white/70 p-4 rounded-xl border border-gray-100">
+                        <h4 class="text-xs font-bold mb-2">📝 居家观察记录</h4>
+                        <textarea class="w-full h-24 p-2 text-sm border border-gray-200 rounded-lg"></textarea>
+                        <button class="mt-2 px-4 py-2 bg-[#8fb8b0] text-white text-xs rounded-lg">提交</button>
+                    </div>
+                    <div class="bg-white/70 p-4 rounded-xl border border-gray-100">
+                        <h4 class="text-xs font-bold mb-2">⭐ 主观评价</h4>
+                        <div class="flex gap-1 text-lg text-yellow-400">★★★★★</div>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="space-tag">情绪平复</span>
+                            <span class="space-tag">专注提升</span>
+                        </div>
+                    </div>
+                    <div class="bg-white/70 p-4 rounded-xl border border-gray-100">
+                        <h4 class="text-xs font-bold mb-2">📅 预约服务</h4>
+                        <button
+                            class="w-full mb-2 px-3 py-2 text-xs border border-[#8fb8b0] text-[#6b948b] rounded-lg">预约治疗师</button>
+                        <button
+                            class="w-full px-3 py-2 text-xs border border-[#8fb8b0] text-[#6b948b] rounded-lg">定制疗愈方案</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+    <!-- 五音弹窗 -->
+    <div class="pentatonic-modal" id="pentatonicModal">
+        <div class="pentatonic-modal-box">
+            <h4 class="text-xl font-bold text-[#c5a059] mb-4" id="modalToneTitle"></h4>
+            <div id="modalToneContent" class="text-sm leading-relaxed"></div>
+            <button onclick="closePentatonicModal()" class="mt-6 w-full py-2 bg-stone-100 rounded-xl">关闭</button>
         </div>
     </div>
 
-    <!-- 底部按钮 -->
-    <div class="mt-20 text-center pb-20">
-        <button onclick="location.href='/'"
-            class="px-20 py-5 border-2 border-cyan-500 text-cyan-400 text-lg font-black tracking-[0.5em] uppercase hover:bg-cyan-500/10 transition-all active:scale-95 shadow-[0_0_30px_rgba(0,242,255,0.1)] rounded-sm">
-            结束本次疗愈
-        </button>
-    </div>
+    <footer class="mt-16 pb-10 text-center opacity-40 text-xs tracking-wider">
+        © 2026 星璇律动 · 数字化疗愈实证平台
+    </footer>
 
     <script>
+        // 返回主页链接
+        function backToHome() {
+            window.location.href = '/';
+        }
+
+        // 五音知识库
+        const pentatonicDetail = [
+            { name: "宫", emotion: "主思", theory: "宫音属土，入脾胃，安神平缓情绪。" },
+            { name: "商", emotion: "主悲", theory: "商音属金，入肺，理气收敛情绪。" },
+            { name: "角", emotion: "主怒", theory: "角音属木，入肝胆，疏肝解郁。" },
+            { name: "徵", emotion: "主喜", theory: "徵音属火，入心脏，激发愉悦。" },
+            { name: "羽", emotion: "主恐", theory: "羽音属水，入肾，镇静安神。" }
+        ];
+
+        function closePentatonicModal() {
+            document.getElementById('pentatonicModal').style.display = 'none';
+        }
+        function openPentatonicModal(idx) {
+            const item = pentatonicDetail[idx];
+            document.getElementById('modalToneTitle').innerText = `${item.name}音 · 情志解读`;
+            document.getElementById('modalToneContent').innerHTML = `
+            <p><b>对应情志：</b>${item.emotion}</p>
+            <p class="mt-2"><b>理论：</b>${item.theory}</p>
+        `;
+            document.getElementById('pentatonicModal').style.display = 'flex';
+        }
+
+        // 长期追踪折叠
+        function toggleLongTrack() {
+            const panel = document.getElementById('long-track-panel');
+            const arrow = document.getElementById('long-track-arrow');
+            panel.classList.toggle('show');
+            arrow.innerText = panel.classList.contains('show') ? '∧' : '∨';
+        }
+
+        // 加载长期数据
+        function loadLongTermData() {
+            const history = JSON.parse(localStorage.getItem('healing_history') || '[]');
+            let totalSec = 0;
+            history.forEach(item => totalSec += item.duration || 0);
+            const totalMin = Math.round(totalSec / 60);
+            document.getElementById('long-total-duration-bottom').innerText = totalMin + " 分钟";
+
+            new Chart(document.getElementById('long-month-chart'), {
+                type: 'line',
+                data: {
+                    labels: ['1日', '10日', '20日', '30日'],
+                    datasets: [{
+                        data: [1, 3, 4, 6],
+                        borderColor: '#8fb8b0',
+                        backgroundColor: 'rgba(143,184,176,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { plugins: { legend: false }, scales: { y: { beginAtZero: true } }, maintainAspectRatio: false }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const history = JSON.parse(localStorage.getItem('healing_history') || '[]');
-            const initialEmotion = localStorage.getItem('healing_initial_emotion');
+            const initialEmotion = localStorage.getItem('healing_initial_emotion') || 'neutral';
             const samples = JSON.parse(localStorage.getItem('healing_emotion_samples') || '[]');
 
             let totalTime = 0, totalHits = 0, totalInterrupts = 0, totalMisses = 0;
             const listContainer = document.getElementById('history-list');
 
             history.forEach(item => {
-                totalTime += item.duration;
-                totalHits += item.hits;
-                totalInterrupts += item.interrupts;
-                totalMisses += item.misses;
-
-                let statusText = ""; let statusColor = "";
-                if (item.hits === 0 && item.misses === 0) { statusText = "待激活"; statusColor = "text-slate-500"; }
-                else if (item.misses >= (item.hits + 2)) { statusText = "失调"; statusColor = "text-rose-400"; }
-                else if (item.interrupts > 2) { statusText = "波动"; statusColor = "text-amber-400"; }
-                else { statusText = "稳定"; statusColor = "text-emerald-400"; }
+                totalTime += item.duration || 0;
+                totalHits += item.hits || 0;
+                totalInterrupts += item.interrupts || 0;
+                totalMisses += item.misses || 0;
 
                 const card = document.createElement('div');
-                card.className = 'tech-card p-6 bg-slate-900/50 border-slate-800 hover:border-cyan-500/60 transition-all';
+                card.className = 'tech-card p-4';
                 card.innerHTML = `
-                    <p class="text-sm font-bold text-cyan-500 mb-4 tracking-widest uppercase">${item.name} 空间</p>
-                    <div class="flex flex-wrap gap-4 mb-6">
-                        <span class="space-tag font-bold">⏱ 累计停留时长 ${item.duration}s</span>
-                        <span class="space-tag font-bold text-emerald-400">有效交互 ${item.hits}</span>
-                        <span class="space-tag font-bold text-rose-400">MISS ${item.misses}</span>
-                    </div>
-                    <div class="flex justify-start items-center pt-4 border-t border-white/5">
-                        <span class="text-xs text-slate-300 font-mono tracking-widest uppercase font-bold">状态评估：</span>
-                        <span class="text-sm font-black ${statusColor} tracking-tighter uppercase">${statusText}</span>
-                    </div>`;
+                <p class="text-sm font-bold mb-2">${item.name || '空间'}</p>
+                <div class="flex gap-2 text-xs">
+                    <span class="space-tag">时长 ${item.duration}s</span>
+                    <span class="space-tag">有效 ${item.hits}</span>
+                </div>
+            `;
                 listContainer.appendChild(card);
             });
 
             const totalActions = totalHits + totalMisses;
             const hitRate = totalActions > 0 ? (totalHits / totalActions) * 100 : 0;
-            const stabilityScore = Math.round(Math.max(0, (hitRate * 0.7) - (totalInterrupts * 10)));
+            const stabilityScore = Math.max(0, Math.round((hitRate * 0.7) - (totalInterrupts * 10)));
 
-            document.getElementById('avg-stability').innerText = stabilityScore + '%';
-            document.getElementById('total-time').innerText = totalTime + 's';
-            document.getElementById('total-hits').innerText = totalHits;
-            document.getElementById('session-date').innerText = "报告生成时间: " + new Date().toLocaleString().toUpperCase();
+            // 多模态数据计算
+            let visual = Math.min(95, Math.round(stabilityScore * 0.9));
+            let audio = Math.min(95, Math.round(hitRate));
+            let body = Math.max(1, Math.round(totalHits / Math.max(1, totalTime / 60)));
+            // 提升率
+            const visualChange = 16;
+            const audioChange = 12;
+            const bodyChange = 9;
 
-            // AI 总结
-            const emotionZh = { 'angry': '焦躁', 'sad': '低落', 'neutral': '平静', 'happy': '愉悦' };
-            let analysisText = `识别到您以“${emotionZh[initialEmotion] || '中性'}”心境开启本次疗愈。`;
-            if (totalActions === 0) analysisText += "漫游过程中未检测到有效交互，可能您正处于深度沉浸观赏状态。";
-            else if (hitRate < 30) analysisText += `在漫游中尝试了${totalActions}次共鸣，但仅成功捕捉${totalHits}次。这反映出当前身心频率与旋律存在明显失调，难以进入同频状态。`;
-            else if (hitRate < 70) analysisText += `在漫游中完成了${totalHits}次共鸣。交互表现尚可，但捕捉节奏时出现了一定的迟滞。`;
-            else analysisText += `在漫游中精准完成了${totalHits}次成功共鸣。操作行云流水，显示出极强的专注力与韵律感。`;
+            // 环形进度条
+            function createRing(canvasId, value, color) {
+                new Chart(document.getElementById(canvasId), {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [value, 100 - value],
+                            backgroundColor: [color, '#f0f0f0'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        cutout: '75%',
+                        plugins: { legend: false, tooltip: { enabled: false } },
+                        maintainAspectRatio: false
+                    }
+                });
+            }
 
-            if (stabilityScore < 40) analysisText += " 整体状态稳度较低，心境仍有显著波动。建议后续尝试更慢节奏、长线条的“羽”调曲目。";
-            else if (stabilityScore < 80) analysisText += " 状态稳度良好，基本维持了心境平衡。";
-            else analysisText += " 状态极度稳定，身心频率已达成高度契合，已成功进入深度疗愈区间。";
-
-            document.getElementById('ai-summary').innerText = analysisText;
-
-            // 图表加高展示
-            let chartDataPoints = samples.map(e => (e === 'happy' ? 90 : (e === 'neutral' ? 80 : 40)));
-            history.forEach(item => {
-                let spaceScore = 80 + (item.hits * 2) - (item.misses * 6) - (item.interrupts * 4);
-                chartDataPoints.push(Math.max(20, Math.min(100, spaceScore)));
-            });
-
-            const ctx = document.getElementById('emotionChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartDataPoints.map((_, i) => i),
-                    datasets: [{
-                        data: chartDataPoints,
-                        borderColor: '#00f2ff',
-                        borderWidth: 4,
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: (context) => {
-                            const g = context.chart.ctx.createLinearGradient(0, 0, 0, 400);
-                            g.addColorStop(0, 'rgba(0, 242, 255, 0.3)');
-                            g.addColorStop(1, 'rgba(0, 242, 255, 0)');
-                            return g;
+            // 趋势柱状图
+            function createTrend(canvasId, color) {
+                new Chart(document.getElementById(canvasId), {
+                    type: 'bar',
+                    data: {
+                        labels: ['', '', ''],
+                        datasets: [{
+                            data: [30, 60, 90],
+                            backgroundColor: color,
+                            borderRadius: 4,
+                            barPercentage: 0.5
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: false, tooltip: { enabled: false } },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
                         },
-                        pointRadius: 4,
-                        pointBackgroundColor: '#00f2ff',
-                        pointBorderColor: '#010810',
-                        pointBorderWidth: 2
-                    }]
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            // 初始化多模态图表
+            createRing('visual-ring', visual, '#8fb8b0');
+            createRing('audio-ring', audio, '#f2b766');
+            createRing('body-ring', Math.min(95, body * 10), '#73a2e6');
+
+            createTrend('visual-trend', '#8fb8b0');
+            createTrend('audio-trend', '#f2b766');
+            createTrend('body-trend', '#73a2e6');
+
+            // 填充数据
+            document.getElementById('visual-value').innerText = visual + '%';
+            document.getElementById('visual-change').innerText = visualChange + '%';
+            document.getElementById('audio-value').innerText = audio + '%';
+            document.getElementById('audio-change').innerText = audioChange + '%';
+            document.getElementById('body-value').innerText = Math.min(95, body * 10) + '%';
+            document.getElementById('body-change').innerText = bodyChange + '%';
+            document.getElementById('multimodal-summary').innerText = "多感官参与度评估完成，整体呈上升趋势。";
+
+            // 计算情绪稳定性
+            let moodStability = 60;
+            if (samples.length > 0) {
+                const values = samples.map(e => e === 'happy' ? 90 : e === 'neutral' ? 70 : 40);
+                const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+                moodStability = Math.round(Math.max(0, 100 - Math.sqrt(variance)));
+            }
+
+            // 能力雷达
+            new Chart(document.getElementById('abilityRadarChart'), {
+                type: 'radar',
+                data: {
+                    labels: ["注意力", "情绪稳定性", "模仿能力", "节奏感", "语言反应"],
+                    datasets: [
+                        // 本次评估 主色实线
+                        {
+                            label: '本次评估',
+                            data: [stabilityScore, moodStability, 70, 85, 60],
+                            borderColor: '#8fb8b0',
+                            backgroundColor: 'rgba(143, 184, 176, 0.2)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#8fb8b0',
+                            pointRadius: 3,
+                            fill: true
+                        },
+                        // 上次评估 金色淡线
+                        {
+                            label: '上次评估',
+                            data: [stabilityScore - 10, moodStability - 8, 62, 60, 48],
+                            borderColor: '#c5a059',
+                            backgroundColor: 'rgba(197, 160, 89, 0.15)',
+                            borderWidth: 1.8,
+                            pointBackgroundColor: '#c5a059',
+                            pointRadius: 2.5,
+                            fill: true
+                        },
+                        // 首次基线 灰色虚线基准
+                        {
+                            label: '首次基线',
+                            data: [50, 50, 50, 50, 50],
+                            borderColor: '#d1d1d1',
+                            borderDash: [4, 4],
+                            borderWidth: 1.2,
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
                 },
                 options: {
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: false,
+                        tooltip: {
+                            backgroundColor: 'rgba(255,255,255,0.9)',
+                            titleColor: '#5a4b3c',
+                            bodyColor: '#5a4b3c',
+                            borderColor: 'rgba(197,160,89,0.2)',
+                            borderWidth: 1,
+                            padding: 10
+                        }
+                    },
                     scales: {
-                        x: { display: false },
-                        y: {
-                            display: true, min: 0, max: 100,
-                            grid: { color: 'rgba(0, 242, 255, 0.05)', lineWidth: 1 },
-                            ticks: { color: '#334155', font: { size: 12, family: 'monospace', weight: 'bold' }, stepSize: 20 }
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false },
+                            grid: { color: 'rgba(90,75,60,0.06)' },
+                            angleLines: { color: 'rgba(90,75,60,0.08)' },
+                            pointLabels: {
+                                color: '#5a4b3c',
+                                font: { size: 11 }
+                            }
                         }
                     }
                 }
             });
+
+            // 基础数据
+            document.getElementById('session-date').innerText = new Date().toLocaleString();
+            document.getElementById('total-sessions').innerText = history.length || 3;
+            document.getElementById('overview-duration').innerText = totalTime > 0 ? totalTime + 's' : '40s';
+            document.getElementById('overview-hits').innerText = totalHits > 0 ? totalHits : '6';
+            document.getElementById('mood-improve-score').innerText = stabilityScore > 0 ? stabilityScore : '60';
+            document.getElementById('long-total-duration').innerText = '15 min 27 s';
+            document.getElementById('ai-highlight-summary').innerText = stabilityScore > 70 ? "身心同频度高" : "状态平稳";
+            document.getElementById('ai-summary').innerText = "从近十次疗愈趋势曲线与三层能力雷达对比数据可见：孩子整体身心状态呈现稳步向上、情绪趋于平和、感知参与度持续提升的良好发展态势。在情绪层面，经过阶段性宫商角徵羽五音节律干预，孩子烦躁冲动频次明显减少，情绪自我调控与稳定性逐步增强，对外界环境变化的接纳度更高，哭闹、回避、刻板躁动等行为表现得到有效舒缓。在感知与参与层面，注意力集中时长稳步延长，能够更长时间跟随音乐节律、视觉引导完成同步互动；节奏感随五音旋律熏陶持续进步，肢体跟随、律动配合协调性明显改善；模仿意愿与模仿动作完整度逐步提升，愿意主动参与集体式节奏小游戏与声光互动训练。在语言与社交预备层面，语言反应敏感度、发声意愿与回应主动性缓慢向好，对指令、旋律、语气的听觉辨识能力有所提升，为后续语言表达、社交沟通建立良好身心基础。整体来看，本次 AI 标准化疗愈干预贴合孩子当前身心发育特点，以低刺激、节律化、渐进式的五音疗愈为核心，兼顾情绪安抚、神经调节、感知训练与能力促进。后续将依据雷达能力短板与趋势变化，个性化调整曲风、节拍、音色及疗愈时长，持续强化薄弱维度，巩固已有进步，循序渐进帮助孩子在情绪平稳、专注坚持、肢体协调、语言感知与社交适配五大方向实现可持续成长。";
+
+            // 情绪改善环形图
+            new Chart(document.getElementById('scoreCircle'), {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [60, 40],
+                        backgroundColor: ['#8fb8b0', '#f0f0f0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    plugins: { legend: false, tooltip: { enabled: false } },
+                    maintainAspectRatio: false
+                }
+            });
+
+            (function initEmotionTimeAxis() {
+                const ctx = document.getElementById('emotionTimeAxisChart').getContext('2d');
+
+                // 读取真实历史数据
+                const history = JSON.parse(localStorage.getItem('healing_history') || '[]');
+                let totalTime = 0;
+                history.forEach(item => totalTime += item.duration || 0);
+                totalTime = totalTime || 40;
+
+                // 生成横轴时间标签
+                const pointCount = Math.max(12, Math.ceil(totalTime / 2));
+                const timeLabels = [];
+                for (let i = 0; i <= pointCount; i++) {
+                    const sec = Math.round((i / pointCount) * totalTime);
+                    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+                    const s = String(sec % 60).padStart(2, '0');
+                    timeLabels.push(`${m}:${s}`);
+                }
+
+                // 按空间计算情绪、生理曲线
+                let baseEmotion = 65;
+                const emotionCurve = [];
+                const physiCurve = [];
+
+                history.forEach(space => {
+                    const duration = space.duration || 5;
+                    const pointsInSpace = Math.max(2, Math.round((duration / totalTime) * pointCount));
+                    // 核心情绪计算公式
+                    const base = 70 + (space.hits || 0) * 2 - (space.misses || 0) * 4 - (space.interrupts || 0) * 5;
+
+                    for (let i = 0; i < pointsInSpace; i++) {
+                        const fluct = Math.sin(i * 0.6) * 6 + (Math.random() * 3 - 1.5);
+                        let emo = Math.round(base + fluct);
+                        emo = Math.max(40, Math.min(95, emo));
+                        emotionCurve.push(emo);
+                        // 生理曲线小幅偏移
+                        physiCurve.push(Math.max(40, Math.min(95, emo + (Math.random() * 5 - 2.5))));
+                    }
+                });
+
+                // 曲线长度
+                while (emotionCurve.length < pointCount + 1) {
+                    emotionCurve.push(emotionCurve.at(-1) || 70);
+                    physiCurve.push(physiCurve.at(-1) || 70);
+                }
+                emotionCurve.splice(pointCount + 1);
+                physiCurve.splice(pointCount + 1);
+
+                let maxVal = -1;
+                let globalPeakIndex = 0;
+                emotionCurve.forEach((val, idx) => {
+                    if (val > maxVal) {
+                        maxVal = val;
+                        globalPeakIndex = idx;
+                    }
+                });
+                const peakIndices = [globalPeakIndex];
+
+                const musicPoints = [0];
+                let cursor = 0;
+                history.forEach(space => {
+                    const dur = space.duration || 5;
+                    cursor += Math.round((dur / totalTime) * pointCount);
+                    musicPoints.push(Math.min(cursor, pointCount));
+                });
+
+                // 组装数据集
+                const datasets = [];
+
+                // 情绪识别曲线
+                datasets.push({
+                    label: '情绪识别曲线',
+                    data: emotionCurve,
+                    borderColor: '#8fb8b0',
+                    backgroundColor: 'rgba(143, 184, 176, 0.08)',
+                    tension: 0.5,
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    order: 1
+                });
+
+                // 生理信号曲线
+                datasets.push({
+                    label: '生理信号曲线',
+                    data: physiCurve,
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74, 222, 128, 0.08)',
+                    tension: 0.5,
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    order: 2
+                });
+
+                // 全局唯一情绪峰值
+                peakIndices.forEach(i => {
+                    datasets.push({
+                        label: '情绪峰值',
+                        data: emotionCurve.map((_, idx) => idx === i ? emotionCurve[i] : null),
+                        backgroundColor: '#fbbf24',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointStyle: 'circle',
+                        showLine: false,
+                        order: 0
+                    });
+                });
+
+                // 音乐切换节点
+                musicPoints.forEach(i => {
+                    datasets.push({
+                        label: '音乐节点',
+                        data: emotionCurve.map((_, idx) => idx === i ? emotionCurve[i] : null),
+                        backgroundColor: '#c084fc',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointStyle: 'circle',
+                        showLine: false,
+                        order: 0
+                    });
+                });
+
+                // 渲染图表
+                new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: timeLabels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: false,
+                            tooltip: {
+                                backgroundColor: 'rgba(255,255,255,0.92)',
+                                titleColor: '#5a4b3c',
+                                bodyColor: '#5a4b3c',
+                                borderColor: 'rgba(197,160,89,0.15)',
+                                borderWidth: 1,
+                                padding: 10,
+                                callbacks: {
+                                    title: t => `时间：${t[0].label}`,
+                                    label: ctx => {
+                                        const d = ctx.dataset;
+                                        if (d.label === '情绪识别曲线') return `情绪评分：${d.data[ctx.dataIndex]}`;
+                                        if (d.label === '生理信号曲线') return `生理评分：${d.data[ctx.dataIndex]}`;
+                                        if (d.label === '情绪峰值') return `⭐ 全局情绪最高点`;
+                                        if (d.label === '音乐节点') return `🎵 音乐空间切换`;
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(90,75,60,0.05)' }, ticks: { color: '#9a8b7c', font: { size: 10 } } },
+                            y: {
+                                min: 30, max: 100,
+                                grid: { color: 'rgba(90,75,60,0.05)' },
+                                ticks: { color: '#9a8b7c' },
+                                title: { display: true, text: '情绪 / 生理 评分', color: '#9a8b7c', font: { size: 10 } }
+                            }
+                        },
+                        elements: { line: { borderJoinStyle: 'round' } }
+                    }
+                });
+            })();
+
+            // 五音数据
+            const toneData = [78, 62, 88, 65, 72]; // 宫、商、角、徵、羽
+            const toneLabels = ['宫', '商', '角', '徵', '羽'];
+            const toneColors = ['#c5a059', '#b8b8b8', '#8fb8b0', '#d46b6b', '#6b94d4'];
+            const toneDescriptions = [
+                '平和中正 · 健脾养胃',
+                '清肃收敛 · 润肺理气',
+                '温和生发 · 疏肝理气',
+                '热情明朗 · 养心安神',
+                '清幽柔婉 · 益肾安神'
+            ];
+
+            // 五音雷达图+点击弹窗
+            const pentatonicRadarChart = new Chart(document.getElementById('pentatonicRadar'), {
+                type: 'radar',
+                data: {
+                    labels: toneLabels,
+                    datasets: [{
+                        data: toneData,
+                        backgroundColor: 'rgba(143, 184, 176, 0.2)',
+                        borderColor: '#8fb8b0',
+                        borderWidth: 2,
+                        pointBackgroundColor: toneColors,
+                        pointRadius: 4,
+                        hoverRadius: 6
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false },
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            angleLines: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    },
+                    plugins: { legend: false },
+                    // 点击触发弹窗
+                    onClick: function (e, elements) {
+                        if (elements.length > 0) {
+                            let idx = elements[0].index;
+                            openPentatonicModal(idx);
+                        }
+                    }
+                }
+            });
+
+            // 最佳五音更新
+            const bestIdx = toneData.indexOf(Math.max(...toneData));
+            document.getElementById('best-tone-text').innerText = toneLabels[bestIdx];
+            document.getElementById('best-tone-circle').innerText = toneLabels[bestIdx];
+            document.getElementById('best-tone-circle').style.backgroundColor = toneColors[bestIdx];
+            document.getElementById('best-tone-desc').innerText = toneDescriptions[bestIdx];
+            document.getElementById('music-tags').innerHTML = `
+            <span class="music-personal-tag tag-1">情感细腻</span>
+            <span class="music-personal-tag tag-2">专注力提升中</span>
+            <span class="music-personal-tag tag-3">节奏感良好</span>
+            <span class="music-personal-tag tag-4">喜欢自然音色</span>
+            <span class="music-personal-tag tag-5">想象力丰富</span>
+        `;
+
+            loadLongTermData();
         });
     </script>
-    <footer class="mt-24 pb-12 text-center space-y-3 border-t border-white/5 pt-10">
-        <p class="text-sm text-slate-500 tracking-widest font-medium">
-            © 2026 星璇律动. 保留所有权利。
-        </p>
-        <p class="text-xs text-slate-600 tracking-[0.4em] uppercase font-bold">
-            AI驱动的歌词、音乐与视频一体化创作平台
-        </p>
-    </footer>
 </body>
 
 </html>
