@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Water & Guqin Experience - Interactive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{% static 'js/healing_tracker.js' %}"></script>
@@ -43,6 +43,9 @@
             opacity: 0;
             transition: opacity 2s ease-in-out;
             pointer-events: none;
+            will-change: opacity;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         .bg-video.active {
@@ -450,6 +453,7 @@
             border-color: rgba(64, 164, 255, 0.8);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/site-mobile.css?v=20260507-mobile2">
 </head>
 
 <body>
@@ -473,8 +477,8 @@
 
     <!-- 背景视频 -->
     <div id="video-container">
-        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
-        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+        <video id="video-1" class="bg-video active" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay preload="metadata" disablepictureinpicture></video>
     </div>
 
     <!-- 气泡层 -->
@@ -492,7 +496,7 @@
 
     <!-- 精灵 -->
     <div id="sprite-container">
-        <img src="{% static 'sprite/water_happy.png' %}" class="sprite-visual" alt="精灵">
+        <img src="{% static 'sprite_lite/water_happy.webp' %}" class="sprite-visual" alt="精灵">
     </div>
 
     <!-- 引导页 -->
@@ -501,7 +505,7 @@
             <div class="prompt-line1"><span class="highlight-water">水</span>空间</div>
 
             <div class="prompt-line2">
-                出现 <img class="guqin-icon-inline" src="{% static 'instrumentsIcon/guqin.png' %}"> 时，
+                出现 <img class="guqin-icon-inline" src="{% static 'instrumentsIcon_lite/guqin.webp' %}"> 时，
                 3s内根据提示点击或长按，感受指尖流水！
             </div>
 
@@ -514,7 +518,7 @@
     <!-- 目标图标 -->
     <div id="target-icon-layer">
         <div id="icon-normal">
-            <img src="{% static 'instrumentsIcon/guqin.png' %}" class="target-guqin">
+            <img src="{% static 'instrumentsIcon_lite/guqin.webp' %}" class="target-guqin">
             <div id="icon-hint" class="icon-hint">点击!</div>
         </div>
         <div id="icon-miss">MISS!</div>
@@ -529,24 +533,24 @@
     <!-- 音乐控制 -->
     <div class="music-layer-control">
         <div class="custom-select-trigger" id="music-trigger">
-            <span id="trigger-text">🎵 添加疗愈白噪音</span><span>▼</span>
+            <span id="trigger-text">添加疗愈白噪音</span><span>▼</span>
         </div>
         <div class="custom-options" id="music-options">
             <div class="volume-box">
                 <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.5">
             </div>
-            <div class="custom-option" data-value="stop">⛔ 停止播放</div>
-            <div class="custom-option" data-value="钵音">🥣 钵音</div>
-            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
-            <div class="custom-option" data-value="滴水">💧 滴水</div>
-            <div class="custom-option" data-value="短笛">🎋 短笛</div>
-            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="stop">停止播放</div>
+            <div class="custom-option" data-value="钵音">钵音</div>
+            <div class="custom-option" data-value="晨钟暮鼓">晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">滴水</div>
+            <div class="custom-option" data-value="短笛">短笛</div>
+            <div class="custom-option" data-value="放松">放松</div>
             <div class="custom-option" data-value="风铃">🎐 风铃</div>
-            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
-            <div class="custom-option" data-value="入眠">🌙 入眠</div>
-            <div class="custom-option" data-value="唯美">🌸 唯美</div>
-            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
-            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
+            <div class="custom-option" data-value="疗愈">疗愈</div>
+            <div class="custom-option" data-value="入眠">入眠</div>
+            <div class="custom-option" data-value="唯美">唯美</div>
+            <div class="custom-option" data-value="小雨">小雨</div>
+            <div class="custom-option" data-value="雨声">雨声</div>
         </div>
     </div>
 
@@ -585,14 +589,14 @@
         const BUBBLE_SIDE_DENSITY = 3; // 两侧气泡数量
         const BUBBLE_DECAY = 0.01; // 气泡衰退速度
 
-        const NOTE_SPAWN_PROBABILITY = 0.5; // 音符频率
+        const NOTE_SPAWN_PROBABILITY = 0.22; // 音符频率
         const NOTE_SPAWN_AMOUNT = 1;        // 音符数量
         const NOTE_FLOAT_SPEED = 1.0;       // 音符速度
         const NOTE_MIN_SIZE = 35;           // 音符最小尺寸
         const NOTE_MAX_SIZE = 60;           // 音符最大尺寸
 
         const musicList = ["凤求凰", "广陵散", "胡笳十八拍", "仙翁操", "长相思"];
-        const videoBasePath = "{% static 'image_video/video/水/' %}";
+        const videoBasePath = "{% static 'image_video/video_lite/水/' %}";
         const musicBasePath = "{% static 'music_segment/古琴/' %}";
         const videoList = [1, 2, 3, 4, 5, 6, 7];
         const maxPlayCount = 8;
@@ -644,12 +648,14 @@
             const currVideo = activeVideoId === 1 ? video1 : video2;
             currentVideoName = videoList[Math.floor(Math.random() * videoList.length)];
             nextVideo.src = `${videoBasePath}${currentVideoName}.mp4`;
+            nextVideo.preload = 'auto';
+            nextVideo.load();
             nextVideo.play().then(() => {
                 nextVideo.classList.add('active');
                 currVideo.classList.remove('active');
                 activeVideoId = activeVideoId === 1 ? 2 : 1;
                 currentVideoPlayCount = 0;
-                setTimeout(() => { currVideo.pause(); }, 2000);
+                setTimeout(() => { currVideo.pause(); currVideo.removeAttribute('src'); currVideo.load(); }, 2000);
             });
         }
 
@@ -759,7 +765,20 @@
         });
 
         // 绘制音符
-        function drawNotes() {
+        let lastNoteFrame = 0;
+        let noteCanvasDirty = false;
+        function drawNotes(timestamp = 0) {
+            requestAnimationFrame(drawNotes);
+            if (timestamp - lastNoteFrame < 33) return;
+            lastNoteFrame = timestamp;
+            if (noteParticles.length === 0) {
+                if (noteCanvasDirty) {
+                    iCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
+                    noteCanvasDirty = false;
+                }
+                return;
+            }
+            noteCanvasDirty = true;
             iCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
             for (let i = noteParticles.length - 1; i >= 0; i--) {
                 let p = noteParticles[i];
@@ -780,15 +799,18 @@
                 iCtx.fillText(p.text, p.x, p.y);
                 iCtx.shadowBlur = 0;
             }
-            requestAnimationFrame(drawNotes);
         }
-        drawNotes();
+        requestAnimationFrame(drawNotes);
 
         // 6. 交互逻辑
         const zones = document.querySelectorAll('.zone');
         let iconTimer, missTimer;
+        let is3dMode = false;
 
         function generateNextIcon() {
+            if (is3dMode) return;
+            clearTimeout(iconTimer);
+            clearTimeout(missTimer);
             const zoneIndex = Math.floor(Math.random() * 4);
             const x = (zoneIndex * 25) + 5 + Math.random() * 15;
             const y = 20 + Math.random() * 40;
@@ -809,6 +831,7 @@
         }
 
         function handleMiss() {
+            if (is3dMode) return;
             targetData.status = 'miss';
             if (window.HealingTracker) HealingTracker.logMiss(); 
             isMoving = false;
@@ -822,6 +845,7 @@
         }
 
         function onZoneDown(idx) {
+            if (is3dMode) return;
             if (!targetData.show || targetData.status !== 'normal' || targetData.zoneIndex !== idx) return;
             clearTimeout(iconTimer);
 
@@ -840,6 +864,7 @@
         }
 
         function finishTarget() {
+            if (is3dMode) return;
             targetData.show = false;
             isMoving = false;
             document.getElementById('target-icon-layer').style.display = 'none';
@@ -886,6 +911,7 @@
         });
 
         document.addEventListener('mouseup', () => {
+            if (is3dMode) return;
             if (isMoving && targetData.type === 'longpress') {
                 isMoving = false;
                 interruptCount++; // 增加中断次数
@@ -896,6 +922,7 @@
         });
 
         document.addEventListener('touchend', (e) => {
+            if (is3dMode) return;
             if (isMoving && targetData.type === 'longpress') {
                 isMoving = false;
                 interruptCount++;
@@ -957,16 +984,45 @@
             }, 500);
         };
 
+        function pauseHealingInteractionFor3D() {
+            is3dMode = true;
+            clearTimeout(iconTimer);
+            clearTimeout(missTimer);
+            targetData.show = false;
+            targetData.status = 'paused';
+            isMoving = false;
+            document.getElementById('target-icon-layer').style.display = 'none';
+            document.getElementById('icon-miss').style.display = 'none';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            fadeOutHitSound();
+        }
+
+        function resumeHealingInteractionFrom3D() {
+            if (!is3dMode) return;
+            is3dMode = false;
+            generateNextIcon();
+        }
+
         // 7. 其他UI逻辑
         const btn3d = document.getElementById('btn-3d');
         const frame = document.getElementById('viewer-frame');
         btn3d.onclick = () => {
+            pauseHealingInteractionFor3D();
             frame.src = `{% url 'water_360' %}?id=${currentVideoName}`;
             frame.style.opacity = '1';
             frame.style.pointerEvents = 'auto';
+            btn3d.style.opacity = '0';
+            btn3d.style.pointerEvents = 'none';
         };
         window.addEventListener('message', e => {
-            if (e.data === 'close360') { frame.style.opacity = '0'; frame.style.pointerEvents = 'none'; }
+            if (e.data === 'close360') {
+                frame.style.opacity = '0';
+                frame.style.pointerEvents = 'none';
+                resumeHealingInteractionFrom3D();
+                btn3d.style.opacity = '1';
+                btn3d.style.pointerEvents = 'auto';
+                setTimeout(() => { frame.src = ""; }, 1000);
+            }
         });
 
         const trigger = document.getElementById('music-trigger');
@@ -978,7 +1034,7 @@
                 if (val === 'stop') document.getElementById('ambient-audio').pause();
                 else {
                     const audio = document.getElementById('ambient-audio');
-                    audio.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
+                    audio.src = `{% static 'music_segment/bk_music_lite/' %}${val}.mp3`;
                     audio.play();
                 }
                 document.getElementById('trigger-text').innerText = this.innerText;

@@ -5,7 +5,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Fire & Erhu - Interactive Healing Space</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{% static 'js/healing_tracker.js' %}"></script>
@@ -43,6 +43,9 @@
             opacity: 0;
             transition: opacity 2s ease-in-out;
             pointer-events: none;
+            will-change: opacity;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         .bg-video.active {
@@ -401,6 +404,7 @@
             border-color: rgba(255, 69, 0, 0.8);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/site-mobile.css?v=20260507-mobile2">
 </head>
 
 <body>
@@ -421,8 +425,8 @@
     </div>
 
     <div id="video-container">
-        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
-        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+        <video id="video-1" class="bg-video active" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay preload="metadata" disablepictureinpicture></video>
     </div>
 
     <div id="growth-overlay"></div>
@@ -437,21 +441,21 @@
     </div>
 
     <div id="sprite-container">
-        <img src="{% static 'sprite/fire_happy.png' %}" class="sprite-visual" alt="Fire Sprite">
+        <img src="{% static 'sprite_lite/fire_happy.webp' %}" class="sprite-visual" alt="Fire Sprite">
     </div>
 
     <div id="prompt-page"
         class="fixed inset-0 bg-black/90 z-[9990] flex flex-col justify-center items-center backdrop-blur-md transition-opacity duration-500">
         <div class="text-orange-600 text-5xl font-bold mb-4">火 空间</div>
         <div class="text-white my-4 flex items-center gap-4 text-center px-8">
-            当出现 <img src="{% static 'instrumentsIcon/erhu.png' %}" class="w-12 h-12"> 时，在3s内点击或长按屏幕对应区域
+            当出现 <img src="{% static 'instrumentsIcon_lite/erhu.webp' %}" class="w-12 h-12"> 时，在3s内点击或长按屏幕对应区域
         </div>
         <button id="start-btn" class="glass-btn mt-6">开启"火"空间</button>
     </div>
 
     <div id="target-icon-layer">
         <div id="icon-normal">
-            <img src="{% static 'instrumentsIcon/erhu.png' %}" class="target-erhu">
+            <img src="{% static 'instrumentsIcon_lite/erhu.webp' %}" class="target-erhu">
             <div id="icon-hint" class="icon-hint">点击!</div>
         </div>
         <div id="icon-miss"
@@ -467,27 +471,27 @@
 
     <div class="music-layer-control">
         <div class="custom-select-trigger" id="music-trigger">
-            <span id="trigger-text">🎵 疗愈白噪音</span><span>▼</span>
+            <span id="trigger-text">疗愈白噪音</span><span>▼</span>
         </div>
         <div class="custom-options" id="music-options">
             <div class="p-4 flex items-center gap-2 border-b border-white/10">
-                <span class="text-xs">🔉</span>
+                <span class="text-xs">音量</span>
                 <input type="range" id="volume-slider"
                     class="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer" min="0" max="1" step="0.05"
                     value="0.5">
             </div>
             <div class="custom-option" data-value="stop">⛔ 停止</div>
-            <div class="custom-option" data-value="钵音">🥣 钵音</div>
-            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
-            <div class="custom-option" data-value="滴水">💧 滴水</div>
-            <div class="custom-option" data-value="短笛">🎋 短笛</div>
-            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="钵音">钵音</div>
+            <div class="custom-option" data-value="晨钟暮鼓">晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">滴水</div>
+            <div class="custom-option" data-value="短笛">短笛</div>
+            <div class="custom-option" data-value="放松">放松</div>
             <div class="custom-option" data-value="风铃">🎐 风铃</div>
-            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
-            <div class="custom-option" data-value="入眠">🌙 入眠</div>
-            <div class="custom-option" data-value="唯美">🌸 唯美</div>
-            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
-            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
+            <div class="custom-option" data-value="疗愈">疗愈</div>
+            <div class="custom-option" data-value="入眠">入眠</div>
+            <div class="custom-option" data-value="唯美">唯美</div>
+            <div class="custom-option" data-value="小雨">小雨</div>
+            <div class="custom-option" data-value="雨声">雨声</div>
         </div>
     </div>
 
@@ -525,7 +529,7 @@
 
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
         const musicList = ["二泉映月", "光明行", "良宵", "十面埋伏", "月夜"];
-        const videoBasePath = "{% static 'image_video/video/火/' %}";
+        const videoBasePath = "{% static 'image_video/video_lite/火/' %}";
         const musicBasePath = "{% static 'music_segment/二胡/' %}";
 
         let activeVideoId = 1;
@@ -547,7 +551,7 @@
             const lantern = document.createElement('div');
             lantern.className = 'lantern';
             const imgIndex = (i % 4) + 1;
-            lantern.style.backgroundImage = `url("{% static 'growth/fire/' %}${imgIndex}.png")`;
+            lantern.style.backgroundImage = `url("{% static 'growth/fire_lite/' %}${imgIndex}.webp")`;
             lantern.style.left = (Math.random() * 90 + 5) + '%';
             lanternPool.push({ el: lantern, speedFactor: 0.5 + Math.random() * 0.8, y: -100, active: false });
             lanternContainer.appendChild(lantern);
@@ -571,13 +575,14 @@
             const current = activeVideoId === 1 ? video1 : video2;
             currentVideoName = videoList[Math.floor(Math.random() * videoList.length)];
             next.src = `${videoBasePath}${currentVideoName}.mp4`;
+            next.preload = 'auto';
             next.load();
             next.play().then(() => {
                 next.classList.add('active');
                 current.classList.remove('active');
                 activeVideoId = (activeVideoId === 1 ? 2 : 1);
                 currentVideoPlayCount = 0;
-                setTimeout(() => { current.pause(); current.currentTime = 0; }, 2000);
+                setTimeout(() => { current.pause(); current.removeAttribute('src'); current.load(); }, 2000);
             });
         }
 
@@ -604,12 +609,15 @@
         let isMoving = false;
         let growthLevel = 0;
         let interruptCount = 0;
+        let is3dMode = false;
 
         const zones = document.querySelectorAll('.zone');
         const spriteContainer = document.getElementById('sprite-container');
         const targetIconLayer = document.getElementById('target-icon-layer');
 
         function generateNextIcon() {
+            if (is3dMode) return;
+            clearTimeout(iconTimer);
             const zoneIdx = Math.floor(Math.random() * 4);
             const x = 15 + zoneIdx * 20 + Math.random() * 10;
             const y = 20 + Math.random() * 40;
@@ -633,6 +641,7 @@
         }
 
         function doMiss() {
+            if (is3dMode) return;
             targetData.status = 'miss'; // 标记为miss
             if (window.HealingTracker) HealingTracker.logMiss();
             isMoving = false;
@@ -654,6 +663,7 @@
         }
 
         function onZoneDown(idx) {
+            if (is3dMode) return;
             if (!targetData.show || targetData.zoneIndex !== idx) return;
 
             clearTimeout(iconTimer); //清除Miss定时器
@@ -678,6 +688,7 @@
         }
 
         function onZoneUp() {
+            if (is3dMode) return;
             if (targetData.type === 'longpress' && isMoving) {
                 isMoving = false;
                 interruptCount++; // 每次松开，中断次数加1
@@ -817,9 +828,28 @@
             setTimeout(() => { document.getElementById('prompt-page').style.display = 'none'; initBackground(); gameLoop(); generateNextIcon(); }, 500);
         };
 
+        function pauseHealingInteractionFor3D() {
+            is3dMode = true;
+            clearTimeout(iconTimer);
+            targetData.show = false;
+            targetData.status = 'paused';
+            isMoving = false;
+            targetIconLayer.style.display = 'none';
+            document.getElementById('icon-miss').style.display = 'none';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            fadeOutHitSound();
+        }
+
+        function resumeHealingInteractionFrom3D() {
+            if (!is3dMode) return;
+            is3dMode = false;
+            generateNextIcon();
+        }
+
         const btn3d = document.getElementById('btn-3d');
         const vFrame = document.getElementById('viewer-frame');
         btn3d.onclick = () => {
+            pauseHealingInteractionFor3D();
             vFrame.src = `{% url 'fire_360' %}?id=${currentVideoName}`;
             vFrame.style.opacity = '1'; vFrame.style.pointerEvents = 'auto';
             btn3d.style.opacity = '0';
@@ -827,6 +857,7 @@
         window.addEventListener('message', (e) => {
             if (e.data === 'close360') {
                 vFrame.style.opacity = '0'; vFrame.style.pointerEvents = 'none';
+                resumeHealingInteractionFrom3D();
                 btn3d.style.opacity = '1'; setTimeout(() => { vFrame.src = ""; }, 1000);
             }
         });
@@ -869,7 +900,7 @@
                     document.getElementById('trigger-text').innerText = this.innerText;
                     options.classList.remove('open');
                     if (val === 'stop') { ambient.pause(); return; }
-                    ambient.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
+                    ambient.src = `{% static 'music_segment/bk_music_lite/' %}${val}.mp3`;
                     ambient.volume = slider.value;
                     ambient.play();
                 };

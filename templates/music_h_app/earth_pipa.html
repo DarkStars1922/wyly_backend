@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Earth & Pipa Experience - Interactive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{% static 'js/healing_tracker.js' %}"></script>
@@ -43,6 +43,9 @@
             opacity: 0;
             transition: opacity 2s ease-in-out;
             pointer-events: none;
+            will-change: opacity;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         .bg-video.active {
@@ -470,6 +473,7 @@
             border-color: rgba(218, 165, 32, 0.6);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/site-mobile.css?v=20260507-mobile2">
 </head>
 
 <body>
@@ -492,8 +496,8 @@
 
     <!-- 视频背景 -->
     <div id="video-container">
-        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
-        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+        <video id="video-1" class="bg-video active" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay preload="metadata" disablepictureinpicture></video>
     </div>
 
     <!-- 宝石与光晕特效 -->
@@ -515,7 +519,7 @@
 
     <!-- 精灵 -->
     <div id="sprite-container">
-        <img src="{% static 'sprite/earth_happy.png' %}" class="sprite-visual" alt="精灵">
+        <img src="{% static 'sprite_lite/earth_happy.webp' %}" class="sprite-visual" alt="精灵">
     </div>
 
     <!-- 引导页 -->
@@ -524,7 +528,7 @@
             <div class="text-white text-3xl mb-4"><span
                     style="color:#DAA520; font-size:4rem; font-weight:bold;">土</span>空间</div>
             <div class="text-gray-200 text-xl mb-8 flex items-center gap-2">当出现 <img
-                    src="{% static 'instrumentsIcon/pipa.png' %}" style="width:45px;"> 时，3s内点击或长按！</div>
+                    src="{% static 'instrumentsIcon_lite/pipa.webp' %}" style="width:45px;"> 时，3s内点击或长按！</div>
             <button id="start-btn" class="glass-btn" style="pointer-events: auto;">准备好了</button>
         </div>
     </div>
@@ -532,7 +536,7 @@
     <!-- 目标图标 -->
     <div id="target-icon-layer">
         <div id="icon-normal" class="flex flex-col items-center">
-            <img src="{% static 'instrumentsIcon/pipa.png' %}" class="target-instrument">
+            <img src="{% static 'instrumentsIcon_lite/pipa.webp' %}" class="target-instrument">
             <div id="icon-hint" class="icon-hint">点击!</div>
         </div>
         <div id="icon-miss" style="color: #FF6347; font-size: 2.5rem; font-weight: bold; display:none;">MISS!</div>
@@ -548,7 +552,7 @@
     <!-- 音乐控制 -->
     <div class="music-layer-control">
         <div class="custom-select-trigger" id="music-trigger">
-            <span id="trigger-text">🎵 添加疗愈白噪音</span><span>▼</span>
+            <span id="trigger-text">添加疗愈白噪音</span><span>▼</span>
         </div>
         <div class="custom-options" id="music-options">
             <div class="p-4 border-b border-white/10">
@@ -556,17 +560,17 @@
                     class="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" min="0" max="1" step="0.05"
                     value="0.5">
             </div>
-            <div class="custom-option" data-value="stop">⛔ 停止播放</div>
-            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
-            <div class="custom-option" data-value="滴水">💧 滴水</div>
-            <div class="custom-option" data-value="短笛">🎋 短笛</div>
-            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="stop">停止播放</div>
+            <div class="custom-option" data-value="晨钟暮鼓">晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">滴水</div>
+            <div class="custom-option" data-value="短笛">短笛</div>
+            <div class="custom-option" data-value="放松">放松</div>
             <div class="custom-option" data-value="风铃">🎐 风铃</div>
-            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
-            <div class="custom-option" data-value="入眠">🌙 入眠</div>
-            <div class="custom-option" data-value="唯美">🌸 唯美</div>
-            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
-            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
+            <div class="custom-option" data-value="疗愈">疗愈</div>
+            <div class="custom-option" data-value="入眠">入眠</div>
+            <div class="custom-option" data-value="唯美">唯美</div>
+            <div class="custom-option" data-value="小雨">小雨</div>
+            <div class="custom-option" data-value="雨声">雨声</div>
         </div>
     </div>
 
@@ -598,7 +602,7 @@
         const SPRITE_FLOAT_AMP = 60; // 精灵浮动幅度
         const GEM_GROW_SPEED = 0.01; // 宝石增长速度
 
-        const NOTE_SPAWN_PROBABILITY = 0.8; // 音符产生频率
+        const NOTE_SPAWN_PROBABILITY = 0.28; // 音符产生频率
         const NOTE_FLOAT_SPEED = 2.0; // 音符浮动速度
         const NOTE_MIN_SIZE = 45; // 音符最小大小
         const NOTE_MAX_SIZE = 65; // 音符最大大小
@@ -621,7 +625,7 @@
         // 2. 音视频逻辑
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8];
         const musicList = ["高山流水", "塞上曲", "十面埋伏", "夕阳箫鼓", "阳春白雪"];
-        const videoBasePath = "{% static 'image_video/video/土/' %}";
+        const videoBasePath = "{% static 'image_video/video_lite/土/' %}";
         const musicBasePath = "{% static 'music_segment/琵琶/' %}";
 
         const v1 = document.getElementById('video-1'), v2 = document.getElementById('video-2');
@@ -640,10 +644,12 @@
             const curr = activeVid === 1 ? v1 : v2;
             currentVidName = videoList[Math.floor(Math.random() * videoList.length)];
             next.src = `${videoBasePath}${currentVidName}.mp4`;
+            next.preload = 'auto';
+            next.load();
             next.play().then(() => {
                 next.classList.add('active'); curr.classList.remove('active');
                 activeVid = activeVid === 1 ? 2 : 1; playCount = 0;
-                setTimeout(() => { curr.pause(); }, 2000);
+                setTimeout(() => { curr.pause(); curr.removeAttribute('src'); curr.load(); }, 2000);
             });
         }
 
@@ -662,6 +668,7 @@
         let targetData = { show: false, x: 50, y: 50, zoneIndex: 0, status: 'normal', type: 'click' };
         let currentPos = { x: 50, y: 85 }, targetPos = { x: 50, y: 85 };
         let isMoving = false, gemLvl = 0, interruptCnt = 0;
+        let is3dMode = false;
         let iconTimer, fadeInterval, particles = [];
 
         const zones = document.querySelectorAll('.zone');
@@ -674,6 +681,8 @@
         };
 
         function generateNext() {
+            if (is3dMode) return;
+            clearTimeout(iconTimer);
             const zi = Math.floor(Math.random() * 4);
             const x = [18, 38, 62, 82][zi] + (Math.random() * 6 - 3);
             const y = 25 + Math.random() * 40;
@@ -692,6 +701,7 @@
         }
 
         function doMiss() {
+            if (is3dMode) return;
             targetData.status = 'miss';
             if (window.HealingTracker) HealingTracker.logMiss(); 
             document.getElementById('icon-normal').style.display = 'none';
@@ -701,6 +711,7 @@
         }
 
         function onDown(idx) {
+            if (is3dMode) return;
             if (!targetData.show || targetData.status !== 'normal' || targetData.zoneIndex !== idx) return;
             clearTimeout(iconTimer);
             if (targetData.type === 'click') {
@@ -715,6 +726,7 @@
         }
 
         function onUp() {
+            if (is3dMode) return;
             if (targetData.type === 'click' || !isMoving) return;
             isMoving = false; interruptCnt++; iconHint.innerText = '长按!';
             fadeOutHit();
@@ -728,6 +740,7 @@
         window.onmouseup = onUp; window.ontouchend = onUp;
 
         function finish(txt) {
+            if (is3dMode) return;
             if (txt === 'Great!' || txt === 'Good!' || txt === 'Perfect!') {
                 HealingTracker.logHit(); // 在healingTracker中记录
             }
@@ -772,6 +785,8 @@
             }
         }
 
+        let particleCanvasDirty = false;
+
         function gameLoop() {
             if (isMoving) {
                 const dx = targetPos.x - currentPos.x, dy = targetPos.y - currentPos.y;
@@ -779,7 +794,7 @@
                 if (dist < SPRITE_MOVE_SPEED) finish();
                 else { currentPos.x += (dx / dist) * SPRITE_MOVE_SPEED; currentPos.y += (dy / dist) * SPRITE_MOVE_SPEED; }
                 gemLvl = Math.min(1, gemLvl + GEM_GROW_SPEED);
-                if (Math.random() < 0.4) spawnParticles('cont');
+                if (Math.random() < 0.18) spawnParticles('cont');
             } else {
                 gemLvl = Math.max(0, gemLvl - 0.02);
             }
@@ -799,21 +814,47 @@
                 else if (g.id === 'gem-right') g.style.transform = `translateX(${offset}%)`;
             });
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, i) => {
-                p.x += p.vx; p.y += p.vy; p.life -= 0.015;
-                if (p.life <= 0) return particles.splice(i, 1);
-                ctx.globalAlpha = p.life; ctx.font = `${p.size}px Arial`; ctx.fillStyle = p.color;
-                ctx.fillText(p.text, p.x, p.y);
-            });
+            if (particles.length > 0) {
+                particleCanvasDirty = true;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, i) => {
+                    p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+                    if (p.life <= 0) return particles.splice(i, 1);
+                    ctx.globalAlpha = p.life; ctx.font = `${p.size}px Arial`; ctx.fillStyle = p.color;
+                    ctx.fillText(p.text, p.x, p.y);
+                });
+                ctx.globalAlpha = 1;
+            } else if (particleCanvasDirty) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particleCanvasDirty = false;
+            }
             requestAnimationFrame(gameLoop);
         }
         gameLoop();
+
+        function pauseHealingInteractionFor3D() {
+            is3dMode = true;
+            clearTimeout(iconTimer);
+            targetData.show = false;
+            targetData.status = 'paused';
+            isMoving = false;
+            iconLayer.style.display = 'none';
+            document.getElementById('icon-miss').style.display = 'none';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            fadeOutHit();
+        }
+
+        function resumeHealingInteractionFrom3D() {
+            if (!is3dMode) return;
+            is3dMode = false;
+            generateNext();
+        }
 
         // 5. UI交互
         const btn3d = document.getElementById('btn-3d'), vf = document.getElementById('viewer-frame');
         btn3d.onclick = () => {
             const vid = currentVidName || '1';
+            pauseHealingInteractionFor3D();
             vf.src = `{% url 'earth_360' %}?id=${vid}`;
             vf.classList.add('show');
             btn3d.style.opacity = '0';
@@ -823,6 +864,7 @@
         window.onmessage = (e) => {
             if (e.data === 'close360') {
                 vf.classList.remove('show');
+                resumeHealingInteractionFrom3D();
                 setTimeout(() => { vf.src = ""; }, 1000);
                 btn3d.style.opacity = '1';
                 btn3d.style.pointerEvents = 'auto';
@@ -854,7 +896,7 @@
                 mo.classList.remove('open');
                 if (val === 'stop') return document.getElementById('ambient-audio').pause();
                 const aa = document.getElementById('ambient-audio');
-                aa.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
+                aa.src = `{% static 'music_segment/bk_music_lite/' %}${val}.mp3`;
                 aa.volume = document.getElementById('volume-slider').value;
                 aa.play();
             };

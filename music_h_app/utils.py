@@ -1,10 +1,5 @@
 import datetime
 import uuid
-import torch
-import torchaudio
-from audiocraft.models import MusicGen
-from audiocraft.data.audio import audio_write
-import numpy as np
 import io
 import os
 import time
@@ -268,6 +263,10 @@ class MusicGenerator:
         if self.model is not None:
             return
 
+        # 延迟导入重量级依赖，避免 Django 启动阶段阻塞
+        import torch
+        from audiocraft.models import MusicGen
+
         print(f"🔄 正在加载 {MODEL_NAME} 模型...")
         start_time = time.time()
         
@@ -314,6 +313,8 @@ class MusicGenerator:
 
     def _extend_audio_to_minutes(self, audio_tensor, sample_rate, requested_duration_seconds):
         """将生成的短音频扩展为指定分钟数的音频"""
+        import torch
+
         # 目标时长（秒）= 请求秒数 * 60
         target_duration_seconds = max(requested_duration_seconds * 60, requested_duration_seconds)
         target_samples = int(sample_rate * target_duration_seconds)
@@ -336,6 +337,9 @@ class MusicGenerator:
         return repeated[:, :target_samples]
 
     def generate_music(self, prompt, duration=30, format='mp3', task_id=None):
+        import torch
+        from audiocraft.data.audio import audio_write
+
         try:
             self._load_model()
             if self.model is None:

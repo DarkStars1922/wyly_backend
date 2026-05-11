@@ -28,7 +28,14 @@ SECRET_KEY = 'django-insecure-z0smg-*d**y)ymn+fn)x(0qh72_a0v3x)43cy)8)84ku(4p9^t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['sdustarpulse.com', 'www.sdustarpulse.com', '10.102.102.1', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'sdustarpulse.top',
+    'www.sdustarpulse.top',
+    '10.102.102.1',
+    '127.0.0.1',
+    'localhost',
+    '121.36.20.83',
+]
 
 # Application definition
 
@@ -130,13 +137,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-# 开发环境静态文件目录
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
 
-# 生产环境静态文件收集目录
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
+# 静态资源源目录（兼容 static 与历史 staticfiles 目录）
+STATIC_SOURCE_CANDIDATES = [
+    BASE_DIR / "static",
+    BASE_DIR / "staticfiles",
+]
+STATICFILES_DIRS = [path for path in STATIC_SOURCE_CANDIDATES if path.exists()]
+
+# 生产/部署静态文件收集目录，使用仓库内现有目录，避免收集到不存在的绝对路径
+STATIC_ROOT = BASE_DIR / 'static_root'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

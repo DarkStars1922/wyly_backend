@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Metal & Zhudi Experience - Interactive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{% static 'js/healing_tracker.js' %}"></script>
@@ -43,6 +43,9 @@
             opacity: 0;
             transition: opacity 2s ease-in-out;
             pointer-events: none;
+            will-change: opacity;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         .bg-video.active {
@@ -662,6 +665,7 @@
             border-color: rgba(255, 215, 0, 0.8);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/site-mobile.css?v=20260507-mobile2">
 </head>
 
 <body>
@@ -686,8 +690,8 @@
 
     <!-- 背景视频 -->
     <div id="video-container">
-        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
-        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+        <video id="video-1" class="bg-video active" muted playsinline autoplay preload="auto" disablepictureinpicture></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay preload="metadata" disablepictureinpicture></video>
     </div>
 
     <!-- 金色线条与光晕特效层 -->
@@ -705,14 +709,14 @@
 
     <!-- 精灵 -->
     <div id="sprite-container">
-        <img src="{% static 'sprite/metal_happy.png' %}" class="sprite-visual" alt="精灵">
+        <img src="{% static 'sprite_lite/metal_happy.webp' %}" class="sprite-visual" alt="精灵">
     </div>
 
     <!-- 提示引导页 -->
     <div id="prompt-page">
         <div class="prompt-content">
             <div class="prompt-line1"><span class="highlight-metal">金</span>空间</div>
-            <div class="prompt-line2">当出现 <img class="zhudi-icon-inline" src="{% static 'instrumentsIcon/zhudi.png' %}">
+            <div class="prompt-line2">当出现 <img class="zhudi-icon-inline" src="{% static 'instrumentsIcon_lite/zhudi.webp' %}">
                 时，3s内根据提示点击或长按！</div>
             <div class="prompt-line3">准备好了吗</div>
             <button id="start-interaction-btn" class="start-btn">是的</button>
@@ -722,7 +726,7 @@
     <!-- 目标图标 -->
     <div id="target-icon-layer">
         <div id="icon-normal">
-            <img id="target-zhudi" src="{% static 'instrumentsIcon/zhudi.png' %}" class="target-zhudi" alt="zhudi">
+            <img id="target-zhudi" src="{% static 'instrumentsIcon_lite/zhudi.webp' %}" class="target-zhudi" alt="zhudi">
             <div id="icon-hint" class="icon-hint">点击!</div>
         </div>
         <div id="icon-miss">MISS!</div>
@@ -739,23 +743,23 @@
     <!-- 音乐控件 -->
     <div class="music-layer-control">
         <div class="custom-select-trigger" id="music-trigger">
-            <span id="trigger-text">🎵 添加疗愈白噪音</span><span>▼</span>
+            <span id="trigger-text">添加疗愈白噪音</span><span>▼</span>
         </div>
         <div class="custom-options" id="music-options">
-            <div class="volume-box"><span class="volume-icon">🔉</span><input type="range" id="volume-slider"
+            <div class="volume-box"><span class="volume-icon">音量</span><input type="range" id="volume-slider"
                     class="volume-slider" min="0" max="1" step="0.05" value="0.5"></div>
-            <div class="custom-option" data-value="stop">⛔ 停止播放</div>
-            <div class="custom-option" data-value="钵音">🥣 钵音</div>
-            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
-            <div class="custom-option" data-value="滴水">💧 滴水</div>
-            <div class="custom-option" data-value="短笛">🎋 短笛</div>
-            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="stop">停止播放</div>
+            <div class="custom-option" data-value="钵音">钵音</div>
+            <div class="custom-option" data-value="晨钟暮鼓">晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">滴水</div>
+            <div class="custom-option" data-value="短笛">短笛</div>
+            <div class="custom-option" data-value="放松">放松</div>
             <div class="custom-option" data-value="风铃">🎐 风铃</div>
-            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
-            <div class="custom-option" data-value="入眠">🌙 入眠</div>
-            <div class="custom-option" data-value="唯美">🌸 唯美</div>
-            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
-            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
+            <div class="custom-option" data-value="疗愈">疗愈</div>
+            <div class="custom-option" data-value="入眠">入眠</div>
+            <div class="custom-option" data-value="唯美">唯美</div>
+            <div class="custom-option" data-value="小雨">小雨</div>
+            <div class="custom-option" data-value="雨声">雨声</div>
         </div>
     </div>
 
@@ -788,7 +792,7 @@
         const LINE_GROW_SPEED = 0.005; // 金色线条生长速度
         const LINE_DECAY_SPEED = 0.005; // 金色线条消退速度
 
-        const NOTE_SPAWN_PROBABILITY = 0.5; // 音符出现频率
+        const NOTE_SPAWN_PROBABILITY = 0.22; // 音符出现频率
         const NOTE_SPAWN_AMOUNT = 1; // 音符数量
         const NOTE_FLOAT_SPEED = 2.0; // 音符速度
         const NOTE_MIN_SIZE = 40; // 音符最小尺寸
@@ -909,7 +913,7 @@
 
         // 音视频资源配置
         const musicList = ["琅琊神韵", "平湖秋月", "秋湖月夜", "思泉", "鹧鸪飞"];
-        const videoBasePath = "{% static 'image_video/video/金/' %}";
+        const videoBasePath = "{% static 'image_video/video_lite/金/' %}";
         const musicBasePath = "{% static 'music_segment/竹笛/' %}";
         const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 十个背景视频
         const maxPlayCount = 8; // 一个视频播放次数
@@ -939,6 +943,7 @@
             currentVideoName = videoList[Math.floor(Math.random() * videoList.length)];
 
             nextVideo.src = `${videoBasePath}${currentVideoName}.mp4`;
+            nextVideo.preload = 'auto';
             nextVideo.load();
             nextVideo.play().then(() => {
                 nextVideo.classList.add('active');
@@ -947,7 +952,8 @@
                 currentVideoPlayCount = 0;
                 setTimeout(() => {
                     currentVideo.pause();
-                    currentVideo.currentTime = 0;
+                    currentVideo.removeAttribute('src');
+                    currentVideo.load();
                 }, 2000);
             }).catch(e => console.error("视频切换失败:", e));
         }
@@ -996,6 +1002,7 @@
         let interruptCount = 0;
         let iconTimer = null, missTimer = null, feedbackTimer = null, fadeInterval = null;
         let isMoving = false, lineGrowthLevel = 0;
+        let is3dMode = false;
 
         // 1. 开始引导
         document.getElementById('start-interaction-btn').addEventListener('click', () => {
@@ -1009,6 +1016,9 @@
 
         // 2. 随机生成目标
         function generateNextIcon() {
+            if (is3dMode) return;
+            clearTimeout(iconTimer);
+            clearTimeout(missTimer);
             const zoneIndex = Math.floor(Math.random() * 4);
             let x;
             if (zoneIndex === 0) x = 12 + Math.random() * 12;
@@ -1035,6 +1045,7 @@
 
         // 3. 处理Miss
         function handleMiss() {
+            if (is3dMode) return;
             targetData.status = 'miss';
             if (window.HealingTracker) HealingTracker.logMiss(); 
             iconNormal.style.display = 'none';
@@ -1064,6 +1075,7 @@
 
         // 5. 交互逻辑
         function onZonePointerDown(index) {
+            if (is3dMode) return;
             if (!targetData.show || targetData.status !== 'normal' || targetData.zoneIndex !== index) return;
             clearTimeout(iconTimer);
 
@@ -1091,6 +1103,7 @@
         }
 
         function onZonePointerUp() {
+            if (is3dMode) return;
             if (targetData.type === 'click') return;
             if (!isMoving || !targetData.show) return;
 
@@ -1235,7 +1248,7 @@
                 }
 
                 // 切换新音频并播放
-                ambientAudio.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
+                ambientAudio.src = `{% static 'music_segment/bk_music_lite/' %}${val}.mp3`;
                 ambientAudio.volume = volSlider.value;
                 ambientAudio.play().catch(err => console.error("音频播放失败:", err));
             });
@@ -1277,7 +1290,20 @@
                 });
             }
         });
-        function drawParticles() {
+        let lastParticleFrame = 0;
+        let particleCanvasDirty = false;
+        function drawParticles(timestamp = 0) {
+            requestAnimationFrame(drawParticles);
+            if (timestamp - lastParticleFrame < 33) return;
+            lastParticleFrame = timestamp;
+            if (!isMoving && particles.length === 0 && constellationLines.length === 0) {
+                if (particleCanvasDirty) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particleCanvasDirty = false;
+                }
+                return;
+            }
+            particleCanvasDirty = true;
             // 1. 清空画布
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1316,9 +1342,28 @@
                 }
             }
             ctx.globalAlpha = 1.0;
-            requestAnimationFrame(drawParticles);
         }
-        drawParticles();
+        requestAnimationFrame(drawParticles);
+
+        function pauseHealingInteractionFor3D() {
+            is3dMode = true;
+            clearTimeout(iconTimer);
+            clearTimeout(missTimer);
+            clearTimeout(feedbackTimer);
+            targetData.show = false;
+            targetData.status = 'paused';
+            isMoving = false;
+            targetIconLayer.style.display = 'none';
+            iconMiss.style.display = 'none';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            fadeOutHitSound();
+        }
+
+        function resumeHealingInteractionFrom3D() {
+            if (!is3dMode) return;
+            is3dMode = false;
+            generateNextIcon();
+        }
 
         // 3D模式切换逻辑
         const btn3d = document.getElementById('btn-3d');
@@ -1327,6 +1372,7 @@
         btn3d.addEventListener('click', () => {
             const videoId = typeof currentVideoName !== 'undefined' && currentVideoName ? currentVideoName : '1';
             const viewerUrl = `{% url 'metal_360' %}?id=${videoId}`;
+            pauseHealingInteractionFor3D();
             viewerFrame.src = viewerUrl;
             viewerFrame.classList.add('show');
 
@@ -1339,6 +1385,7 @@
         window.addEventListener('message', (event) => {
             if (event.data === 'close360') {
                 viewerFrame.classList.remove('show');
+                resumeHealingInteractionFrom3D();
 
                 setTimeout(() => {
                     viewerFrame.src = "";
