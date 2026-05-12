@@ -1,0 +1,888 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth & Pipa Experience - Interactive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/healing_tracker.js' %}"></script>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        /* 视频层 */
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            pointer-events: none;
+        }
+
+        .bg-video.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        /* 环境遮罩 */
+        #growth-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(184, 134, 11, 0.3) 70%, rgba(101, 67, 33, 0.7) 100%);
+            transition: opacity 0.5s ease-out;
+        }
+
+        /* 宝石生长层 */
+        .gem-layer {
+            position: absolute;
+            z-index: 4;
+            pointer-events: none;
+            opacity: 0;
+            background-repeat: repeat;
+            transition: opacity 0.3s ease;
+        }
+
+        #gem-bottom {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 22vh;
+            background-repeat: repeat-x;
+            background-size: 15vw 100%;
+            transform: translateY(100%);
+        }
+
+        #gem-top {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 22vh;
+            background-repeat: repeat-x;
+            background-size: 15vw 100%;
+            transform: translateY(-100%);
+        }
+
+        #gem-left {
+            top: 0;
+            left: 0;
+            width: 20vw;
+            height: 100%;
+            background-repeat: repeat-y;
+            background-size: 100% 15vh;
+            transform: translateX(-100%);
+        }
+
+        #gem-right {
+            top: 0;
+            right: 0;
+            width: 20vw;
+            height: 100%;
+            background-repeat: repeat-y;
+            background-size: 100% 15vh;
+            transform: translateX(100%);
+        }
+
+        /* 画布 */
+        #ink-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* 交互区域 */
+        #interaction-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80%;
+            z-index: 20;
+            display: flex;
+        }
+
+        .zone {
+            flex: 1;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .zone-highlight {
+            background: linear-gradient(to bottom, transparent, rgba(218, 165, 32, 0.15) 50%, transparent);
+            box-shadow: inset 0 0 40px rgba(218, 165, 32, 0.1);
+        }
+
+        /* 精灵容器 */
+        #sprite-container {
+            position: absolute;
+            width: var(--sprite-size);
+            height: var(--sprite-size);
+            top: 85%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: top 0.05s linear, left 0.05s linear;
+        }
+
+        .sprite-visual {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: breathe 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(218, 165, 32, 0.6));
+        }
+
+        .sprite-visual.active {
+            animation: active-breathe 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(calc(var(--float-amp) * -1)) scale(1.05);
+            }
+        }
+
+        @keyframes active-breathe {
+            0% {
+                transform: translateY(0) scale(1.1);
+                filter: drop-shadow(0 0 20px rgba(218, 165, 32, 0.8));
+            }
+
+            100% {
+                transform: translateY(calc(var(--float-amp) * -1.2)) scale(1.25);
+                filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.9));
+            }
+        }
+
+        /* 目标图标与反馈 */
+        #target-icon-layer {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 25;
+            display: none;
+            pointer-events: none;
+        }
+
+        .target-instrument {
+            width: 70px;
+            height: 70px;
+            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9));
+        }
+
+        .icon-hint {
+            margin-top: 8px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #DAA520, 0 0 10px #DAA520;
+            animation: pulseHint 1s infinite alternate;
+        }
+
+        @keyframes pulseHint {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.1);
+            }
+        }
+
+        /* UI层 */
+        #ui-layer {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .glass-btn {
+            pointer-events: auto;
+            padding: 12px 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(218, 165, 32, 0.6);
+        }
+
+        #viewer-frame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            background: #000;
+            transition: opacity 1s ease;
+        }
+
+        #viewer-frame.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 导航样式 */
+        .nav-trigger {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            z-index: 35;
+            text-decoration: none;
+            opacity: 0.6;
+            transition: all 0.4s ease;
+            padding: 20px;
+        }
+
+        .nav-trigger:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        #nav-prev {
+            left: 20px;
+            flex-direction: row;
+        }
+
+        #nav-next {
+            right: 20px;
+            flex-direction: row-reverse;
+        }
+
+        .arrow-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .arrow-shape {
+            width: 20px;
+            height: 20px;
+            border-top: 3px solid rgba(255, 255, 255, 0.9);
+            border-right: 3px solid rgba(255, 255, 255, 0.9);
+            transform: rotate(45deg) skew(10deg, 10deg);
+            margin: 0 2px;
+        }
+
+        #nav-prev .arrow-shape {
+            transform: rotate(-135deg) skew(10deg, 10deg);
+        }
+
+        .nav-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin: 0 15px;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0 8px;
+        }
+
+        #nav-prev .nav-text {
+            border-left: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 反馈文字 */
+        .feedback-text {
+            position: absolute;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #FFD700;
+            text-shadow: 0 0 10px #fff, 0 0 20px #DAA520;
+            z-index: 100;
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -50%);
+        }
+
+        .feedback-anim {
+            animation: floatUpFade 0.8s ease-out forwards;
+        }
+
+        @keyframes floatUpFade {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+
+            20% {
+                transform: translate(-50%, calc(-50% - 10px)) scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, calc(-50% - 40px)) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 引导页 */
+        #prompt-page {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9990;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.5s;
+        }
+
+        /* 白噪音 */
+        .music-layer-control {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 150;
+            width: 220px;
+        }
+
+        .custom-select-trigger {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 12px 20px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .custom-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 20px 20px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.3s;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .custom-options.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .custom-option {
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .custom-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        #btn-report {
+            padding: 10px 20px;
+            background: rgba(218, 165, 32, 0.1);
+            border: 1px solid rgba(218, 165, 32, 0.3);
+        }
+
+        #btn-report:hover {
+            background: rgba(218, 165, 32, 0.2);
+            box-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+            border-color: rgba(218, 165, 32, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 一个精致的报告图标 -->
+    <div id="report-trigger-container" class="absolute top-8 left-8 z-[150] pointer-events-none">
+        <button id="btn-report" class="glass-btn flex items-center gap-2 pointer-events-auto group">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-yellow-500 group-hover:scale-110 transition-transform" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="text-sm font-medium tracking-widest">结束疗愈 · 查看报告</span>
+        </button>
+    </div>
+    <!-- 转场遮罩 -->
+    <div id="transition-overlay"
+        style="position: fixed; inset: 0; background: #000; z-index: 9999; pointer-events: none; transition: 1.2s; opacity: 1;">
+    </div>
+
+    <!-- 视频背景 -->
+    <div id="video-container">
+        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+    </div>
+
+    <!-- 宝石与光晕特效 -->
+    <div id="growth-overlay"></div>
+    <div id="gem-bottom" class="gem-layer"></div>
+    <div id="gem-top" class="gem-layer"></div>
+    <div id="gem-left" class="gem-layer"></div>
+    <div id="gem-right" class="gem-layer"></div>
+
+    <canvas id="ink-canvas"></canvas>
+
+    <!-- 交互区域 -->
+    <div id="interaction-zones">
+        <div class="zone" data-index="0"></div>
+        <div class="zone" data-index="1"></div>
+        <div class="zone" data-index="2"></div>
+        <div class="zone" data-index="3"></div>
+    </div>
+
+    <!-- 精灵 -->
+    <div id="sprite-container">
+        <img src="{% static 'sprite/earth_happy.png' %}" class="sprite-visual" alt="精灵">
+    </div>
+
+    <!-- 引导页 -->
+    <div id="prompt-page">
+        <div class="flex flex-col items-center">
+            <div class="text-white text-3xl mb-4"><span
+                    style="color:#DAA520; font-size:4rem; font-weight:bold;">土</span>空间</div>
+            <div class="text-gray-200 text-xl mb-8 flex items-center gap-2">当出现 <img
+                    src="{% static 'instrumentsIcon/pipa.png' %}" style="width:45px;"> 时，3s内点击或长按！</div>
+            <button id="start-btn" class="glass-btn" style="pointer-events: auto;">准备好了</button>
+        </div>
+    </div>
+
+    <!-- 目标图标 -->
+    <div id="target-icon-layer">
+        <div id="icon-normal" class="flex flex-col items-center">
+            <img src="{% static 'instrumentsIcon/pipa.png' %}" class="target-instrument">
+            <div id="icon-hint" class="icon-hint">点击!</div>
+        </div>
+        <div id="icon-miss" style="color: #FF6347; font-size: 2.5rem; font-weight: bold; display:none;">MISS!</div>
+    </div>
+
+    <div id="feedback-text" class="feedback-text">Great!</div>
+
+    <!-- UI 层 -->
+    <div id="ui-layer">
+        <button id="btn-3d" class="glass-btn">进入 3D 沉浸模式</button>
+    </div>
+
+    <!-- 音乐控制 -->
+    <div class="music-layer-control">
+        <div class="custom-select-trigger" id="music-trigger">
+            <span id="trigger-text">🎵 添加疗愈白噪音</span><span>▼</span>
+        </div>
+        <div class="custom-options" id="music-options">
+            <div class="p-4 border-b border-white/10">
+                <input type="range" id="volume-slider"
+                    class="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" min="0" max="1" step="0.05"
+                    value="0.5">
+            </div>
+            <div class="custom-option" data-value="stop">⛔ 停止播放</div>
+            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">💧 滴水</div>
+            <div class="custom-option" data-value="短笛">🎋 短笛</div>
+            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="风铃">🎐 风铃</div>
+            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
+            <div class="custom-option" data-value="入眠">🌙 入眠</div>
+            <div class="custom-option" data-value="唯美">🌸 唯美</div>
+            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
+            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <a id="nav-prev" class="nav-trigger" href="#">
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+        <div class="nav-text">上一个空间</div>
+    </a>
+    <a id="nav-next" class="nav-trigger" href="#">
+        <div class="nav-text">下一个空间</div>
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+    </a>
+
+    <audio id="ambient-audio" loop style="display:none;"></audio>
+    <audio id="bg-music" loop style="display:none;"></audio>
+    <audio id="hit-music" style="display:none;"></audio>
+    <iframe id="viewer-frame" src=""></iframe>
+
+    <script>
+        //  1. 全局配置
+        const SPRITE_MOVE_SPEED = 0.2; // 精灵移动速度
+        const SPRITE_SIZE = 250; // 精灵大小
+        const SPRITE_FLOAT_AMP = 60; // 精灵浮动幅度
+        const GEM_GROW_SPEED = 0.01; // 宝石增长速度
+
+        const NOTE_SPAWN_PROBABILITY = 0.8; // 音符产生频率
+        const NOTE_FLOAT_SPEED = 2.0; // 音符浮动速度
+        const NOTE_MIN_SIZE = 45; // 音符最小大小
+        const NOTE_MAX_SIZE = 65; // 音符最大大小
+
+        document.documentElement.style.setProperty('--sprite-size', SPRITE_SIZE + 'px');
+        document.documentElement.style.setProperty('--float-amp', SPRITE_FLOAT_AMP + 'px');
+
+        window.onload = () => { // 初始化healingTracker
+            HealingTracker.initSpace("土 (琵琶)");
+        };
+
+        // 生成宝石
+        function generateGemSVG(c1, c2) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="50,5 90,50 50,95 10,50" fill="${c1}" opacity="0.8" /><polygon points="50,5 90,50 50,50" fill="${c2}" opacity="0.6" /></svg>`;
+            return `url("data:image/svg+xml;base64,${btoa(svg)}")`;
+        }
+        const gemPattern = generateGemSVG('#B8860B', '#FFD700');
+        document.querySelectorAll('.gem-layer').forEach(el => el.style.backgroundImage = gemPattern);
+
+        // 2. 音视频逻辑
+        const videoList = [1, 2, 3, 4, 5, 6, 7, 8];
+        const musicList = ["高山流水", "塞上曲", "十面埋伏", "夕阳箫鼓", "阳春白雪"];
+        const videoBasePath = "{% static 'image_video/video/土/' %}";
+        const musicBasePath = "{% static 'music_segment/琵琶/' %}";
+
+        const v1 = document.getElementById('video-1'), v2 = document.getElementById('video-2');
+        const bgAudio = document.getElementById('bg-music'), hitMusic = document.getElementById('hit-music');
+        let activeVid = 1, currentVidName = "1", playCount = 0;
+
+        function initBackground() {
+            currentVidName = videoList[Math.floor(Math.random() * videoList.length)];
+            v1.src = `${videoBasePath}${currentVidName}.mp4`;
+            v1.play().catch(() => { });
+            playRandomBGM();
+        }
+
+        function crossFade() {
+            const next = activeVid === 1 ? v2 : v1;
+            const curr = activeVid === 1 ? v1 : v2;
+            currentVidName = videoList[Math.floor(Math.random() * videoList.length)];
+            next.src = `${videoBasePath}${currentVidName}.mp4`;
+            next.play().then(() => {
+                next.classList.add('active'); curr.classList.remove('active');
+                activeVid = activeVid === 1 ? 2 : 1; playCount = 0;
+                setTimeout(() => { curr.pause(); }, 2000);
+            });
+        }
+
+        [v1, v2].forEach(v => v.onended = () => {
+            playCount++;
+            if (playCount < 8) v.play(); else crossFade();
+        });
+
+        function playRandomBGM() {
+            bgAudio.src = `${musicBasePath}${encodeURIComponent(musicList[Math.floor(Math.random() * musicList.length)])}.mp3`;
+            bgAudio.volume = 0.4; bgAudio.play().catch(() => { });
+        }
+        bgAudio.onended = playRandomBGM;
+
+        // 3. 核心交互
+        let targetData = { show: false, x: 50, y: 50, zoneIndex: 0, status: 'normal', type: 'click' };
+        let currentPos = { x: 50, y: 85 }, targetPos = { x: 50, y: 85 };
+        let isMoving = false, gemLvl = 0, interruptCnt = 0;
+        let iconTimer, fadeInterval, particles = [];
+
+        const zones = document.querySelectorAll('.zone');
+        const iconLayer = document.getElementById('target-icon-layer');
+        const iconHint = document.getElementById('icon-hint');
+
+        document.getElementById('start-btn').onclick = () => {
+            document.getElementById('prompt-page').style.opacity = '0';
+            setTimeout(() => { document.getElementById('prompt-page').style.display = 'none'; initBackground(); generateNext(); }, 500);
+        };
+
+        function generateNext() {
+            const zi = Math.floor(Math.random() * 4);
+            const x = [18, 38, 62, 82][zi] + (Math.random() * 6 - 3);
+            const y = 25 + Math.random() * 40;
+            const type = Math.random() > 0.5 ? 'click' : 'longpress';
+
+            interruptCnt = 0;
+            targetData = { show: true, x, y, zoneIndex: zi, status: 'normal', type };
+
+            iconLayer.style.display = 'block'; iconLayer.style.left = `${x}%`; iconLayer.style.top = `${y}%`;
+            document.getElementById('icon-normal').style.display = 'flex';
+            document.getElementById('icon-miss').style.display = 'none';
+            iconHint.innerText = type === 'click' ? '点击!' : '长按!';
+
+            zones.forEach((z, i) => z.classList.toggle('zone-highlight', i === zi));
+            iconTimer = setTimeout(doMiss, 3000);
+        }
+
+        function doMiss() {
+            targetData.status = 'miss';
+            if (window.HealingTracker) HealingTracker.logMiss(); 
+            document.getElementById('icon-normal').style.display = 'none';
+            document.getElementById('icon-miss').style.display = 'block';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            setTimeout(() => { iconLayer.style.display = 'none'; generateNext(); }, 1000);
+        }
+
+        function onDown(idx) {
+            if (!targetData.show || targetData.status !== 'normal' || targetData.zoneIndex !== idx) return;
+            clearTimeout(iconTimer);
+            if (targetData.type === 'click') {
+                currentPos = { x: targetData.x, y: targetData.y };
+                spawnParticles('burst');
+                finish('Great!');
+            } else {
+                targetPos = { x: targetData.x, y: targetData.y };
+                isMoving = true; iconHint.innerText = '保持!';
+                playHitSound();
+            }
+        }
+
+        function onUp() {
+            if (targetData.type === 'click' || !isMoving) return;
+            isMoving = false; interruptCnt++; iconHint.innerText = '长按!';
+            fadeOutHit();
+            iconTimer = setTimeout(doMiss, 3000);
+        }
+
+        zones.forEach((z, i) => {
+            z.onmousedown = () => onDown(i);
+            z.ontouchstart = (e) => { e.preventDefault(); onDown(i); };
+        });
+        window.onmouseup = onUp; window.ontouchend = onUp;
+
+        function finish(txt) {
+            if (txt === 'Great!' || txt === 'Good!' || txt === 'Perfect!') {
+                HealingTracker.logHit(); // 在healingTracker中记录
+            }
+            isMoving = false; targetData.show = false;
+            iconLayer.style.display = 'none';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+            fadeOutHit();
+            const fb = document.getElementById('feedback-text');
+            fb.innerText = txt || (interruptCnt === 0 ? 'Great!' : 'Good!');
+            fb.style.left = `${currentPos.x}%`; fb.style.top = `${currentPos.y}%`;
+            fb.style.display = 'block'; fb.classList.add('feedback-anim');
+            setTimeout(() => { fb.style.display = 'none'; fb.classList.remove('feedback-anim'); generateNext(); }, 800);
+        }
+
+        function playHitSound() {
+            hitMusic.src = `${musicBasePath}${encodeURIComponent(musicList[Math.floor(Math.random() * musicList.length)])}.mp3`;
+            hitMusic.volume = 1; hitMusic.play();
+        }
+        function fadeOutHit() {
+            clearInterval(fadeInterval);
+            fadeInterval = setInterval(() => {
+                if (hitMusic.volume > 0.1) hitMusic.volume -= 0.1;
+                else { clearInterval(fadeInterval); hitMusic.pause(); }
+            }, 50);
+        }
+
+        // 4. 动画循环与粒子
+        const canvas = document.getElementById('ink-canvas'), ctx = canvas.getContext('2d');
+        window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+        window.onresize();
+
+        function spawnParticles(type) {
+            const cx = canvas.width * (currentPos.x / 100), cy = canvas.height * (currentPos.y / 100);
+            let amt = type === 'burst' ? 15 : 1;
+            for (let i = 0; i < amt; i++) {
+                particles.push({
+                    x: cx, y: cy, vx: (Math.random() - 0.5) * 3, vy: -Math.random() * NOTE_FLOAT_SPEED - 1,
+                    life: 1, size: Math.random() * 20 + 20,
+                    color: `rgb(${Math.random() * 155 + 100},${Math.random() * 155 + 100},50)`,
+                    text: ['♪', '♫', '♬'][Math.floor(Math.random() * 3)]
+                });
+            }
+        }
+
+        function gameLoop() {
+            if (isMoving) {
+                const dx = targetPos.x - currentPos.x, dy = targetPos.y - currentPos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < SPRITE_MOVE_SPEED) finish();
+                else { currentPos.x += (dx / dist) * SPRITE_MOVE_SPEED; currentPos.y += (dy / dist) * SPRITE_MOVE_SPEED; }
+                gemLvl = Math.min(1, gemLvl + GEM_GROW_SPEED);
+                if (Math.random() < 0.4) spawnParticles('cont');
+            } else {
+                gemLvl = Math.max(0, gemLvl - 0.02);
+            }
+
+            const s = document.getElementById('sprite-container');
+            s.style.left = `${currentPos.x}%`; s.style.top = `${currentPos.y}%`;
+            document.querySelector('.sprite-visual').classList.toggle('active', isMoving);
+            document.getElementById('growth-overlay').style.opacity = gemLvl * 0.7;
+
+            // 宝石平移逻辑
+            const offset = (1 - gemLvl) * 100;
+            document.querySelectorAll('.gem-layer').forEach(g => {
+                g.style.opacity = gemLvl;
+                if (g.id === 'gem-bottom') g.style.transform = `translateY(${offset}%)`;
+                else if (g.id === 'gem-top') g.style.transform = `translateY(-${offset}%)`;
+                else if (g.id === 'gem-left') g.style.transform = `translateX(-${offset}%)`;
+                else if (g.id === 'gem-right') g.style.transform = `translateX(${offset}%)`;
+            });
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+                if (p.life <= 0) return particles.splice(i, 1);
+                ctx.globalAlpha = p.life; ctx.font = `${p.size}px Arial`; ctx.fillStyle = p.color;
+                ctx.fillText(p.text, p.x, p.y);
+            });
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+
+        // 5. UI交互
+        const btn3d = document.getElementById('btn-3d'), vf = document.getElementById('viewer-frame');
+        btn3d.onclick = () => {
+            const vid = currentVidName || '1';
+            vf.src = `{% url 'earth_360' %}?id=${vid}`;
+            vf.classList.add('show');
+            btn3d.style.opacity = '0';
+            btn3d.style.pointerEvents = 'none';
+        };
+
+        window.onmessage = (e) => {
+            if (e.data === 'close360') {
+                vf.classList.remove('show');
+                setTimeout(() => { vf.src = ""; }, 1000);
+                btn3d.style.opacity = '1';
+                btn3d.style.pointerEvents = 'auto';
+            }
+        };
+
+        const spaces = ["{% url 'earth_pipa' %}",
+            "{% url 'water_guqin' %}",
+            "{% url 'metal_zhudi' %}",
+            "{% url 'wood_xiao' %}",
+            "{% url 'fire_erhu' %}"];
+        function nav(idx) {
+            document.getElementById('transition-overlay').style.opacity = '1';
+            setTimeout(() => {
+                HealingTracker.captureAndGo(spaces[idx]);
+            }, 1000);
+        }
+        document.getElementById('nav-prev').onclick = (e) => { e.preventDefault(); nav(2); };
+        document.getElementById('nav-next').onclick = (e) => { e.preventDefault(); nav(1); };
+        setTimeout(() => document.getElementById('transition-overlay').style.opacity = '0', 100);
+
+        // 白噪音菜单
+        const mt = document.getElementById('music-trigger'), mo = document.getElementById('music-options');
+        mt.onclick = (e) => { e.stopPropagation(); mo.classList.toggle('open'); mt.classList.toggle('active'); };
+        document.querySelectorAll('.custom-option').forEach(opt => {
+            opt.onclick = function () {
+                const val = this.dataset.value;
+                document.getElementById('trigger-text').innerText = this.innerText;
+                mo.classList.remove('open');
+                if (val === 'stop') return document.getElementById('ambient-audio').pause();
+                const aa = document.getElementById('ambient-audio');
+                aa.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
+                aa.volume = document.getElementById('volume-slider').value;
+                aa.play();
+            };
+        });
+        window.onclick = () => mo.classList.remove('open');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportBtn = document.getElementById('btn-report');
+            if (reportBtn) {
+                reportBtn.onclick = (e) => {
+                    e.preventDefault();
+
+                    // 播放转场动画
+                    const overlay = document.getElementById('transition-overlay');
+                    if (overlay) overlay.style.opacity = '1';
+
+                    // 调用追踪器保存数据并跳转
+                    setTimeout(() => {
+                        if (window.HealingTracker) {
+                            HealingTracker.captureAndGo("{% url 'report_page' %}");
+                        } else {
+                            window.location.href = "{% url 'report_page' %}";
+                        }
+                    }, 1000);
+                };
+            }
+        });
+    </script>
+</body>
+
+</html>

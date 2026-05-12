@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>星璇律动音乐可视化 - 沉浸式音频体验</title>
   
-  <!-- 基础库和样式 -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -26,22 +25,22 @@
       overflow: hidden;
       font-family: 'Noto Sans SC', sans-serif;
       color: #fff;
-      position: relative; /* Needed for pseudo-element positioning */
+      position: relative; 
     }
 
     body::before {
       content: '';
-      position: fixed; /* Use fixed to cover the viewport */
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-image: url('/static/images/background.jpg'); /* Use the provided image */
+      background-image: url('/static/images/background.jpg'); 
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      filter: blur(10px); /* Apply blur */
-      z-index: -2; /* Place it behind the particle canvas */
+      filter: blur(10px); 
+      z-index: -2;
     }
     
     /* 背景星星效果 */
@@ -377,7 +376,7 @@
       }
     }
 
-    /* 五音卡片样式 - 从 meditation_music.html 复制并调整 */
+    /* 五音卡片样式 */
     .tone-card {
       cursor: pointer;
       transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -385,7 +384,7 @@
       position: relative;
       overflow: hidden;
       z-index: 1;
-      border-radius: 12px; /* 统一圆角 */
+      border-radius: 12px;
       padding: 15px;
       margin-bottom: 15px;
       color: white;
@@ -403,7 +402,7 @@
       z-index: -1;
       transition: opacity 0.4s ease;
       opacity: 0;
-      border-radius: 10px; /* 匹配父元素圆角 */
+      border-radius: 10px;
     }
 
     .tone-card:hover {
@@ -476,11 +475,11 @@
     }
 
     .tone-symbol {
-      font-size: 1.8rem; /* 调整大小以适应侧边栏 */
+      font-size: 1.8rem; 
       margin-bottom: 8px;
       display: inline-block;
-      width: 45px; /* 调整大小 */
-      height: 45px; /* 调整大小 */
+      width: 45px; 
+      height: 45px;
       line-height: 45px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.9);
@@ -492,13 +491,13 @@
       color: #fff;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
       margin-bottom: 5px;
-      font-size: 1rem; /* 调整大小 */
+      font-size: 1rem;
     }
 
     .tone-attributes {
       color: rgba(255, 255, 255, 0.9);
       font-weight: 500;
-      font-size: 0.85rem; /* 调整大小 */
+      font-size: 0.85rem;
       margin-bottom: 5px;
     }
 
@@ -507,7 +506,7 @@
       color: rgba(255, 255, 255, 0.95);
       padding: 4px 8px;
       border-radius: 15px;
-      font-size: 0.75rem; /* 调整大小 */
+      font-size: 0.75rem;
       display: inline-block;
       margin-top: 3px;
     }
@@ -632,7 +631,6 @@
     
     <!-- 播放控制 -->
     <div class="audio-controls">
-      <!-- 左侧：曲目信息 -->
       <div class="flex items-center w-1/4">
         <div class="track-info overflow-hidden">
           <div id="current-track-title" class="font-bold truncate">未播放</div>
@@ -640,7 +638,6 @@
         </div>
       </div>
       
-      <!-- 中间：播放控制和进度条 -->
       <div class="flex-1 flex flex-col items-center">
         <div class="flex items-center gap-4 mb-2">
           <button id="prev-btn" class="text-white">
@@ -664,7 +661,6 @@
         </div>
       </div>
       
-      <!-- 右侧：音量控制 -->
       <div class="w-1/4 flex justify-end items-center gap-2">
         <i class="ri-volume-up-line"></i>
         <input type="range" id="volume-slider" class="volume-slider w-24" min="0" max="1" step="0.01" value="1">
@@ -676,7 +672,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     console.log('音乐可视化初始化...');
     
-    // 格式化时间的辅助函数（定义在全局范围内可以被所有组件访问）
+    // 格式化时间的辅助函数
     function formatTime(seconds) {
       if (isNaN(seconds) || !isFinite(seconds)) return "00:00";
       seconds = Math.floor(seconds);
@@ -685,7 +681,7 @@
       return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
     
-    // === 粒子效果系统 ===
+    // 粒子效果系统
     class ParticleSystem {
       constructor(canvas) {
         this.canvas = canvas;
@@ -697,7 +693,7 @@
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
         
-        // 环形区域设置 - 优化配置
+        // 环形区域设置
         this.numRings = 6;  // 环的数量
         this.radii = [50, 80, 110, 140, 170, 200]; // 固定的基础半径
         this.smoothedRadii = [...this.radii]; // 平滑后的半径
@@ -728,20 +724,20 @@
           bass: 0, mid: 0, treble: 0, rms: 0
         }; // 用于平滑处理
         
-        // 预设颜色方案 - 优化颜色组合
+        // 预设颜色方案
         this.colorSchemes = [
-          [180, 210, 240, 270, 300, 330], // 紫蓝-粉红 (默认)
+          [180, 210, 240, 270, 300, 330], // 紫蓝-粉红(默认)
           [200, 220, 160, 140, 120, 100], // 蓝绿-橙黄
           [300, 330, 0, 30, 60, 90],      // 紫红-橙黄
           [120, 140, 160, 180, 200, 220], // 绿青-蓝色
-          [0, 30, 60, 90, 120, 150]       // 新增: 红黄-绿色
+          [0, 30, 60, 90, 120, 150]       // 红黄-绿色
         ];
         this.currentScheme = 0;
         
         // 动画控制
-        this.animationStyle = 'normal'; // normal, slow, reactive
+        this.animationStyle = 'normal';
         
-        // 添加新的视觉特效标志
+        // 视觉特效标志
         this.enableBloom = true; // 泛光效果
         this.enableWaterColor = true; // 水彩效果
         
@@ -757,7 +753,7 @@
         this.animate();
       }
       
-      // 切换动画风格，更好的性能适配
+      // 切换动画风格
       setAnimationStyle(style) {
         this.animationStyle = style;
         switch(style) {
@@ -768,7 +764,7 @@
             this.glowIntensity = 0.5;
             break;
           case 'reactive':
-            // 高响应模式 - 更快的响应速度
+            // 高响应模式
             this.frameRate = 60;
             this.frameInterval = 1000 / this.frameRate;
             this.glowIntensity = 0.9;
@@ -782,7 +778,7 @@
         }
       }
       
-      // 改进性能模式切换
+      // 性能模式切换
       setPerformanceMode(isHigh) {
         this.isHighPerformance = isHigh;
         
@@ -806,11 +802,11 @@
         console.log(`[ParticleSystem] 性能模式已切换为: ${isHigh ? '高' : '低'}, 粒子数量: ${this.particles.length}`);
       }
       
-      // 增强的背景绘制 - 动态渐变
+      // 背景绘制
       drawGradientBackground() {
         const ctx = this.ctx;
         
-        // 创建更具动态感的渐变背景
+        // 创建渐变背景
         const gradient = ctx.createRadialGradient(
           this.centerX, this.centerY, 0,
           this.centerX, this.centerY, Math.max(this.width, this.height) / 1.5
@@ -834,7 +830,7 @@
         ctx.fillRect(0, 0, this.width, this.height);
         
         if (this.isHighPerformance) {
-          // 添加高级视觉效果
+          // 高级视觉效果
           this.addNoiseTexture();
           
           if (this.enableWaterColor && this.bass > 0.4) {
@@ -843,12 +839,12 @@
         }
       }
       
-      // 新增水彩效果
+      // 水彩效果
       addWatercolorEffect() {
         const ctx = this.ctx;
         ctx.save();
         
-        // 使用叠加混合模式
+        // 叠加混合模式
         ctx.globalCompositeOperation = 'overlay';
         ctx.globalAlpha = this.bass * 0.15;
         
@@ -875,7 +871,7 @@
         ctx.restore();
       }
       
-      // 在主界面添加控制按钮 - 修复响应问题
+      // 控制按钮
       addVisualControls() {
         const container = document.createElement('div');
         container.className = 'visual-controls';
@@ -891,7 +887,7 @@
         const btnGroup = document.createElement('div');
         btnGroup.style.cssText = 'display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;';
         
-        // 添加动画风格按钮
+        // 动画风格按钮
         const addStyleButton = (style, text) => {
           const btn = document.createElement('button');
           btn.textContent = text;
@@ -921,12 +917,12 @@
           return btn;
         };
         
-        // 添加动画风格按钮
+        // 动画风格按钮
         addStyleButton('normal', '标准模式');
         addStyleButton('reactive', '高响应');
         addStyleButton('slow', '平缓模式');
         
-        // 添加性能模式切换按钮
+        // 性能模式切换按钮
         const perfButton = document.createElement('button');
         perfButton.textContent = this.isHighPerformance ? '高质量' : '流畅模式';
         perfButton.className = 'control-button';
@@ -947,11 +943,11 @@
         btnGroup.appendChild(perfButton);
         container.appendChild(btnGroup);
         
-        // 添加效果切换按钮组
+        // 效果切换按钮组
         const effectsGroup = document.createElement('div');
         effectsGroup.style.cssText = 'display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 5px;';
         
-        // 添加彩色切换按钮
+        // 彩色切换按钮
         const colorBtn = document.createElement('button');
         colorBtn.textContent = '切换配色';
         colorBtn.className = 'control-button';
@@ -983,7 +979,7 @@
         effectsGroup.appendChild(bloomBtn);
         container.appendChild(effectsGroup);
         
-        // 添加控制按钮的隐藏/显示
+        // 控制按钮的隐藏/显示
         const toggleButton = document.createElement('button');
         toggleButton.innerHTML = '⚙️';
         toggleButton.style.cssText = 'position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(0,0,0,0.5); border: none; border-radius: 50%; color: white; font-size: 20px; cursor: pointer; z-index: 26; display: flex; align-items: center; justify-content: center; transition: all 0.3s;';
@@ -1011,7 +1007,7 @@
       
       // 初始化旋转速度
       initRotationSpeeds() {
-        // 从内到外，速度递减 (0.02到0.008)
+        // 从内到外速度递减
         for (let i = 0; i < this.numRings; i++) {
           this.rotationSpeeds[i] = 0.02 - (i * (0.02 - 0.008) / (this.numRings - 1));
         }
@@ -1067,7 +1063,7 @@
           const size = 1 + Math.random() * 1; // 1-2px
           const alpha = 0.1 + Math.random() * 0.2; // 0.1-0.3
           
-          // 随机生成浅蓝到浅紫的颜色 (HSB 200-240)
+          // 随机生成浅蓝到浅紫的颜色(HSB 200-240)
           const hue = 200 + Math.random() * 40;
           
           this.particles.push({
@@ -1162,7 +1158,7 @@
         const x2 = d01 + ux * (d11 - d01);
         const result = x1 + uy * (x2 - x1);
         
-        // 归一化到 0-1
+        // 归一化到0-1
         return (result + 1) / 2;
       }
       
@@ -1261,14 +1257,14 @@
           const hue = (this.baseHues[i] + (this.mid * 30) + 
                       Math.sin(Date.now() * 0.01) * 10) % 360;
           
-          // 绘制外部矩形线条（波形）
+          // 绘制外部矩形线条
           this.drawOuterWaveform(i, radius, hue);
           
           // 在节拍检测到时添加动态效果
           if (this.isBeat) {
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            // 不要绘制环形，而是在波形上增加亮度
+            // 不绘制环形，而是在波形上增加亮度
             this.enhanceWaveform(i, radius, hue);
             ctx.restore();
           }
@@ -1278,7 +1274,7 @@
         this.drawRingParticles();
       }
       
-      // 新增：增强波形效果，替代原来的环形光晕
+      // 增强波形效果
       enhanceWaveform(ringIndex, radius, hue) {
         // 同样只在特定环上显示增强效果
         if (ringIndex % 2 !== 0 && ringIndex !== this.numRings - 1) {
@@ -1313,8 +1309,7 @@
             // 减慢时间变化速度到0.0005
             const currentTime = this.isPlaying ? Date.now() * 0.0005 : this.pausedTime || 0;
             
-            // 使波形更多地受到音频振幅影响
-            // 增强低频对波形的影响
+            // 使波形更多受到音频振幅影响
             const bassInfluence = this.bass * 180;
             // 节拍检测到时增加额外振幅
             const beatBoost = this.isBeat ? 50 : 0;
@@ -1413,10 +1408,10 @@
         ctx.restore();
       }
       
-      // 新增：绘制单个环形边缘
+      // 绘制单个环形边缘
       drawRing(ringIndex, radius, hue, saturation, brightness, alphaMultiplier) {
         // 对于内侧环，设置不绘制或使用最小半径
-        // 让最内侧的环形半径为20，不要留白
+        // 让最内侧的环形半径为20，不留白
         if (ringIndex === 0) {
           radius = Math.max(20, radius); // 确保最小20px半径
         }
@@ -1460,7 +1455,7 @@
         ctx.strokeStyle = `hsla(${hue}, ${saturation + 30}%, ${brightness - 10}%, ${alphaMultiplier * 0.9})`;
         ctx.stroke();
         
-        // 添加边缘发光效果
+        // 边缘发光效果
         if (this.isBeat || this.bass > 0.6) {
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
@@ -1473,7 +1468,7 @@
         ctx.restore();
       }
       
-      // 绘制外部矩形线条（波形）
+      // 绘制外部矩形线条
       drawOuterWaveform(ringIndex, radius, hue) {
         // 减少波形数量，优化密度
         // 只在每隔一个环上显示波形，减少视觉密度
@@ -1558,7 +1553,7 @@
         
         ctx.stroke();
         
-        // 添加波形闪光效果 - 只在低频或节拍明显时出现，增强与音乐的同步感
+        // 波形闪光效果--只在低频或节拍明显时出现，增强与音乐的同步感
         if (this.bass > 0.6 || this.isBeat) {
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
@@ -1573,7 +1568,7 @@
         ctx.restore();
       }
       
-      // 新增：创建额外的中心曲线
+      // 创建额外的中心曲线
       drawCenterRings() {
         const ctx = this.ctx;
         const innerRadius = 10; // 设置最小内环半径
@@ -1661,11 +1656,10 @@
     const canvas = document.getElementById('particle-canvas');
     const particleSystem = new ParticleSystem(canvas);
     
-    // 为了测试粒子效果的音频响应，添加模拟音频数据
-    // 实际项目中，这应该由真实的音频分析器提供
+    // 测试粒子效果的音频响应，添加模拟音频数据
     clearInterval(window.testInterval);
     
-    // === 音频处理器类 ===
+    // 音频处理器类
     class AudioProcessor {
       constructor() {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -1843,35 +1837,28 @@
           const wasPlaying = this.isPlaying;
           const newOffset = Math.max(0, Math.min(time, this.getDuration()));
 
-          // Stop the current source regardless of playing state
           if (this.bufferSource) {
-            this.bufferSource.onended = null; // Prevent onended from firing due to stop()
+            this.bufferSource.onended = null;
             try { this.bufferSource.stop(); } catch(e) { console.warn("[AudioProcessor] Error stopping previous source:", e); }
             this.bufferSource.disconnect();
             this.bufferSource = null;
           }
 
-          // Update the offset
           this.startOffset = newOffset;
-          this.isPlaying = false; // Explicitly set playing state before potential restart
-          this.isPaused = !wasPlaying; // Update paused state
+          this.isPlaying = false; 
+          this.isPaused = !wasPlaying;
 
-          // Update UI immediately
           window.dispatchEvent(new CustomEvent('audio-seek', {
             detail: { currentTime: this.startOffset, duration: this.getDuration() }
           }));
 
           if (wasPlaying) {
-            // If it was playing, restart playback from the new offset
-            // Need to re-create the source and start it
             this.bufferSource = this.audioContext.createBufferSource();
             this.bufferSource.buffer = this.audioBuffer;
             this.bufferSource.connect(this.gainNode);
-            this.startTime = this.audioContext.currentTime; // Reset start time for accurate getCurrentTime()
+            this.startTime = this.audioContext.currentTime;
 
-            // Set the onended handler again for the new source
             this.bufferSource.onended = () => {
-              // Check isPlaying flag which should be true now if ended naturally
               if (this.isPlaying) { 
                 console.log("[AudioProcessor] Track ended naturally after seek.");
                 this.isPlaying = false;
@@ -1879,24 +1866,21 @@
                 this.startOffset = 0;
                 window.dispatchEvent(new Event('track-ended'));
               } else {
-                // This branch is hit if stop() or another seek happens before natural end
                 console.log("[AudioProcessor] bufferSource ended, but isPlaying is false (likely due to stop/pause/seek).");
               }
             };
 
             this.bufferSource.start(0, this.startOffset);
-            this.isPlaying = true; // Mark as playing again
+            this.isPlaying = true;
             this.isPaused = false;
             console.log(`[AudioProcessor] Resuming playback at offset: ${this.startOffset}`);
             return Promise.resolve(true);
           } else {
-            // If it was paused, just update the offset and remain paused
             console.log(`[AudioProcessor] Seek while paused, new offset: ${this.startOffset}`);
             return Promise.resolve(true);
           }
         } catch (error) {
           console.error("[AudioProcessor] 跳转失败:", error);
-          // Ensure state consistency on error
           this.isPlaying = false;
           this.isPaused = true; 
           if (this.bufferSource) {
@@ -1936,7 +1920,7 @@
         this.analyser.getByteFrequencyData(this.frequencyData);
         this.analyser.getByteTimeDomainData(this.timeData);
         
-        // 计算RMS（均方根，表示音量）
+        // 计算RMS
         let sum = 0;
         for (let i = 0; i < this.timeData.length; i++) {
           const amplitude = (this.timeData[i] - 128) / 128;
@@ -1961,9 +1945,9 @@
       // 计算不同频率范围的能量
       calculateFrequencyRanges() {
         const nyquist = this.audioContext.sampleRate / 2;
-        const lowFreq = [20, 250];    // 低频范围 20-250 Hz
-        const midFreq = [250, 2000];  // 中频范围 250-2000 Hz
-        const highFreq = [2000, 20000]; // 高频范围 2000-20000 Hz
+        const lowFreq = [20, 250];    // 低频范围20-250 Hz
+        const midFreq = [250, 2000];  // 中频范围250-2000 Hz
+        const highFreq = [2000, 20000]; // 高频范围2000-20000 Hz
         
         let bassSum = 0, bassCount = 0;
         let midSum = 0, midCount = 0;
@@ -2006,7 +1990,7 @@
       }
     }
     
-    // === UI管理器类 ===
+    // UI管理器类
     class UIManager {
       constructor() {
         // 获取UI元素
@@ -2118,7 +2102,7 @@
       }
     }
     
-    // === 歌词管理器类 ===
+    // 歌词管理器类
     class LyricsManager {
       constructor(container, audioProcessor) {
         this.container = container;
@@ -2152,7 +2136,7 @@
         this.container.innerHTML = '<div class="lyrics-line"><p class="text-center">已保存歌词，播放音乐时将自动显示</p></div>';
       }
       
-      // 加载待处理的歌词（如果有）
+      // 加载待处理的歌词（若有）
       loadPendingLyricsIfExists() {
         if (this.pendingLyrics) {
           this.loadLyrics(this.pendingLyrics);
@@ -2231,7 +2215,7 @@
           
           lineElement.innerHTML = html || '<p class="text-center">&nbsp;</p>';
           
-          // 点击歌词跳转 - 使用原生onclick
+          // 点击歌词跳转--使用原生onclick
           lineElement.onclick = function() {
             if (!self.audioProcessor || !self.audioProcessor.audioBuffer) {
               console.log('[LyricsManager] 无法跳转：没有加载音频');
@@ -2339,7 +2323,7 @@
       }
     }
     
-    // === 播放列表管理器类 ===
+    // 播放列表管理器类
     class PlaylistManager {
       constructor(container) {
         this.container = container;
@@ -2510,7 +2494,7 @@
       }
     }
     
-    // === 初始化应用程序 ===
+    // 初始化应用程序
     const audioProcessor = new AudioProcessor();
     const uiManager = new UIManager();
     
@@ -2523,7 +2507,7 @@
     // 禁用测试动画
     clearInterval(window.testInterval);
     
-    // === 绑定事件处理程序 ===
+    // 绑定事件处理程序
     
     // 播放/暂停按钮
     uiManager.elements.playBtn.addEventListener('click', async () => {
@@ -2752,7 +2736,7 @@
       }
     });
     
-    // === 处理文件函数 ===
+    // 处理文件函数
     
     // 处理音频文件
     async function handleAudioFiles(files) {
@@ -2860,7 +2844,7 @@
         uiManager.updateTimeDisplay(0, metadata.duration);
         playlistManager.highlightCurrentTrack();
         
-        // 加载歌词（如果有）
+        // 加载歌词（若有）
         if (track.lyricsContent) {
           lyricsManager.loadLyrics(track.lyricsContent);
         } else if (lyricsManager.loadPendingLyricsIfExists()) {
@@ -2916,7 +2900,6 @@
         }
       }
       
-      // 使用setInterval替代setTimeout，确保稳定更新
       window.updateLoopInterval = setInterval(update, updateInterval);
       console.log('[Main] 启动UI更新循环 (间隔:', updateInterval, 'ms)');
       
@@ -2932,7 +2915,7 @@
       lyricsManager.updateHighlight(currentTime);
     });
     
-    // === 侧边栏控制 ===
+    // 侧边栏控制
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const closeSidebar = document.getElementById('close-sidebar');
     const mainInterface = document.querySelector('.main-interface');
@@ -2945,13 +2928,13 @@
       mainInterface.classList.add('sidebar-collapsed');
     });
     
-    // 初始化时启动UI更新循环，确保界面响应即使在没有播放音乐的情况下
+    // 初始化时启动UI更新循环，确保界面响应，即使在没有播放音乐的情况下
     startUpdateLoop();
     
     // 欢迎消息
     uiManager.showNotification('欢迎使用星璇律动音乐可视化', 'success');
     
-    // 自定义事件监听器 - 处理音频跳转事件
+    // 自定义事件监听器--处理音频跳转事件
     window.addEventListener('audio-seek', function(e) {
       const { currentTime, duration } = e.detail;
       
@@ -2967,7 +2950,7 @@
       }
     });
 
-    // === 五音播放功能 ===
+    // 五音播放功能
     let currentToneAudioElement = null;
 
     // 播放五音音频的函数
@@ -3007,7 +2990,7 @@
       audioElement.play().catch(e => console.error("音频播放错误: ", e));
       currentToneAudioElement = audioElement; // 保存当前播放的元素
       
-      // 可选：显示正在播放的提示
+      // 显示正在播放的提示
       showPlayingNotification(`正在播放: ${getToneChineseName(tone)}`);
 
       // 音频播放结束后移除元素
@@ -3043,9 +3026,9 @@
     const toneCards = document.querySelectorAll('.tone-card');
     toneCards.forEach(card => {
       card.addEventListener('click', function() {
-        // 移除其他卡片的 active 类
+        // 移除其他卡片的active类
         toneCards.forEach(c => c.classList.remove('active'));
-        // 为当前卡片添加 active 类
+        // 为当前卡片添加active类
         this.classList.add('active');
         
         const toneName = this.getAttribute('data-tone');

@@ -1,3 +1,19 @@
 /venv
 /.vscode
-/media
+media/
+/zenith-360-viewer
+venv/
+tmp/
+static_root/
+*.pyc
+__pycache__/
+.env
+**/__pycache__/
+static/
+staticfiles/
+static_update.txt
+/static.zip
+/code.zip
+/星璇律动 --本地部署与运行指南.md
+/星璇律动 --本地部署与运行指南.pdf
+2026073891-参赛总文件夹/

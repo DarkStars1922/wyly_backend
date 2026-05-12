@@ -1,10 +1,13 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>用户注册</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -22,14 +25,14 @@
             --warning: #fbbf24;
             --error: #f87171;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             transition: all 0.3s ease;
         }
-        
+
         body {
             background: linear-gradient(135deg, #0f172a, #1e293b);
             color: var(--text-primary);
@@ -41,7 +44,7 @@
             position: relative;
             overflow-x: hidden;
         }
-        
+
         body::before {
             content: '';
             position: absolute;
@@ -50,22 +53,22 @@
             width: 100%;
             height: 100%;
             background: radial-gradient(circle at 10% 20%, rgba(74, 108, 247, 0.1) 0%, transparent 40%),
-                        radial-gradient(circle at 90% 80%, rgba(138, 99, 210, 0.1) 0%, transparent 40%);
+                radial-gradient(circle at 90% 80%, rgba(138, 99, 210, 0.1) 0%, transparent 40%);
             z-index: -1;
         }
-        
+
         .container {
             max-width: 500px;
             margin: 0 auto;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 40px;
             position: relative;
             animation: fadeInDown 0.8s ease;
         }
-        
+
         .header h1 {
             font-weight: 700;
             font-size: 2.8rem;
@@ -75,7 +78,7 @@
             color: transparent;
             margin-bottom: 10px;
         }
-        
+
         .card {
             background: var(--card-dark);
             border-radius: 16px;
@@ -86,7 +89,7 @@
             z-index: 2;
             animation: fadeInUp 0.8s ease;
         }
-        
+
         .card::before {
             content: '';
             position: absolute;
@@ -98,7 +101,7 @@
             z-index: -1;
             border-radius: 18px;
         }
-        
+
         .card-header {
             background: rgba(30, 30, 30, 0.7);
             padding: 25px 30px;
@@ -106,7 +109,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .card-header::before {
             content: '';
             position: absolute;
@@ -116,7 +119,7 @@
             height: 4px;
             background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
         }
-        
+
         .card-header h3 {
             font-weight: 600;
             font-size: 1.7rem;
@@ -125,16 +128,16 @@
             align-items: center;
             gap: 12px;
         }
-        
+
         .card-header h3 i {
             font-size: 1.5rem;
             color: var(--accent-primary);
         }
-        
+
         .card-body {
             padding: 35px;
         }
-        
+
         .form-label {
             font-weight: 500;
             color: var(--text-primary);
@@ -144,7 +147,7 @@
             gap: 10px;
             font-size: 1.05rem;
         }
-        
+
         .form-control {
             background: var(--input-bg);
             border: 1px solid var(--input-border);
@@ -155,14 +158,14 @@
             font-size: 1rem;
             transition: all 0.3s;
         }
-        
+
         .form-control::placeholder {
             color: var(--input-placeholder);
             opacity: 1;
             font-style: italic;
             transition: opacity 0.2s;
         }
-        
+
         .form-control:focus {
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.25);
@@ -171,11 +174,11 @@
             outline: none;
             transform: translateY(-2px);
         }
-        
+
         .form-control:focus::placeholder {
             opacity: 0.6;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             border: none;
@@ -190,12 +193,12 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 20px rgba(74, 108, 247, 0.5);
         }
-        
+
         .btn-primary::after {
             content: '';
             position: absolute;
@@ -207,15 +210,15 @@
             transform: rotate(30deg);
             transition: all 0.6s;
         }
-        
+
         .btn-primary:hover::after {
             transform: rotate(30deg) translate(100%, 100%);
         }
-        
+
         .password-container {
             position: relative;
         }
-        
+
         .password-toggle {
             position: absolute;
             right: 15px;
@@ -225,16 +228,16 @@
             font-size: 1.1rem;
             transition: color 0.3s;
         }
-        
+
         .password-toggle:hover {
             color: var(--accent-primary);
         }
-        
+
         .decoration {
             position: absolute;
             z-index: 1;
         }
-        
+
         .decoration.circle {
             width: 250px;
             height: 250px;
@@ -244,7 +247,7 @@
             left: 5%;
             animation: float 8s ease-in-out infinite;
         }
-        
+
         .decoration.rectangle {
             width: 180px;
             height: 180px;
@@ -255,26 +258,26 @@
             transform: rotate(45deg);
             animation: float 10s ease-in-out infinite;
         }
-        
+
         .footer {
             padding: 20px 30px;
             text-align: center;
             font-size: 1rem;
             color: var(--text-secondary);
         }
-        
+
         .mt-5 {
             margin-top: 3rem;
         }
-        
+
         .text-center {
             text-align: center;
         }
-        
+
         .text-muted {
             color: var(--text-secondary);
         }
-        
+
         .success-screen {
             position: absolute;
             top: 0;
@@ -291,75 +294,87 @@
             pointer-events: none;
             transition: opacity 0.8s ease;
         }
-        
+
         .success-screen.active {
             opacity: 1;
             pointer-events: all;
         }
-        
+
         .success-content {
             text-align: center;
             max-width: 500px;
             padding: 40px;
         }
-        
+
         .countdown {
             font-size: 1.2rem;
             margin-top: 20px;
             color: var(--accent-primary);
         }
-        
+
         .terms-link {
             color: var(--accent-primary);
             text-decoration: none;
             transition: all 0.3s;
         }
-        
+
         .terms-link:hover {
             text-decoration: underline;
             color: #6c8dfa;
         }
-        
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         @keyframes fadeInDown {
             from {
                 opacity: 0;
                 transform: translateY(-30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         @keyframes float {
             0% {
                 transform: translateY(0) rotate(0deg);
             }
+
             50% {
                 transform: translateY(-20px) rotate(5deg);
             }
+
             100% {
                 transform: translateY(0) rotate(0deg);
             }
         }
-        
+
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
-        
+
         .password-strength {
             height: 5px;
             border-radius: 3px;
@@ -368,20 +383,20 @@
             overflow: hidden;
             position: relative;
         }
-        
+
         .password-strength-bar {
             height: 100%;
             width: 0;
             transition: width 0.5s ease, background-color 0.5s ease;
         }
-        
+
         .password-strength-text {
             font-size: 0.85rem;
             margin-top: 5px;
             color: var(--text-secondary);
             text-align: right;
         }
-        
+
         .password-tips {
             margin-top: 10px;
             padding: 10px;
@@ -390,28 +405,28 @@
             font-size: 0.9rem;
             color: var(--text-secondary);
         }
-        
+
         .password-match {
             margin-top: 5px;
             font-size: 0.85rem;
             text-align: right;
             height: 20px;
         }
-        
+
         .match-valid {
             color: var(--success);
         }
-        
+
         .match-invalid {
             color: var(--error);
         }
-        
+
         .tip-item {
             display: flex;
             align-items: center;
             margin-bottom: 5px;
         }
-        
+
         .tip-item i {
             margin-right: 8px;
             font-size: 0.8rem;
@@ -419,20 +434,20 @@
             text-align: center;
             color: var(--accent-secondary);
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 15px;
             }
-            
+
             .card-body {
                 padding: 25px;
             }
-            
+
             .header h1 {
                 font-size: 2.2rem;
             }
-            
+
             .decoration.circle,
             .decoration.rectangle {
                 display: none;
@@ -440,11 +455,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="decoration circle"></div>
     <div class="decoration rectangle"></div>
-    
-    <!-- 成功跳转屏幕 -->
+
+    <!-- 成功跳转 -->
     <div class="success-screen" id="successScreen">
         <div class="success-content">
             <i class="fas fa-check-circle fa-5x mb-4" style="color: var(--success); animation: pulse 2s infinite;"></i>
@@ -456,13 +472,13 @@
             </button>
         </div>
     </div>
-    
+
     <div class="container">
         <div class="header">
             <h1>用户注册</h1>
             <p>创建您的专属账户</p>
         </div>
-        
+
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-user-plus"></i> 新用户注册</h3>
@@ -473,24 +489,24 @@
                         <label for="registerUsername" class="form-label">
                             <i class="fas fa-user"></i> 用户名
                         </label>
-                        <input type="text" class="form-control" id="registerUsername" name="username" required 
+                        <input type="text" class="form-control" id="registerUsername" name="username" required
                             placeholder="创建您的用户名">
                     </div>
-    
+
                     <div class="mb-3">
                         <label for="registerEmail" class="form-label">
                             <i class="fas fa-envelope"></i> 电子邮箱
                         </label>
-                        <input type="email" class="form-control" id="registerEmail" name="email" required 
+                        <input type="email" class="form-control" id="registerEmail" name="email" required
                             placeholder="输入您的电子邮箱">
                     </div>
-    
+
                     <div class="mb-3">
                         <label for="registerPassword" class="form-label">
                             <i class="fas fa-lock"></i> 密码
                         </label>
                         <div class="password-container">
-                            <input type="password" class="form-control" id="registerPassword" name="password" required 
+                            <input type="password" class="form-control" id="registerPassword" name="password" required
                                 placeholder="请设置您的密码">
                             <span class="password-toggle" id="registerPasswordToggle">
                                 <i class="fas fa-eye"></i>
@@ -501,26 +517,27 @@
                         </div>
                         <div class="password-strength-text" id="passwordStrengthText">密码强度: 未输入</div>
                     </div>
-    
+
                     <div class="mb-3">
                         <label for="registerConfirmPassword" class="form-label">
                             <i class="fas fa-lock"></i> 确认密码
                         </label>
                         <div class="password-container">
-                            <input type="password" class="form-control" id="registerConfirmPassword" name="confirmPassword" required
-                                placeholder="请再次输入密码">
+                            <input type="password" class="form-control" id="registerConfirmPassword"
+                                name="confirmPassword" required placeholder="请再次输入密码">
                             <span class="password-toggle" id="registerConfirmPasswordToggle">
                                 <i class="fas fa-eye"></i>
                             </span>
                         </div>
                         <div class="password-match" id="passwordMatch"></div>
                     </div>
-    
+
                     <div class="mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="termsAgreement" required>
                             <label class="form-check-label" for="termsAgreement">
-                                我已阅读并同意 <a href="#" class="terms-link">服务条款</a> 和 <a href="#" class="terms-link">隐私政策</a>
+                                我已阅读并同意 <a href="#" class="terms-link">服务条款</a> 和 <a href="#"
+                                    class="terms-link">隐私政策</a>
                             </label>
                         </div>
                     </div>
@@ -530,15 +547,20 @@
                 </form>
             </div>
         </div>
+
+        <div class="mt-5 text-center text-muted">
+            <p>© 2026 星璇律动. 保留所有权利。</p>
+            <p>AI驱动的歌词、音乐与视频一体化创作平台</p>
+        </div>
     </div>
-    
+
     <script>
         // 密码可见性切换功能
         document.querySelectorAll('.password-toggle').forEach(toggle => {
-            toggle.addEventListener('click', function() {
+            toggle.addEventListener('click', function () {
                 const input = this.previousElementSibling;
                 const icon = this.querySelector('i');
-                
+
                 if (input.type === 'password') {
                     input.type = 'text';
                     icon.classList.remove('fa-eye');
@@ -550,19 +572,19 @@
                 }
             });
         });
-        
+
         // 密码强度检测
         const passwordInput = document.getElementById('registerPassword');
         const confirmPasswordInput = document.getElementById('registerConfirmPassword');
-        
+
         passwordInput.addEventListener('input', updatePasswordStrength);
         confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-        
+
         function updatePasswordStrength() {
             const password = passwordInput.value;
             const strengthBar = document.getElementById('passwordStrengthBar');
             const strengthText = document.getElementById('passwordStrengthText');
-            
+
             if (password.length === 0) {
                 strengthBar.style.width = '0%';
                 strengthBar.style.background = 'transparent';
@@ -570,37 +592,37 @@
                 strengthText.style.color = 'var(--text-secondary)';
                 return;
             }
-            
+
             // 更复杂的密码强度算法
             let strength = 0;
             let tips = "";
-            
+
             // 长度加分
             strength += Math.min(password.length * 4, 40);
-            
+
             // 包含小写字母
             if (/[a-z]/.test(password)) {
                 strength += 10;
             }
-            
+
             // 包含大写字母
             if (/[A-Z]/.test(password)) {
                 strength += 15;
             }
-            
+
             // 包含数字
             if (/\d/.test(password)) {
                 strength += 15;
             }
-            
+
             // 包含特殊字符
             if (/[^A-Za-z0-9]/.test(password)) {
                 strength += 20;
             }
-            
+
             // 根据总分确定强度级别
             let strengthLevel, color;
-            
+
             if (strength < 40) {
                 strengthLevel = '弱';
                 color = 'var(--error)';
@@ -614,30 +636,30 @@
                 strengthLevel = '非常强';
                 color = 'var(--success)';
             }
-            
+
             // 计算百分比
             const percentage = Math.min(strength, 100);
-            
+
             // 更新UI
             strengthBar.style.width = percentage + '%';
             strengthBar.style.background = color;
             strengthText.textContent = `密码强度: ${strengthLevel}`;
             strengthText.style.color = color;
-            
+
             // 同时检查密码匹配
             checkPasswordMatch();
         }
-        
+
         function checkPasswordMatch() {
             const password = passwordInput.value;
             const confirmPassword = confirmPasswordInput.value;
             const matchElement = document.getElementById('passwordMatch');
-            
+
             if (password.length === 0 || confirmPassword.length === 0) {
                 matchElement.textContent = '';
                 return;
             }
-            
+
             if (password === confirmPassword) {
                 matchElement.textContent = '✓ 密码匹配';
                 matchElement.className = 'password-match match-valid';
@@ -646,58 +668,82 @@
                 matchElement.className = 'password-match match-invalid';
             }
         }
-        
+
         // 注册表单提交处理
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const username = document.getElementById('registerUsername').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
-            
+
             if (!username) {
                 showError('registerUsername', '请输入用户名');
                 return;
             }
-            
+
             if (!email) {
                 showError('registerEmail', '请输入邮箱');
                 return;
             }
-            
+
             if (!validateEmail(email)) {
                 showError('registerEmail', '请输入有效的邮箱地址');
                 return;
             }
-            
+
             if (!password) {
                 showError('registerPassword', '请输入密码');
                 return;
             }
-            
-            // 已移除密码长度检查
-            
+
             if (password !== confirmPassword) {
                 showError('registerConfirmPassword', '两次输入的密码不匹配');
                 return;
             }
-            
+
             if (!document.getElementById('termsAgreement').checked) {
                 alert('请同意服务条款和隐私政策');
                 return;
             }
-            
-            // 模拟注册成功
-            showSuccess('注册成功！');
+
+            // 构造表单数据
+            const formData = {
+                username,
+                email,
+                password,
+                confirm_password: confirmPassword
+            };
+
+            fetch('/api/register/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('注册成功！');
+                    } else {
+                        alert(data.message || '注册失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('注册请求失败:', error);
+                    alert('网络错误，请稍后再试');
+                });
         });
-        
+
         // 显示错误提示
         function showError(inputId, message) {
             const input = document.getElementById(inputId);
             input.style.borderColor = 'var(--error)';
             input.placeholder = message;
-            
+
             // 添加动画效果
             input.animate([
                 { transform: 'translateX(0)' },
@@ -709,48 +755,64 @@
                 iterations: 2
             });
         }
-        
+
         // 显示成功消息并跳转
         function showSuccess(message) {
             const successScreen = document.getElementById('successScreen');
             const successMessage = document.getElementById('successMessage');
             const countdown = document.getElementById('countdown');
             const goHomeBtn = document.getElementById('goHomeBtn');
-            
-            // 设置成功消息
+
             successMessage.textContent = message;
-            
-            // 显示成功屏幕
             successScreen.classList.add('active');
-            
-            // 倒计时跳转
+
             let seconds = 5;
             countdown.textContent = seconds;
-            
+
             const countdownInterval = setInterval(() => {
                 seconds--;
                 countdown.textContent = seconds;
-                
                 if (seconds <= 0) {
                     clearInterval(countdownInterval);
                     redirectToHome();
                 }
             }, 1000);
-            
-            // 立即跳转按钮
+
             goHomeBtn.addEventListener('click', redirectToHome);
         }
-        
+
         // 跳转到首页
         function redirectToHome() {
-            window.location.href = 'index.html';
+            window.location.href = '/';
         }
-        
+
         // 邮箱验证
         function validateEmail(email) {
             const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
             return re.test(String(email).toLowerCase());
         }
+
+        //获取 CSRF Token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
     </script>
+    <script>
+        document.cookie = "csrftoken={{ csrf_token }}";
+    </script>
+
 </body>
+
 </html>

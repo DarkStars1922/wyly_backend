@@ -1,0 +1,884 @@
+--- START OF FILE fire_erhu.html ---
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire & Erhu - Interactive Healing Space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/healing_tracker.js' %}"></script>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            pointer-events: none;
+        }
+
+        .bg-video.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        #growth-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at center, transparent 30%, rgba(255, 69, 0, 0.2) 70%, rgba(80, 0, 0, 0.4) 100%);
+            transition: opacity 0.8s ease-out;
+        }
+
+        #lantern-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .lantern {
+            position: absolute;
+            bottom: -100px;
+            width: 50px;
+            height: 70px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            filter: drop-shadow(0 0 10px rgba(255, 140, 0, 0.6));
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        #ink-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #interaction-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80%;
+            z-index: 20;
+            display: flex;
+        }
+
+        .zone {
+            flex: 1;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .zone-highlight {
+            background: linear-gradient(to bottom, transparent, rgba(255, 69, 0, 0.15) 50%, transparent);
+            box-shadow: inset 0 0 40px rgba(255, 69, 0, 0.1);
+        }
+
+        #sprite-container {
+            position: absolute;
+            width: var(--sprite-size);
+            height: var(--sprite-size);
+            top: 85%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: top 0.05s linear, left 0.05s linear;
+        }
+
+        .sprite-visual {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: breathe 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 15px rgba(255, 69, 0, 0.6));
+        }
+
+        .sprite-visual.active {
+            animation: active-breathe 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+                filter: brightness(1);
+            }
+
+            50% {
+                transform: translateY(calc(var(--float-amp) * -1)) scale(1.05);
+                filter: brightness(1.2);
+            }
+        }
+
+        @keyframes active-breathe {
+            0% {
+                transform: scale(1.1);
+                filter: brightness(1.2) drop-shadow(0 0 20px #ff4500);
+            }
+
+            100% {
+                transform: translateY(-20px) scale(1.3);
+                filter: brightness(1.5) drop-shadow(0 0 40px #ff8c00);
+            }
+        }
+
+        #target-icon-layer {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 25;
+            display: none;
+            pointer-events: none;
+        }
+
+        .target-erhu {
+            width: 65px;
+            height: 65px;
+            filter: drop-shadow(0 0 10px #ff4500);
+            animation: floatIcon 2s infinite ease-in-out;
+        }
+
+        @keyframes floatIcon {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .icon-hint {
+            margin-top: 8px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff4500;
+            text-align: center;
+        }
+
+        .feedback-text {
+            position: absolute;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #ff4500;
+            text-shadow: 0 0 10px #fff, 0 0 20px #ff0000;
+            z-index: 100;
+            pointer-events: none;
+            display: none;
+        }
+
+        .feedback-anim {
+            animation: floatUpFade 0.8s ease-out forwards;
+        }
+
+        @keyframes floatUpFade {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -100px) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        .glass-btn {
+            pointer-events: auto;
+            padding: 12px 32px;
+            background: rgba(40, 0, 0, 0.4);
+            border: 1px solid rgba(255, 69, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 69, 0, 0.3);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 69, 0, 0.6);
+        }
+
+        .music-layer-control {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 50;
+            width: 220px;
+        }
+
+        .custom-select-trigger {
+            background: rgba(40, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 12px 20px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .custom-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(30, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0 0 20px 20px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: 0.3s;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .custom-options.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .custom-option {
+            padding: 10px 20px;
+            color: #ffcccc;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .custom-option:hover {
+            background: rgba(255, 69, 0, 0.3);
+            color: #fff;
+        }
+
+        .nav-trigger {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            z-index: 35;
+            text-decoration: none;
+            opacity: 0.6;
+            transition: all 0.4s ease;
+            padding: 20px;
+        }
+
+        .nav-trigger:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        #nav-prev {
+            left: 20px;
+            flex-direction: row;
+        }
+
+        #nav-next {
+            right: 20px;
+            flex-direction: row-reverse;
+        }
+
+        .arrow-group {
+            display: flex;
+            align-items: center;
+            gap: -5px;
+        }
+
+        .arrow-shape {
+            width: 20px;
+            height: 20px;
+            border-top: 3px solid rgba(255, 255, 255, 0.9);
+            border-right: 3px solid rgba(255, 255, 255, 0.9);
+            transform: rotate(45deg) skew(10deg, 10deg);
+            margin: 0 2px;
+        }
+
+        #nav-prev .arrow-shape {
+            transform: rotate(-135deg) skew(10deg, 10deg);
+        }
+
+        .nav-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin: 0 15px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0 8px;
+        }
+
+        #nav-prev .nav-text {
+            border-left: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #transition-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            pointer-events: none;
+            transition: opacity 1.2s;
+            opacity: 1;
+        }
+
+        #btn-report {
+            border: 1px solid rgba(255, 69, 0, 0.4);
+            box-shadow: 0 0 10px rgba(255, 69, 0, 0.1);
+        }
+
+        #btn-report:hover {
+            box-shadow: 0 0 20px rgba(255, 69, 0, 0.4);
+            border-color: rgba(255, 69, 0, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="transition-overlay"></div>
+
+    <!-- 结束按钮 -->
+    <div id="report-trigger-container" class="absolute top-8 left-8 z-[150] pointer-events-none">
+        <button id="btn-report"
+            class="glass-btn flex items-center gap-2 pointer-events-auto group border-orange-500/30 bg-orange-950/20 hover:bg-orange-600/30">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-orange-500 group-hover:scale-110 transition-transform" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="text-sm font-medium tracking-widest text-orange-100">结束疗愈 · 查看报告</span>
+        </button>
+    </div>
+
+    <div id="video-container">
+        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+    </div>
+
+    <div id="growth-overlay"></div>
+    <div id="lantern-container"></div>
+    <canvas id="ink-canvas"></canvas>
+
+    <div id="interaction-zones">
+        <div class="zone" data-index="0"></div>
+        <div class="zone" data-index="1"></div>
+        <div class="zone" data-index="2"></div>
+        <div class="zone" data-index="3"></div>
+    </div>
+
+    <div id="sprite-container">
+        <img src="{% static 'sprite/fire_happy.png' %}" class="sprite-visual" alt="Fire Sprite">
+    </div>
+
+    <div id="prompt-page"
+        class="fixed inset-0 bg-black/90 z-[9990] flex flex-col justify-center items-center backdrop-blur-md transition-opacity duration-500">
+        <div class="text-orange-600 text-5xl font-bold mb-4">火 空间</div>
+        <div class="text-white my-4 flex items-center gap-4 text-center px-8">
+            当出现 <img src="{% static 'instrumentsIcon/erhu.png' %}" class="w-12 h-12"> 时，在3s内点击或长按屏幕对应区域
+        </div>
+        <button id="start-btn" class="glass-btn mt-6">开启"火"空间</button>
+    </div>
+
+    <div id="target-icon-layer">
+        <div id="icon-normal">
+            <img src="{% static 'instrumentsIcon/erhu.png' %}" class="target-erhu">
+            <div id="icon-hint" class="icon-hint">点击!</div>
+        </div>
+        <div id="icon-miss"
+            style="color: #FF6347; font-size: 2.5rem; font-weight: bold; display:none; text-align:center; text-shadow: 0 0 10px #fff;">
+            MISS!</div>
+    </div>
+
+    <div id="feedback-text" class="feedback-text">Great!</div>
+
+    <div id="ui-layer" class="absolute bottom-12 w-full flex justify-center z-30 pointer-events-none">
+        <button id="btn-3d" class="glass-btn">进入 3D 沉浸模式</button>
+    </div>
+
+    <div class="music-layer-control">
+        <div class="custom-select-trigger" id="music-trigger">
+            <span id="trigger-text">🎵 疗愈白噪音</span><span>▼</span>
+        </div>
+        <div class="custom-options" id="music-options">
+            <div class="p-4 flex items-center gap-2 border-b border-white/10">
+                <span class="text-xs">🔉</span>
+                <input type="range" id="volume-slider"
+                    class="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer" min="0" max="1" step="0.05"
+                    value="0.5">
+            </div>
+            <div class="custom-option" data-value="stop">⛔ 停止</div>
+            <div class="custom-option" data-value="钵音">🥣 钵音</div>
+            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">💧 滴水</div>
+            <div class="custom-option" data-value="短笛">🎋 短笛</div>
+            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="风铃">🎐 风铃</div>
+            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
+            <div class="custom-option" data-value="入眠">🌙 入眠</div>
+            <div class="custom-option" data-value="唯美">🌸 唯美</div>
+            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
+            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
+        </div>
+    </div>
+
+    <a id="nav-prev" class="nav-trigger" href="#">
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+        <div class="nav-text">上一个空间</div>
+    </a>
+    <a id="nav-next" class="nav-trigger" href="#">
+        <div class="nav-text">下一个空间</div>
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+    </a>
+
+    <audio id="ambient-audio" loop></audio>
+    <audio id="bg-music" loop></audio>
+    <audio id="hit-music"></audio>
+    <iframe id="viewer-frame"
+        class="fixed inset-0 w-full h-full border-none z-40 opacity-0 pointer-events-none transition-opacity duration-1000 bg-black"></iframe>
+
+    <script>
+        // 1. 全局配置
+        const SPRITE_MOVE_SPEED = 0.22;
+        const SPRITE_SIZE = 240;
+        const LANTERN_COUNT = 26;
+        const LANTERN_BASE_SPEED = 1.5;
+
+        const rootStyle = document.documentElement.style;
+        rootStyle.setProperty('--sprite-size', SPRITE_SIZE + 'px');
+        rootStyle.setProperty('--float-amp', '50px');
+
+        const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+        const musicList = ["二泉映月", "光明行", "良宵", "十面埋伏", "月夜"];
+        const videoBasePath = "{% static 'image_video/video/火/' %}";
+        const musicBasePath = "{% static 'music_segment/二胡/' %}";
+
+        let activeVideoId = 1;
+        let currentVideoName = "1";
+        let currentVideoPlayCount = 0;
+        let iconTimer;
+        const maxPlayCount = 8;
+
+        window.addEventListener('load', () => {
+            if (window.HealingTracker) {
+                HealingTracker.initSpace("火 (二胡)");
+            }
+        });
+
+        // 2. 孔明灯池初始化
+        const lanternContainer = document.getElementById('lantern-container');
+        const lanternPool = [];
+        for (let i = 0; i < LANTERN_COUNT; i++) {
+            const lantern = document.createElement('div');
+            lantern.className = 'lantern';
+            const imgIndex = (i % 4) + 1;
+            lantern.style.backgroundImage = `url("{% static 'growth/fire/' %}${imgIndex}.png")`;
+            lantern.style.left = (Math.random() * 90 + 5) + '%';
+            lanternPool.push({ el: lantern, speedFactor: 0.5 + Math.random() * 0.8, y: -100, active: false });
+            lanternContainer.appendChild(lantern);
+        }
+
+        // 3. 音视频逻辑
+        const video1 = document.getElementById('video-1');
+        const video2 = document.getElementById('video-2');
+        const bgMusic = document.getElementById('bg-music');
+        const hitMusic = document.getElementById('hit-music');
+
+        function initBackground() {
+            currentVideoName = videoList[Math.floor(Math.random() * videoList.length)];
+            video1.src = `${videoBasePath}${currentVideoName}.mp4`;
+            video1.play().catch(() => { });
+            playRandomBGM();
+        }
+
+        function crossFadeToNextVideo() {
+            const next = activeVideoId === 1 ? video2 : video1;
+            const current = activeVideoId === 1 ? video1 : video2;
+            currentVideoName = videoList[Math.floor(Math.random() * videoList.length)];
+            next.src = `${videoBasePath}${currentVideoName}.mp4`;
+            next.load();
+            next.play().then(() => {
+                next.classList.add('active');
+                current.classList.remove('active');
+                activeVideoId = (activeVideoId === 1 ? 2 : 1);
+                currentVideoPlayCount = 0;
+                setTimeout(() => { current.pause(); current.currentTime = 0; }, 2000);
+            });
+        }
+
+        function handleVideoEnded(el) {
+            if (el !== (activeVideoId === 1 ? video1 : video2)) return;
+            currentVideoPlayCount++;
+            if (currentVideoPlayCount < maxPlayCount) el.play().catch(() => { });
+            else crossFadeToNextVideo();
+        }
+        video1.addEventListener('ended', () => handleVideoEnded(video1));
+        video2.addEventListener('ended', () => handleVideoEnded(video2));
+
+        function playRandomBGM() {
+            const m = musicList[Math.floor(Math.random() * musicList.length)];
+            bgMusic.src = `${musicBasePath}${encodeURIComponent(m)}.mp3`;
+            bgMusic.volume = 0.4;
+            bgMusic.play().catch(() => { });
+        }
+
+        // 4. 交互逻辑
+        let targetData = { show: false, x: 50, y: 50, zoneIndex: 0, status: 'normal', type: 'click' };
+        let currentPos = { x: 50, y: 85 };
+        let targetPos = { x: 50, y: 85 };
+        let isMoving = false;
+        let growthLevel = 0;
+        let interruptCount = 0;
+
+        const zones = document.querySelectorAll('.zone');
+        const spriteContainer = document.getElementById('sprite-container');
+        const targetIconLayer = document.getElementById('target-icon-layer');
+
+        function generateNextIcon() {
+            const zoneIdx = Math.floor(Math.random() * 4);
+            const x = 15 + zoneIdx * 20 + Math.random() * 10;
+            const y = 20 + Math.random() * 40;
+            const type = Math.random() > 0.5 ? 'longpress' : 'click';
+
+            interruptCount = 0;
+            targetData = { show: true, x, y, zoneIndex: zoneIdx, status: 'normal', type };
+
+            // UI重置
+            targetIconLayer.style.display = 'block';
+            targetIconLayer.style.left = `${x}%`;
+            targetIconLayer.style.top = `${y}%`;
+            document.getElementById('icon-normal').style.display = 'flex'; // 显示图标
+            document.getElementById('icon-miss').style.display = 'none';   // 隐藏 Miss
+            document.getElementById('icon-hint').innerText = type === 'click' ? '点击!' : '长按!';
+
+            zones.forEach((z, i) => z.classList.toggle('zone-highlight', i === zoneIdx));
+
+            clearTimeout(iconTimer); // 3s超时判定
+            iconTimer = setTimeout(doMiss, 3000);
+        }
+
+        function doMiss() {
+            targetData.status = 'miss'; // 标记为miss
+            if (window.HealingTracker) HealingTracker.logMiss();
+            isMoving = false;
+
+            // 隐藏图标，显示 MISS
+            document.getElementById('icon-normal').style.display = 'none';
+            document.getElementById('icon-miss').style.display = 'block';
+
+            // 取消高亮
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+
+            fadeOutHitSound(); // 停止声音
+
+            // 1s后移除提示并生成下一个
+            setTimeout(() => {
+                targetIconLayer.style.display = 'none';
+                generateNextIcon();
+            }, 1000);
+        }
+
+        function onZoneDown(idx) {
+            if (!targetData.show || targetData.zoneIndex !== idx) return;
+
+            clearTimeout(iconTimer); //清除Miss定时器
+
+            if (targetData.type === 'click') {
+                currentPos = { x: targetData.x, y: targetData.y };
+                showFeedback('Excellent!', targetData.x, targetData.y);
+                if (window.HealingTracker) HealingTracker.logHit();
+                targetData.show = false;
+                targetIconLayer.style.display = 'none';
+                zones.forEach(z => z.classList.remove('zone-highlight'));
+                playHitSound();
+                window.dispatchEvent(new CustomEvent('sprite-action', { detail: { burst: true } }));
+                setTimeout(() => { fadeOutHitSound(); generateNextIcon(); }, 800);
+            } else {
+                // 长按逻辑开始
+                targetPos = { x: targetData.x, y: targetData.y };
+                isMoving = true;
+                document.getElementById('icon-hint').innerText = '保持!';
+                playHitSound();
+            }
+        }
+
+        function onZoneUp() {
+            if (targetData.type === 'longpress' && isMoving) {
+                isMoving = false;
+                interruptCount++; // 每次松开，中断次数加1
+                document.getElementById('icon-hint').innerText = '长按!';
+                fadeOutHitSound();
+                clearTimeout(iconTimer);
+                iconTimer = setTimeout(doMiss, 3000);
+            }
+        }
+
+        zones.forEach((z, i) => {
+            z.addEventListener('mousedown', () => onZoneDown(i));
+            z.addEventListener('touchstart', (e) => { e.preventDefault(); onZoneDown(i); });
+        });
+        document.addEventListener('mouseup', onZoneUp);
+        document.addEventListener('touchend', onZoneUp);
+
+        // 5. 循环逻辑
+        const canvas = document.getElementById('ink-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        window.dispatchEvent(new Event('resize'));
+
+        window.addEventListener('sprite-action', (e) => {
+            const rect = spriteContainer.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const count = e.detail?.burst ? 12 : 1;
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: cx, y: cy, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4 - 1.5,
+                    life: 1.0, size: Math.random() * 15 + 8,
+                    color: `rgba(255, ${Math.floor(Math.random() * 100)}, 0,`, isNote: Math.random() > 0.7
+                });
+            }
+        });
+
+        function gameLoop() {
+            if (isMoving) {
+                const dx = targetPos.x - currentPos.x;
+                const dy = targetPos.y - currentPos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < SPRITE_MOVE_SPEED) {
+                    // 反馈逻辑
+                    currentPos = { x: targetPos.x, y: targetPos.y };
+                    isMoving = false;
+                    targetData.show = false;
+                    targetIconLayer.style.display = 'none';
+                    zones.forEach(z => z.classList.remove('zone-highlight'));
+                    let fb = "Perfect!";
+                    if (interruptCount === 1) fb = "Good!";
+                    else if (interruptCount >= 2) fb = "Not Bad!";
+
+                    showFeedback(fb, currentPos.x, currentPos.y);
+                    if (window.HealingTracker) HealingTracker.logHit();
+                    fadeOutHitSound();
+                    setTimeout(generateNextIcon, 600);
+                } else {
+                    currentPos.x += (dx / dist) * SPRITE_MOVE_SPEED;
+                    currentPos.y += (dy / dist) * SPRITE_MOVE_SPEED;
+                }
+                growthLevel = Math.min(1, growthLevel + 0.008);
+                window.dispatchEvent(new CustomEvent('sprite-action'));
+            } else {
+                growthLevel = Math.max(0, growthLevel - 0.005);
+            }
+
+            spriteContainer.style.left = `${currentPos.x}%`;
+            spriteContainer.style.top = `${currentPos.y}%`;
+            const spriteVisual = document.querySelector('.sprite-visual');
+            isMoving ? spriteVisual.classList.add('active') : spriteVisual.classList.remove('active');
+            document.getElementById('growth-overlay').style.opacity = growthLevel * 0.8;
+
+            // 孔明灯淡出上升逻辑
+            lanternPool.forEach((lp) => {
+                if (growthLevel > 0.01) {
+                    lp.active = true;
+                    lp.y += LANTERN_BASE_SPEED * lp.speedFactor * (0.5 + growthLevel);
+                } else if (lp.active) {
+                    lp.y += LANTERN_BASE_SPEED * 0.3;
+                }
+                if (lp.active) {
+                    const h = window.innerHeight;
+                    lp.el.style.transform = `translateY(-${lp.y}px)`;
+                    let fade = 1.0;
+                    const threshold = h * 0.4;
+                    if (lp.y > threshold) fade = 1.0 - (lp.y - threshold) / (h - threshold + 100);
+                    lp.el.style.opacity = Math.max(0, fade * Math.min(1, growthLevel * 5));
+                    if (lp.y > h + 200) { lp.y = -100; lp.active = false; }
+                }
+            });
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+                if (p.life <= 0) { particles.splice(i, 1); return; }
+                ctx.globalAlpha = p.life;
+                if (p.isNote) {
+                    ctx.font = `${p.size}px Arial`; ctx.fillStyle = p.color + "1)";
+                    ctx.fillText(['♩', '♪', '♫', '♬'][Math.floor(p.life * 4) % 4], p.x, p.y);
+                } else {
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color + "0.8)";
+                    ctx.shadowBlur = 10; ctx.shadowColor = "#ff4500";
+                    ctx.fill(); ctx.shadowBlur = 0;
+                }
+            });
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 6. 辅助工具与UI
+        function showFeedback(txt, x, y) {
+            const f = document.getElementById('feedback-text');
+            f.innerText = txt; f.style.left = `${x}%`; f.style.top = `${y}%`;
+            f.style.display = 'block'; f.classList.remove('feedback-anim');
+            void f.offsetWidth; f.classList.add('feedback-anim');
+        }
+
+        let fadeTimer;
+        function playHitSound() {
+            clearInterval(fadeTimer); hitMusic.volume = 1;
+            hitMusic.src = `${musicBasePath}${encodeURIComponent(musicList[Math.floor(Math.random() * musicList.length)])}.mp3`;
+            hitMusic.play().catch(() => { });
+        }
+        function fadeOutHitSound() {
+            if (fadeTimer) clearInterval(fadeTimer);
+            fadeTimer = setInterval(() => {
+                if (hitMusic.volume > 0.05) hitMusic.volume -= 0.05;
+                else { clearInterval(fadeTimer); hitMusic.pause(); hitMusic.volume = 1; }
+            }, 50);
+        }
+
+        document.getElementById('start-btn').onclick = () => {
+            document.getElementById('prompt-page').style.opacity = '0';
+            setTimeout(() => { document.getElementById('prompt-page').style.display = 'none'; initBackground(); gameLoop(); generateNextIcon(); }, 500);
+        };
+
+        const btn3d = document.getElementById('btn-3d');
+        const vFrame = document.getElementById('viewer-frame');
+        btn3d.onclick = () => {
+            vFrame.src = `{% url 'fire_360' %}?id=${currentVideoName}`;
+            vFrame.style.opacity = '1'; vFrame.style.pointerEvents = 'auto';
+            btn3d.style.opacity = '0';
+        };
+        window.addEventListener('message', (e) => {
+            if (e.data === 'close360') {
+                vFrame.style.opacity = '0'; vFrame.style.pointerEvents = 'none';
+                btn3d.style.opacity = '1'; setTimeout(() => { vFrame.src = ""; }, 1000);
+            }
+        });
+
+        const spaces = ["{% url 'earth_pipa' %}", "{% url 'water_guqin' %}", "{% url 'metal_zhudi' %}", "{% url 'wood_xiao' %}", "{% url 'fire_erhu' %}"];
+        function navTo(idx) {
+            document.getElementById('transition-overlay').style.opacity = '1';
+            const targetUrl = spaces[idx];
+            setTimeout(() => {
+                if (window.HealingTracker) {
+                    HealingTracker.captureAndGo(targetUrl); // 调用追踪器保存当前空间数据并跳转
+                } else {
+                    window.location.href = targetUrl;
+                }
+            }, 1200);
+        }
+        document.getElementById('btn-report').onclick = (e) => {
+            e.preventDefault();
+            document.getElementById('transition-overlay').style.opacity = '1';
+            setTimeout(() => {
+                if (window.HealingTracker) {
+                    HealingTracker.captureAndGo("{% url 'report_page' %}"); // 跳转至 Django 总结报告页面
+                } else {
+                    window.location.href = "{% url 'report_page' %}";
+                }
+            }, 1000);
+        };
+        document.getElementById('nav-prev').onclick = (e) => { e.preventDefault(); navTo(3); };
+        document.getElementById('nav-next').onclick = (e) => { e.preventDefault(); navTo(0); };
+
+        (function setupAudio() {
+            const trigger = document.getElementById('music-trigger');
+            const options = document.getElementById('music-options');
+            const ambient = document.getElementById('ambient-audio');
+            const slider = document.getElementById('volume-slider');
+            trigger.onclick = (e) => { e.stopPropagation(); options.classList.toggle('open'); };
+            document.querySelectorAll('.custom-option').forEach(opt => {
+                opt.onclick = function () {
+                    const val = this.dataset.value;
+                    document.getElementById('trigger-text').innerText = this.innerText;
+                    options.classList.remove('open');
+                    if (val === 'stop') { ambient.pause(); return; }
+                    ambient.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
+                    ambient.volume = slider.value;
+                    ambient.play();
+                };
+            });
+            slider.oninput = function () { ambient.volume = this.value; };
+            window.onclick = () => options.classList.remove('open');
+            setTimeout(() => document.getElementById('transition-overlay').style.opacity = '0', 500);
+        })();
+    </script>
+</body>
+
+</html>

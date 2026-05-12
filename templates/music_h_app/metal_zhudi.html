@@ -1,0 +1,1406 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metal & Zhudi Experience - Interactive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/healing_tracker.js' %}"></script>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        /* 视频层 */
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            pointer-events: none;
+        }
+
+        .bg-video.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        /* 覆盖层 */
+        #growth-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(255, 215, 0, 0.2) 70%, rgba(218, 165, 32, 0.6) 100%);
+            transition: opacity 0.5s ease-out;
+            box-shadow: inset 0 0 100px rgba(255, 215, 0, 0.3);
+        }
+
+        /* 金色线条层 */
+        #ink-canvas {
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+        }
+
+        #line-bottom {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            transform-origin: center;
+            background: linear-gradient(90deg, transparent, #FFD700, transparent);
+            box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
+        }
+
+        #line-top {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            transform-origin: center;
+            background: linear-gradient(90deg, transparent, #FFD700, transparent);
+            box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
+        }
+
+        #line-left {
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            transform-origin: center;
+            background: linear-gradient(180deg, transparent, #FFD700, transparent);
+            box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
+        }
+
+        #line-right {
+            top: 0;
+            right: 0;
+            width: 6px;
+            height: 100%;
+            transform-origin: center;
+            background: linear-gradient(180deg, transparent, #FFD700, transparent);
+            box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
+        }
+
+        /* 粒子画布层 */
+        #ink-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* 交互区域 */
+        #interaction-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80%;
+            z-index: 20;
+            display: flex;
+        }
+
+        .zone {
+            flex: 1;
+            height: 100%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .zone-highlight {
+            background: linear-gradient(to bottom, transparent, rgba(255, 215, 0, 0.15) 50%, transparent);
+            box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.1);
+        }
+
+        /* 精灵容器 */
+        #sprite-container {
+            position: absolute;
+            width: var(--sprite-size);
+            height: var(--sprite-size);
+            top: 85%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: top 0.05s linear, left 0.05s linear;
+        }
+
+        .sprite-visual {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: breathe 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+        }
+
+        .sprite-visual.active {
+            animation: active-breathe 0.8s ease-in-out infinite alternate;
+        }
+
+        /*动画*/
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)) brightness(1);
+            }
+
+            50% {
+                transform: translateY(calc(var(--float-amp) * -1)) scale(1.05);
+                filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.7)) brightness(1.1);
+            }
+        }
+
+        @keyframes active-breathe {
+            0% {
+                transform: translateY(0) scale(1.1);
+                filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)) brightness(1.2);
+            }
+
+            100% {
+                transform: translateY(calc(var(--float-amp) * -1.2)) scale(1.25);
+                filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.9)) brightness(1.5);
+            }
+        }
+
+        /* 目标图标与反馈 */
+        #target-icon-layer {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 25;
+            display: none;
+            pointer-events: none;
+        }
+
+        #icon-normal {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: floatIcon 2s infinite ease-in-out;
+        }
+
+        .target-zhudi {
+            width: 60px;
+            height: 60px;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+        }
+
+        .icon-hint {
+            margin-top: 8px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700;
+            animation: pulseHint 1s infinite alternate;
+        }
+
+        #icon-miss {
+            color: #FF6347;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: popMiss 0.3s ease-out forwards;
+            display: none;
+        }
+
+        .feedback-text {
+            position: absolute;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #FFD700;
+            text-shadow: 0 0 10px #fff, 0 0 20px #FFD700;
+            z-index: 100;
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -50%);
+        }
+
+        .feedback-anim {
+            animation: floatUpFade 0.8s ease-out forwards;
+        }
+
+        @keyframes floatIcon {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes pulseHint {
+            from {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            to {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes popMiss {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            80% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes floatUpFade {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+
+            20% {
+                transform: translate(-50%, calc(-50% - 10px)) scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, calc(-50% - 40px)) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 提示页面 */
+        #prompt-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9990;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.5s;
+        }
+
+        .prompt-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .prompt-line1 {
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .highlight-metal {
+            color: #FFD700;
+            font-size: 2.8rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+        }
+
+        .prompt-line2 {
+            font-size: 1.2rem;
+            color: #eee;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .zhudi-icon-inline {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
+        }
+
+        .prompt-line3 {
+            font-size: 1rem;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+
+        .start-btn {
+            padding: 10px 40px;
+            border: 2px solid #FFD700;
+            border-radius: 40px;
+            color: #FFD700;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: rgba(255, 215, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .start-btn:hover {
+            background: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        /*UI & Controls*/
+        #ui-layer {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            width: 100%;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .glass-btn {
+            pointer-events: auto;
+            padding: 12px 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        #viewer-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            background-color: #000;
+        }
+
+        #viewer-frame.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .nav-trigger {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            z-index: 35;
+            text-decoration: none;
+            opacity: 0.6;
+            transition: all 0.4s ease;
+            padding: 20px;
+        }
+
+        .nav-trigger:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        #nav-prev {
+            left: 20px;
+            flex-direction: row;
+        }
+
+        #nav-next {
+            right: 20px;
+            flex-direction: row-reverse;
+        }
+
+        .arrow-group {
+            display: flex;
+            align-items: center;
+            gap: -5px;
+        }
+
+        .arrow-shape {
+            width: 20px;
+            height: 20px;
+            border-top: 3px solid rgba(255, 255, 255, 0.9);
+            border-right: 3px solid rgba(255, 255, 255, 0.9);
+            transform: rotate(45deg) skew(10deg, 10deg);
+            margin: 0 2px;
+        }
+
+        #nav-prev .arrow-shape {
+            transform: rotate(-135deg) skew(10deg, 10deg);
+        }
+
+        .nav-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin: 0 15px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0 8px;
+        }
+
+        #nav-prev .nav-text {
+            border-left: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 9999;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity 1.2s ease-in-out;
+        }
+
+        #transition-overlay.fade-out {
+            opacity: 0;
+        }
+
+        #transition-overlay.fade-in {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .music-layer-control {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 50;
+            font-family: 'Microsoft YaHei', sans-serif;
+            width: 220px;
+        }
+
+        .custom-select-trigger {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            user-select: none;
+        }
+
+        .custom-select-trigger:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .custom-select-trigger.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 20px 20px 0 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: none;
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 20px 20px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .custom-options.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .volume-box {
+            padding: 15px 20px 10px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: transparent;
+        }
+
+        .volume-icon {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .custom-option {
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .custom-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding-left: 25px;
+        }
+
+        .custom-option.selected {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #btn-report {
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+        }
+
+        #btn-report:hover {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            border-color: rgba(255, 215, 0, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 结束按钮 -->
+    <div id="report-trigger-container" class="absolute top-8 left-8 z-[150] pointer-events-none">
+        <button id="btn-report"
+            class="glass-btn flex items-center gap-2 pointer-events-auto group border-yellow-500/30 bg-yellow-950/20 hover:bg-yellow-600/30">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-yellow-500 group-hover:scale-110 transition-transform" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="text-sm font-medium tracking-widest text-yellow-100">结束疗愈 · 查看报告</span>
+        </button>
+    </div>
+
+    <!-- 转场遮罩 -->
+    <div id="transition-overlay"
+        style="position: fixed; inset: 0; background: #000; z-index: 9999; pointer-events: none; transition: opacity 1.2s; opacity: 1;">
+    </div>
+
+    <!-- 背景视频 -->
+    <div id="video-container">
+        <video id="video-1" class="bg-video active" muted playsinline autoplay></video>
+        <video id="video-2" class="bg-video" muted playsinline autoplay></video>
+    </div>
+
+    <!-- 金色线条与光晕特效层 -->
+    <div id="growth-overlay"></div>
+
+    <canvas id="ink-canvas"></canvas>
+
+    <!-- 交互区域 -->
+    <div id="interaction-zones">
+        <div class="zone" data-index="0"></div>
+        <div class="zone" data-index="1"></div>
+        <div class="zone" data-index="2"></div>
+        <div class="zone" data-index="3"></div>
+    </div>
+
+    <!-- 精灵 -->
+    <div id="sprite-container">
+        <img src="{% static 'sprite/metal_happy.png' %}" class="sprite-visual" alt="精灵">
+    </div>
+
+    <!-- 提示引导页 -->
+    <div id="prompt-page">
+        <div class="prompt-content">
+            <div class="prompt-line1"><span class="highlight-metal">金</span>空间</div>
+            <div class="prompt-line2">当出现 <img class="zhudi-icon-inline" src="{% static 'instrumentsIcon/zhudi.png' %}">
+                时，3s内根据提示点击或长按！</div>
+            <div class="prompt-line3">准备好了吗</div>
+            <button id="start-interaction-btn" class="start-btn">是的</button>
+        </div>
+    </div>
+
+    <!-- 目标图标 -->
+    <div id="target-icon-layer">
+        <div id="icon-normal">
+            <img id="target-zhudi" src="{% static 'instrumentsIcon/zhudi.png' %}" class="target-zhudi" alt="zhudi">
+            <div id="icon-hint" class="icon-hint">点击!</div>
+        </div>
+        <div id="icon-miss">MISS!</div>
+    </div>
+
+    <!-- 反馈文字 -->
+    <div id="feedback-text" class="feedback-text">Great!</div>
+
+    <!-- UI层 -->
+    <div id="ui-layer">
+        <button id="btn-3d" class="glass-btn">进入 3D 沉浸模式</button>
+    </div>
+
+    <!-- 音乐控件 -->
+    <div class="music-layer-control">
+        <div class="custom-select-trigger" id="music-trigger">
+            <span id="trigger-text">🎵 添加疗愈白噪音</span><span>▼</span>
+        </div>
+        <div class="custom-options" id="music-options">
+            <div class="volume-box"><span class="volume-icon">🔉</span><input type="range" id="volume-slider"
+                    class="volume-slider" min="0" max="1" step="0.05" value="0.5"></div>
+            <div class="custom-option" data-value="stop">⛔ 停止播放</div>
+            <div class="custom-option" data-value="钵音">🥣 钵音</div>
+            <div class="custom-option" data-value="晨钟暮鼓">🔔 晨钟暮鼓</div>
+            <div class="custom-option" data-value="滴水">💧 滴水</div>
+            <div class="custom-option" data-value="短笛">🎋 短笛</div>
+            <div class="custom-option" data-value="放松">🍃 放松</div>
+            <div class="custom-option" data-value="风铃">🎐 风铃</div>
+            <div class="custom-option" data-value="疗愈">✨ 疗愈</div>
+            <div class="custom-option" data-value="入眠">🌙 入眠</div>
+            <div class="custom-option" data-value="唯美">🌸 唯美</div>
+            <div class="custom-option" data-value="小雨">🌧️ 小雨</div>
+            <div class="custom-option" data-value="雨声">⛈️ 雨声</div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <a id="nav-prev" class="nav-trigger" href="#">
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+        <div class="nav-text">上一个空间</div>
+    </a>
+    <a id="nav-next" class="nav-trigger" href="#">
+        <div class="nav-text">下一个空间</div>
+        <div class="arrow-group">
+            <div class="arrow-shape"></div>
+            <div class="arrow-shape"></div>
+        </div>
+    </a>
+    <audio id="ambient-audio" loop style="display:none;"></audio>
+    <audio id="bg-music" loop style="display:none;"></audio>
+    <audio id="hit-music" style="display:none;"></audio>
+    <iframe id="viewer-frame" src=""></iframe>
+
+    <script>
+        // 全局配置
+        const SPRITE_MOVE_SPEED = 0.15; // 移动速度
+        const SPRITE_SIZE = 250; // 精灵大小
+        const SPRITE_FLOAT_AMP = 60;  // 精灵上下浮动幅度
+
+        const LINE_GROW_SPEED = 0.005; // 金色线条生长速度
+        const LINE_DECAY_SPEED = 0.005; // 金色线条消退速度
+
+        const NOTE_SPAWN_PROBABILITY = 0.5; // 音符出现频率
+        const NOTE_SPAWN_AMOUNT = 1; // 音符数量
+        const NOTE_FLOAT_SPEED = 2.0; // 音符速度
+        const NOTE_MIN_SIZE = 40; // 音符最小尺寸
+        const NOTE_MAX_SIZE = 70; // 音符最大尺寸
+
+        window.addEventListener('load', () => {
+            if (window.HealingTracker) {
+                HealingTracker.initSpace("金 (竹笛)");
+            }
+        });
+
+        let constellationLines = []; // 金色线条
+        // 金色线条类
+        class ConstellationLine {
+            constructor() {
+                // 1. 随机从四条边之一出发
+                const edge = Math.floor(Math.random() * 4);
+                if (edge === 0) { // Top
+                    this.x = Math.random() * canvas.width;
+                    this.y = 0;
+                } else if (edge === 1) { // Bottom
+                    this.x = Math.random() * canvas.width;
+                    this.y = canvas.height;
+                } else if (edge === 2) { // Left
+                    this.x = 0;
+                    this.y = Math.random() * canvas.height;
+                } else { // Right
+                    this.x = canvas.width;
+                    this.y = Math.random() * canvas.height;
+                }
+
+                this.points = [{ x: this.x, y: this.y }]; // 记录路径轨迹
+                this.life = 1.0; // 生命周期
+                this.maxSegments = 5 + Math.floor(Math.random() * 8); // 最多转折几次
+                this.currentSegments = 0;
+
+                // 计算初始方向：大致指向屏幕中心
+                const angleToCenter = Math.atan2(canvas.height / 2 - this.y, canvas.width / 2 - this.x);
+                this.angle = angleToCenter + (Math.random() - 0.5); // 增加随机偏移
+                this.speed = 3 + Math.random() * 5;
+                this.segmentLength = 30 + Math.random() * 50; // 每次转折前的延伸长度
+                this.distTraveled = 0;
+            }
+
+            update(isMoving) {
+                // 如果精灵在移动，生命值缓慢下降；停下则迅速消散
+                this.life -= isMoving ? 0.003 : 0.03;
+
+                if (this.currentSegments < this.maxSegments && this.life > 0) {
+                    // 继续生长
+                    const dx = Math.cos(this.angle) * this.speed;
+                    const dy = Math.sin(this.angle) * this.speed;
+                    this.x += dx;
+                    this.y += dy;
+                    this.distTraveled += this.speed;
+
+                    // 更新轨迹中的最后一个点
+                    this.points[this.points.length - 1] = { x: this.x, y: this.y };
+
+                    // 达到转折点长度
+                    if (this.distTraveled >= this.segmentLength) {
+                        this.distTraveled = 0;
+                        this.currentSegments++;
+                        // 随机改变方向
+                        this.angle += (Math.random() - 0.5) * Math.PI * 0.8;
+                        // 存入新点
+                        this.points.push({ x: this.x, y: this.y });
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (this.points.length < 2) return;
+
+                ctx.save(); // 保存状态
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                // 金色霓虹光晕
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255, 215, 0, ${this.life * 0.6})`; // 金色透明度
+                ctx.lineWidth = 4; // 宽线条
+                ctx.shadowBlur = 20; // 强发光
+                ctx.shadowColor = "#FFD700";
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                ctx.stroke();
+
+                // 极细白色内芯
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.life * 0.9})`;
+                ctx.lineWidth = 1.2;
+                ctx.shadowBlur = 5;
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                ctx.stroke();
+
+                // 绘制星座节点
+                for (let i = 0; i < this.points.length; i++) {
+                    ctx.beginPath();
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.life})`;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "#FFF";
+                    ctx.arc(this.points[i].x, this.points[i].y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        const rootStyle = document.documentElement.style;
+        rootStyle.setProperty('--sprite-size', SPRITE_SIZE + 'px');
+        rootStyle.setProperty('--float-amp', SPRITE_FLOAT_AMP + 'px');
+
+        // 音视频资源配置
+        const musicList = ["琅琊神韵", "平湖秋月", "秋湖月夜", "思泉", "鹧鸪飞"];
+        const videoBasePath = "{% static 'image_video/video/金/' %}";
+        const musicBasePath = "{% static 'music_segment/竹笛/' %}";
+        const videoList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 十个背景视频
+        const maxPlayCount = 8; // 一个视频播放次数
+        const video1 = document.getElementById('video-1');
+        const video2 = document.getElementById('video-2'); // 备用视频轨
+        const bgMusic = document.getElementById('bg-music');
+        const hitMusic = document.getElementById('hit-music');
+        let currentBaseMusicIndex = -1; // 当前背景音乐索引
+        let currentVideoPlayCount = 0; // 当前视频播放次数
+        let activeVideoId = 1;
+        let currentVideoName = "1"; // 当前播放的视频名称
+
+        // 获取当前视频和备用视频DOM
+        function getActiveVideo() { return activeVideoId === 1 ? video1 : video2; }
+        function getNextVideo() { return activeVideoId === 1 ? video2 : video1; }
+
+        function initBackground() { // 初始化背景
+            currentVideoName = videoList[Math.floor(Math.random() * videoList.length)];
+            video1.src = `${videoBasePath}${currentVideoName}.mp4`;
+            video1.play().catch(() => { });
+            playRandomBGM();
+        }
+
+        function crossFadeToNextVideo() { // 背景视频切换逻辑
+            const nextVideo = getNextVideo();
+            const currentVideo = getActiveVideo();
+            currentVideoName = videoList[Math.floor(Math.random() * videoList.length)];
+
+            nextVideo.src = `${videoBasePath}${currentVideoName}.mp4`;
+            nextVideo.load();
+            nextVideo.play().then(() => {
+                nextVideo.classList.add('active');
+                currentVideo.classList.remove('active');
+                activeVideoId = activeVideoId === 1 ? 2 : 1;
+                currentVideoPlayCount = 0;
+                setTimeout(() => {
+                    currentVideo.pause();
+                    currentVideo.currentTime = 0;
+                }, 2000);
+            }).catch(e => console.error("视频切换失败:", e));
+        }
+
+        function handleVideoEnded(videoElement) {
+            if (videoElement !== getActiveVideo()) return;
+
+            currentVideoPlayCount++;
+            if (currentVideoPlayCount < maxPlayCount) {
+                videoElement.play().catch(() => { });
+            } else {
+                crossFadeToNextVideo();
+            }
+        }
+
+        // 绑定结束事件到两个视频轨
+        video1.addEventListener('ended', () => handleVideoEnded(video1));
+        video2.addEventListener('ended', () => handleVideoEnded(video2));
+
+        function playRandomBGM() {
+            currentBaseMusicIndex = Math.floor(Math.random() * musicList.length);
+            bgMusic.src = `${musicBasePath}${encodeURIComponent(musicList[currentBaseMusicIndex])}.mp3`;
+            bgMusic.volume = 0.4;
+            bgMusic.play().catch(() => { });
+        }
+        bgMusic.addEventListener('ended', playRandomBGM);
+
+        // 核心交互机制
+        const targetIconLayer = document.getElementById('target-icon-layer');
+        const iconNormal = document.getElementById('icon-normal');
+        const iconMiss = document.getElementById('icon-miss');
+        const iconHint = document.getElementById('icon-hint');
+        const feedbackText = document.getElementById('feedback-text');
+
+        const spriteContainer = document.getElementById('sprite-container');
+        const spriteVisual = document.querySelector('.sprite-visual');
+        const growthOverlay = document.getElementById('growth-overlay');
+        const lineLayers = document.querySelectorAll('.line-layer');
+        const zones = document.querySelectorAll('.zone');
+
+        // 状态管理
+        let targetData = { show: false, x: 50, y: 50, zoneIndex: 0, status: 'normal', type: 'click' };
+        let currentPos = { x: 50, y: 85 }; // 初始位置 (X: 50%, Y: 85%)
+        let targetPos = { x: 50, y: 85 };
+
+        let interruptCount = 0;
+        let iconTimer = null, missTimer = null, feedbackTimer = null, fadeInterval = null;
+        let isMoving = false, lineGrowthLevel = 0;
+
+        // 1. 开始引导
+        document.getElementById('start-interaction-btn').addEventListener('click', () => {
+            document.getElementById('prompt-page').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('prompt-page').style.display = 'none';
+                initBackground();
+                generateNextIcon();
+            }, 500);
+        });
+
+        // 2. 随机生成目标
+        function generateNextIcon() {
+            const zoneIndex = Math.floor(Math.random() * 4);
+            let x;
+            if (zoneIndex === 0) x = 12 + Math.random() * 12;
+            else if (zoneIndex === 1) x = 28 + Math.random() * 16;
+            else if (zoneIndex === 2) x = 56 + Math.random() * 16;
+            else x = 76 + Math.random() * 10;
+
+            const y = 20 + Math.random() * 45; // 高度在20%到65%之间随机出现
+            const type = Math.random() > 0.5 ? 'click' : 'longpress';
+
+            interruptCount = 0;
+            targetData = { show: true, x, y, zoneIndex, status: 'normal', type };
+
+            targetIconLayer.style.display = 'block';
+            targetIconLayer.style.left = `${x}%`;
+            targetIconLayer.style.top = `${y}%`;
+            iconNormal.style.display = 'flex';
+            iconMiss.style.display = 'none';
+            iconHint.innerText = type === 'click' ? '点击!' : '长按!';
+
+            zones.forEach((z, i) => z.classList.toggle('zone-highlight', i === zoneIndex));
+            iconTimer = setTimeout(handleMiss, 3000);
+        }
+
+        // 3. 处理Miss
+        function handleMiss() {
+            targetData.status = 'miss';
+            if (window.HealingTracker) HealingTracker.logMiss(); 
+            iconNormal.style.display = 'none';
+            iconMiss.style.display = 'block';
+            zones.forEach(z => z.classList.remove('zone-highlight'));
+
+            missTimer = setTimeout(() => {
+                targetIconLayer.style.display = 'none';
+                generateNextIcon();
+            }, 1000);
+        }
+
+        // 4. 反馈文字
+        function showFeedback(text, x, y) {
+            clearTimeout(feedbackTimer);
+            feedbackText.innerText = text;
+            feedbackText.style.left = `${x}%`;
+            feedbackText.style.top = `${y}%`;
+            feedbackText.style.display = 'block';
+
+            feedbackText.classList.remove('feedback-anim');
+            void feedbackText.offsetWidth;
+            feedbackText.classList.add('feedback-anim');
+
+            feedbackTimer = setTimeout(() => { feedbackText.style.display = 'none'; }, 800);
+        }
+
+        // 5. 交互逻辑
+        function onZonePointerDown(index) {
+            if (!targetData.show || targetData.status !== 'normal' || targetData.zoneIndex !== index) return;
+            clearTimeout(iconTimer);
+
+            if (targetData.type === 'click') {
+                // 点击模式：XY同时瞬移
+                currentPos = { x: targetData.x, y: targetData.y };
+                updateSpriteDomPosition(); // 立刻刷新坐标，确保粒子在正确位置生成
+
+                showFeedback('Great!', targetData.x, targetData.y);
+                if (window.HealingTracker) HealingTracker.logHit();
+                targetIconLayer.style.display = 'none';
+                zones.forEach(z => z.classList.remove('zone-highlight'));
+                playHitSound();
+
+                // 产生大量音符
+                window.dispatchEvent(new CustomEvent('sprite-action', { detail: { type: 'burst' } }));
+                setTimeout(() => { fadeOutHitSound(); generateNextIcon(); }, 300);
+            } else {
+                // 长按模式：更新追踪目标点
+                targetPos = { x: targetData.x, y: targetData.y };
+                isMoving = true;
+                iconHint.innerText = '保持!';
+                playHitSound();
+            }
+        }
+
+        function onZonePointerUp() {
+            if (targetData.type === 'click') return;
+            if (!isMoving || !targetData.show) return;
+
+            isMoving = false;
+            interruptCount++;
+            iconHint.innerText = '长按!';
+            fadeOutHitSound();
+            iconTimer = setTimeout(handleMiss, 3000);
+        }
+
+        // 绑定事件到四个区域
+        zones.forEach((zone, idx) => {
+            zone.addEventListener('mousedown', () => onZonePointerDown(idx));
+            zone.addEventListener('touchstart', (e) => { e.preventDefault(); onZonePointerDown(idx); });
+        });
+        document.addEventListener('mouseup', onZonePointerUp);
+        document.addEventListener('touchend', onZonePointerUp);
+
+        // 6. 音效处理
+        function playHitSound() {
+            if (fadeInterval) clearInterval(fadeInterval);
+            hitMusic.volume = 1.0;
+            hitMusic.src = `${musicBasePath}${encodeURIComponent(musicList[Math.floor(Math.random() * musicList.length)])}.mp3`;
+            hitMusic.play().catch(() => { });
+        }
+        function fadeOutHitSound() {
+            if (fadeInterval) clearInterval(fadeInterval);
+            fadeInterval = setInterval(() => {
+                if (hitMusic.volume > 0.05) hitMusic.volume -= 0.05;
+                else { clearInterval(fadeInterval); hitMusic.pause(); hitMusic.volume = 1.0; }
+            }, 50);
+        }
+
+        // 7. 金色线条控制逻辑
+        function updateAndDrawGoldLines() {
+            // 如果正在移动，按概率产生新线条
+            if (isMoving && Math.random() < 0.08) {
+                constellationLines.push(new ConstellationLine());
+            }
+
+            // 更新并绘制所有线条
+            for (let i = constellationLines.length - 1; i >= 0; i--) {
+                const line = constellationLines[i];
+                line.update(isMoving);
+                line.draw(ctx);
+
+                // 移除死亡线条
+                if (line.life <= 0) {
+                    constellationLines.splice(i, 1);
+                }
+            }
+        }
+
+        function updateSpriteDomPosition() {
+            spriteContainer.style.left = `${currentPos.x}%`;
+            spriteContainer.style.top = `${currentPos.y}%`;
+        }
+
+        // 8. 游戏循环
+        function gameLoop() { // 核心交互逻辑
+            if (isMoving) {
+                // 计算二维向量距离
+                const dx = targetPos.x - currentPos.x;
+                const dy = targetPos.y - currentPos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < SPRITE_MOVE_SPEED) {
+                    // 到达目标
+                    currentPos = { x: targetPos.x, y: targetPos.y };
+                    isMoving = false;
+                    targetData.show = false;
+                    targetIconLayer.style.display = 'none';
+                    zones.forEach(z => z.classList.remove('zone-highlight'));
+
+                    let fb = interruptCount === 0 ? 'Great!' : (interruptCount === 1 ? 'Good!' : 'Not bad!');
+                    showFeedback(fb, targetData.x, targetData.y);
+                    if (window.HealingTracker) HealingTracker.logHit();
+                    fadeOutHitSound();
+                    setTimeout(generateNextIcon, 500);
+                } else {
+                    // 按速度向量移动
+                    currentPos.x += (dx / dist) * SPRITE_MOVE_SPEED;
+                    currentPos.y += (dy / dist) * SPRITE_MOVE_SPEED;
+                }
+
+                spriteVisual.classList.add('active');
+                growthOverlay.style.opacity = 0.8;
+                lineGrowthLevel = Math.min(1.0, lineGrowthLevel + LINE_GROW_SPEED);
+
+                // 长按移动期间，按概率触发粒子
+                if (Math.random() < NOTE_SPAWN_PROBABILITY) {
+                    window.dispatchEvent(new CustomEvent('sprite-action', { detail: { type: 'continuous' } }));
+                }
+            } else {
+                spriteVisual.classList.remove('active');
+                growthOverlay.style.opacity = 0;
+                lineGrowthLevel = Math.max(0.0, lineGrowthLevel - LINE_DECAY_SPEED);
+            }
+
+            // 更新DOM坐标
+            updateSpriteDomPosition();
+
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        // 初始化动画遮罩隐藏
+        setTimeout(() => document.getElementById('transition-overlay').style.opacity = '0', 100);
+
+        // 白噪音菜单
+        const musicTrigger = document.getElementById('music-trigger');
+        const musicOptions = document.getElementById('music-options');
+        const ambientAudio = document.getElementById('ambient-audio');
+        const volSlider = document.getElementById('volume-slider');
+
+        musicTrigger.addEventListener('click', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡到 window
+            musicTrigger.classList.toggle('active');
+            musicOptions.classList.toggle('open');
+        });
+
+        musicOptions.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        volSlider.addEventListener('input', (e) => {
+            ambientAudio.volume = e.target.value;
+        });
+
+        document.querySelectorAll('.custom-option').forEach(opt => {
+            opt.addEventListener('click', function () {
+                const val = this.dataset.value;
+                document.getElementById('trigger-text').innerText = this.innerText;
+
+                // 选中后，收起菜单
+                musicTrigger.classList.remove('active');
+                musicOptions.classList.remove('open');
+
+                if (val === 'stop') {
+                    ambientAudio.pause();
+                    return;
+                }
+
+                // 切换新音频并播放
+                ambientAudio.src = `{% static 'music_segment/bk_music/' %}${val}.mp3`;
+                ambientAudio.volume = volSlider.value;
+                ambientAudio.play().catch(err => console.error("音频播放失败:", err));
+            });
+        });
+
+        window.addEventListener('click', () => {
+            musicTrigger.classList.remove('active');
+            musicOptions.classList.remove('open');
+        });
+
+        // 金色音符绘制
+        const canvas = document.getElementById('ink-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        window.dispatchEvent(new Event('resize'));
+
+        // 接收生成粒子事件
+        window.addEventListener('sprite-action', (e) => {
+            const rect = spriteContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            let amount = (e.detail && e.detail.type === 'burst') ? 15 : 1;
+            const notesChars = ['♪', '♫', '♬'];
+
+            for (let i = 0; i < amount; i++) {
+                // 生成随机颜色
+                const hue = Math.floor(Math.random() * 360);
+                particles.push({
+                    x: centerX + (Math.random() - 0.5) * 60,
+                    y: centerY + (Math.random() - 0.5) * 40,
+                    vx: (Math.random() - 0.5) * 3.0,
+                    vy: -Math.random() * NOTE_FLOAT_SPEED - 1.0,
+                    life: 1.0,
+                    size: Math.random() * (NOTE_MAX_SIZE - NOTE_MIN_SIZE) + NOTE_MIN_SIZE,
+                    color: `hsl(${hue}, 80%, 60%)`, // 彩色
+                    text: notesChars[Math.floor(Math.random() * notesChars.length)],
+                    isNote: true
+                });
+            }
+        });
+        function drawParticles() {
+            // 1. 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 2. 绘制金色星座线条
+            if (isMoving && Math.random() < 0.15) {
+                constellationLines.push(new ConstellationLine());
+            }
+            for (let i = constellationLines.length - 1; i >= 0; i--) {
+                const line = constellationLines[i];
+                line.update(isMoving);
+                line.draw(ctx);
+                if (line.life <= 0) constellationLines.splice(i, 1);
+            }
+
+            // 3. 绘制音符粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.015;
+                if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+                ctx.globalAlpha = p.life;
+                if (p.isNote) {
+                    ctx.font = `bold ${p.size}px Arial`;
+                    ctx.fillStyle = p.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = p.color; // 彩色发光
+                    ctx.fillText(p.text, p.x, p.y);
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1.0;
+            requestAnimationFrame(drawParticles);
+        }
+        drawParticles();
+
+        // 3D模式切换逻辑
+        const btn3d = document.getElementById('btn-3d');
+        const viewerFrame = document.getElementById('viewer-frame');
+
+        btn3d.addEventListener('click', () => {
+            const videoId = typeof currentVideoName !== 'undefined' && currentVideoName ? currentVideoName : '1';
+            const viewerUrl = `{% url 'metal_360' %}?id=${videoId}`;
+            viewerFrame.src = viewerUrl;
+            viewerFrame.classList.add('show');
+
+            // 隐藏外层的3D按钮
+            btn3d.style.opacity = '0';
+            btn3d.style.pointerEvents = 'none';
+        });
+
+        // 监听从3D iframe内部发来的关闭消息
+        window.addEventListener('message', (event) => {
+            if (event.data === 'close360') {
+                viewerFrame.classList.remove('show');
+
+                setTimeout(() => {
+                    viewerFrame.src = "";
+                }, 1000);
+
+                // 恢复外层3D按钮
+                btn3d.style.opacity = '1';
+                btn3d.style.pointerEvents = 'auto';
+            }
+        });
+
+        // 疗愈空间切换
+        const spaceLinks = [
+            "{% url 'earth_pipa' %}",   // 0: 土
+            "{% url 'water_guqin' %}",  // 1: 水
+            "{% url 'metal_zhudi' %}",  // 2: 金
+            "{% url 'wood_xiao' %}",    // 3: 木
+            "{% url 'fire_erhu' %}"     // 4: 火
+        ];
+        const currentSpaceIndex = 2; // 当前在金空间，对应2
+        const transitionOverlay = document.getElementById('transition-overlay');
+
+        function navigateToSpace(url) {
+            transitionOverlay.style.opacity = '1';
+            transitionOverlay.style.pointerEvents = 'auto';
+
+            setTimeout(() => {
+                if (window.HealingTracker) {
+                    HealingTracker.captureAndGo(url); // 保存数据并跳转
+                } else {
+                    window.location.href = url;
+                }
+            }, 1000);
+        }
+
+        document.getElementById('btn-report').onclick = (e) => {
+            e.preventDefault();
+            transitionOverlay.style.opacity = '1';
+            setTimeout(() => {
+                if (window.HealingTracker) {
+                    HealingTracker.captureAndGo("{% url 'report_page' %}");
+                } else {
+                    window.location.href = "{% url 'report_page' %}";
+                }
+            }, 1000);
+        };
+
+        // 绑定左侧箭头
+        document.getElementById('nav-prev').addEventListener('click', (e) => {
+            e.preventDefault();
+            let prevIndex = (currentSpaceIndex - 1 + spaceLinks.length) % spaceLinks.length;
+            navigateToSpace(spaceLinks[prevIndex]);
+        });
+
+        // 绑定右侧箭头
+        document.getElementById('nav-next').addEventListener('click', (e) => {
+            e.preventDefault();
+            let nextIndex = (currentSpaceIndex + 1) % spaceLinks.length;
+            navigateToSpace(spaceLinks[nextIndex]);
+        });
+
+    </script>
+</body>
+
+</html>

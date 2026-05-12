@@ -252,33 +252,50 @@ class TranslationService:
 
 class MusicGenerator:
     _instance = None
+    _lock = threading.Lock()  # 添加线程锁，防止多线程并发初始化
+
     
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(MusicGenerator, cls).__new__(cls)
-            cls._instance._initialize_model()
+            with cls._lock:  # 确保线程安全
+                if cls._instance is None:
+                    cls._instance = super(MusicGenerator, cls).__new__(cls)
+                    cls._instance.model = None  # 先初始化为 None
         return cls._instance
-    
-    def _initialize_model(self):
-        print(f"Loading {MODEL_NAME} model...")
-        start_time = time.time()
 
-        self.model = MusicGen.get_pretrained(
-            MODEL_NAME, 
-            device='cuda' if torch.cuda.is_available() else 'cpu',
-        )
+    def _load_model(self):
+        """内部方法：实际加载模型"""
+        if self.model is not None:
+            return
+
+        print(f"🔄 正在加载 {MODEL_NAME} 模型...")
+        start_time = time.time()
         
-        # 设置生成参数
-        self.model.set_generation_params(
-            use_sampling=True,
-            top_k=250,
-            top_p=0.0,
-            temperature=1.0,
-            duration=30,  # 默认时长
-            cfg_coef=3.0
-        )
-        
-        print(f"Model loaded in {time.time() - start_time:.2f} seconds")
+        try:
+            # 确保使用 GPU (如果可用)
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            print(f"⚙️  加载设备: {device}")
+
+            self.model = MusicGen.get_pretrained(
+                MODEL_NAME, 
+                device=device,
+            )
+            
+            # 设置默认生成参数
+            self.model.set_generation_params(
+                use_sampling=True,
+                top_k=250,
+                top_p=0.0,
+                temperature=1.0,
+                duration=30,
+                cfg_coef=3.0
+            )
+            print(f"✅ 模型加载成功，耗时 {time.time() - start_time:.2f} 秒")
+            
+        except Exception as e:
+            print(f"❌ 模型加载失败: {e}")
+            self.model = None # 确保失败时重置为 None
+            raise RuntimeError(f"模型加载失败，请检查网络或显存: {e}")
     
     def get_audio_save_path(subfolder="generated_music", extension="wav"):
         """生成唯一的音频文件保存路径"""
@@ -320,6 +337,9 @@ class MusicGenerator:
 
     def generate_music(self, prompt, duration=30, format='mp3', task_id=None):
         try:
+            self._load_model()
+            if self.model is None:
+                raise RuntimeError("模型未初始化")
             print(f"\n{'='*60}")
             print(f"🎵 MusicGenerator.generate_music() 开始")
             print(f"{'='*60}")

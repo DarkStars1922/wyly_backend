@@ -1,11 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户登录</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -23,14 +24,14 @@
             --warning: #fbbf24;
             --error: #f87171;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             transition: all 0.3s ease;
         }
-        
+
         body {
             background: linear-gradient(135deg, #0f172a, #1e293b);
             color: var(--text-primary);
@@ -42,7 +43,7 @@
             position: relative;
             overflow-x: hidden;
         }
-        
+
         body::before {
             content: '';
             position: absolute;
@@ -51,22 +52,22 @@
             width: 100%;
             height: 100%;
             background: radial-gradient(circle at 10% 20%, rgba(74, 108, 247, 0.1) 0%, transparent 40%),
-                        radial-gradient(circle at 90% 80%, rgba(138, 99, 210, 0.1) 0%, transparent 40%);
+                radial-gradient(circle at 90% 80%, rgba(138, 99, 210, 0.1) 0%, transparent 40%);
             z-index: -1;
         }
-        
+
         .container {
             max-width: 500px;
             margin: 0 auto;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 40px;
             position: relative;
             animation: fadeInDown 0.8s ease;
         }
-        
+
         .header h1 {
             font-weight: 700;
             font-size: 2.8rem;
@@ -76,7 +77,7 @@
             color: transparent;
             margin-bottom: 10px;
         }
-        
+
         .card {
             background: var(--card-dark);
             border-radius: 16px;
@@ -87,7 +88,7 @@
             z-index: 2;
             animation: fadeInUp 0.8s ease;
         }
-        
+
         .card::before {
             content: '';
             position: absolute;
@@ -99,7 +100,7 @@
             z-index: -1;
             border-radius: 18px;
         }
-        
+
         .card-header {
             background: rgba(30, 30, 30, 0.7);
             padding: 25px 30px;
@@ -107,7 +108,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .card-header::before {
             content: '';
             position: absolute;
@@ -117,7 +118,7 @@
             height: 4px;
             background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
         }
-        
+
         .card-header h3 {
             font-weight: 600;
             font-size: 1.7rem;
@@ -126,16 +127,16 @@
             align-items: center;
             gap: 12px;
         }
-        
+
         .card-header h3 i {
             font-size: 1.5rem;
             color: var(--accent-primary);
         }
-        
+
         .card-body {
             padding: 35px;
         }
-        
+
         .form-label {
             font-weight: 500;
             color: var(--text-primary);
@@ -145,7 +146,7 @@
             gap: 10px;
             font-size: 1.05rem;
         }
-        
+
         .form-control {
             background: var(--input-bg);
             border: 1px solid var(--input-border);
@@ -156,14 +157,14 @@
             font-size: 1rem;
             transition: all 0.3s;
         }
-        
+
         .form-control::placeholder {
             color: var(--input-placeholder);
             opacity: 1;
             font-style: italic;
             transition: opacity 0.2s;
         }
-        
+
         .form-control:focus {
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.25);
@@ -172,11 +173,11 @@
             outline: none;
             transform: translateY(-2px);
         }
-        
+
         .form-control:focus::placeholder {
             opacity: 0.6;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             border: none;
@@ -191,12 +192,12 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 20px rgba(74, 108, 247, 0.5);
         }
-        
+
         .btn-primary::after {
             content: '';
             position: absolute;
@@ -208,15 +209,15 @@
             transform: rotate(30deg);
             transition: all 0.6s;
         }
-        
+
         .btn-primary:hover::after {
             transform: rotate(30deg) translate(100%, 100%);
         }
-        
+
         .password-container {
             position: relative;
         }
-        
+
         .password-toggle {
             position: absolute;
             right: 15px;
@@ -226,40 +227,40 @@
             font-size: 1.1rem;
             transition: color 0.3s;
         }
-        
+
         .password-toggle:hover {
             color: var(--accent-primary);
         }
-        
+
         .additional-options {
             display: flex;
             justify-content: space-between;
             margin-top: 15px;
         }
-        
+
         .remember-me {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        
+
         .forgot-password {
             color: var(--accent-primary);
             text-decoration: none;
             font-weight: 500;
             transition: all 0.3s;
         }
-        
+
         .forgot-password:hover {
             text-decoration: underline;
             color: #6c8dfa;
         }
-        
+
         .decoration {
             position: absolute;
             z-index: 1;
         }
-        
+
         .decoration.circle {
             width: 250px;
             height: 250px;
@@ -269,7 +270,7 @@
             left: 5%;
             animation: float 8s ease-in-out infinite;
         }
-        
+
         .decoration.rectangle {
             width: 180px;
             height: 180px;
@@ -280,26 +281,26 @@
             transform: rotate(45deg);
             animation: float 10s ease-in-out infinite;
         }
-        
+
         .footer {
             padding: 20px 30px;
             text-align: center;
             font-size: 1rem;
             color: var(--text-secondary);
         }
-        
+
         .mt-5 {
             margin-top: 3rem;
         }
-        
+
         .text-center {
             text-align: center;
         }
-        
+
         .text-muted {
             color: var(--text-secondary);
         }
-        
+
         .success-screen {
             position: absolute;
             top: 0;
@@ -316,24 +317,24 @@
             pointer-events: none;
             transition: opacity 0.8s ease;
         }
-        
+
         .success-screen.active {
             opacity: 1;
             pointer-events: all;
         }
-        
+
         .success-content {
             text-align: center;
             max-width: 500px;
             padding: 40px;
         }
-        
+
         .countdown {
             font-size: 1.2rem;
             margin-top: 20px;
             color: var(--accent-primary);
         }
-        
+
         .register-link {
             display: block;
             text-align: center;
@@ -342,80 +343,92 @@
             font-weight: 500;
             transition: all 0.3s;
         }
-        
+
         .register-link:hover {
             color: #6c8dfa;
             transform: translateY(-2px);
         }
-        
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         @keyframes fadeInDown {
             from {
                 opacity: 0;
                 transform: translateY(-30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         @keyframes float {
             0% {
                 transform: translateY(0) rotate(0deg);
             }
+
             50% {
                 transform: translateY(-20px) rotate(5deg);
             }
+
             100% {
                 transform: translateY(0) rotate(0deg);
             }
         }
-        
+
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 15px;
             }
-            
+
             .card-body {
                 padding: 25px;
             }
-            
+
             .header h1 {
                 font-size: 2.2rem;
             }
-            
+
             .decoration.circle,
             .decoration.rectangle {
                 display: none;
             }
         }
     </style>
-    <!-- 保留原head内容 -->
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <link rel="stylesheet" href="/static/css/auth.css">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
 </head>
+
 <body>
     <div class="decoration circle"></div>
     <div class="decoration rectangle"></div>
-    
-    <!-- 成功跳转屏幕 -->
+
+    <!-- 成功跳转 -->
     <div class="success-screen" id="successScreen">
         <div class="success-content">
             <i class="fas fa-check-circle fa-5x mb-4" style="color: var(--success); animation: pulse 2s infinite;"></i>
@@ -427,68 +440,65 @@
             </button>
         </div>
     </div>
-    
+
     <div class="container">
         <div class="header">
             <h1>用户登录</h1>
             <p>欢迎回来，请登录您的账户</p>
         </div>
-        
+
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-sign-in-alt"></i> 登录账户</h3>
             </div>
             <div class="card-body">
                 <form id="loginForm" method="post">
-                    
+
                     <div class="mb-3">
                         <label for="loginUsername" class="form-label">
-                            <i class="fas fa-user"></i> 用户名或邮箱
+                            <i class="fas fa-user"></i> 用户名
                         </label>
                         <input type="text" class="form-control" id="loginUsername" name="username" required
-                            placeholder="请输入用户名或邮箱">
+                            placeholder="请输入用户名">
                     </div>
-    
+
                     <div class="mb-3">
                         <label for="loginPassword" class="form-label">
                             <i class="fas fa-lock"></i> 密码
                         </label>
                         <div class="password-container">
-                            <input type="password" class="form-control" id="loginPassword" name="password" required 
+                            <input type="password" class="form-control" id="loginPassword" name="password" required
                                 placeholder="请输入密码">
                             <span class="password-toggle" id="passwordToggle">
                                 <i class="fas fa-eye"></i>
                             </span>
                         </div>
                     </div>
-    
-                    <div class="additional-options">
-                        <div class="remember-me">
-                            <input class="form-check-input" type="checkbox" id="rememberMe">
-                            <label class="form-check-label" for="rememberMe">记住我</label>
-                        </div>
-                        <a href="#" class="forgot-password">忘记密码?</a>
-                    </div>
-    
+
                     <button type="submit" class="btn btn-primary mt-4">
                         <i class="fas fa-sign-in-alt me-2"></i> 登录
                     </button>
-    
-                    <a href="register.html" class="register-link" id="goToRegister">
+
+                    <a href="{% url 'register_page' %}" class="register-link" id="goToRegister">
                         <i class="fas fa-user-plus me-2"></i> 没有账户？立即注册
                     </a>
                 </form>
             </div>
         </div>
+
+        <div class="mt-5 text-center text-muted">
+            <p>© 2026 星璇律动. 保留所有权利。</p>
+            <p>AI驱动的歌词、音乐与视频一体化创作平台</p>
+        </div>
     </div>
-    
+
     <script>
         // 密码可见性切换功能
         document.querySelectorAll('.password-toggle').forEach(toggle => {
-            toggle.addEventListener('click', function() {
+            toggle.addEventListener('click', function () {
                 const input = this.previousElementSibling;
                 const icon = this.querySelector('i');
-                
+
                 if (input.type === 'password') {
                     input.type = 'text';
                     icon.classList.remove('fa-eye');
@@ -500,34 +510,125 @@
                 }
             });
         });
-        
+
         // 登录表单提交处理
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            console.log("登录表单被提交");
             e.preventDefault();
-            
+            e.stopPropagation(); // 阻止事件冒泡
+
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
-            
+
             if (!username) {
                 showError('loginUsername', '请输入用户名');
-                return;
+                return false; 
             }
-            
+
             if (!password) {
                 showError('loginPassword', '请输入密码');
-                return;
+                return false; 
             }
-            
-            // 模拟登录成功
-            showSuccess('登录成功！');
+
+            fetch('/api/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') 
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("后端返回数据：", data);
+                    console.log("data.success 的类型是：", typeof data.success);
+                    if (data.success == true) {
+                        localStorage.setItem('username', data.username); 
+                        showSuccess('登录成功！');
+                    } else {
+                        showLoginError(data.message || '用户名或密码错误');
+                    }
+                })
+                .catch(error => {
+                    alert('网络错误，请稍后再试');
+                });
+
+            return false; 
         });
-        
-        // 显示错误提示
+
+        // 获取CSRF Token的函数
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // 修改后的登录错误处理函数
+        function showLoginError(message) {
+            // 移除现有的错误提示
+            const existingError = document.getElementById('loginError');
+            if (existingError) existingError.remove();
+
+            // 创建新的错误提示元素
+            const errorElement = document.createElement('div');
+            errorElement.id = 'loginError';
+            errorElement.className = 'alert alert-danger';
+            errorElement.style.marginTop = '15px';
+            errorElement.style.padding = '10px';
+            errorElement.style.borderRadius = '8px';
+            errorElement.style.backgroundColor = 'rgba(248, 113, 113, 0.1)';
+            errorElement.style.border = '1px solid var(--error)';
+
+            // 添加错误内容
+            errorElement.innerHTML = `
+            <i class="fas fa-exclamation-circle me-2"></i>
+            ${message}
+        `;
+
+            // 将错误提示插入到登录按钮之前
+            const loginButton = document.querySelector('button[type="submit"]');
+            loginButton.parentNode.insertBefore(errorElement, loginButton.nextSibling);
+
+            // 添加动画效果
+            errorElement.animate([
+                { opacity: 0, transform: 'translateY(-10px)' },
+                { opacity: 1, transform: 'translateY(0)' }
+            ], {
+                duration: 300,
+                fill: 'forwards'
+            });
+
+            // 5秒后自动消失
+            setTimeout(() => {
+                errorElement.animate([
+                    { opacity: 1 },
+                    { opacity: 0 }
+                ], {
+                    duration: 500,
+                    fill: 'forwards'
+                }).onfinish = () => {
+                    errorElement.remove();
+                };
+            }, 5000);
+        }
+
         function showError(inputId, message) {
             const input = document.getElementById(inputId);
             input.style.borderColor = 'var(--error)';
             input.placeholder = message;
-            
+
             // 添加动画效果
             input.animate([
                 { transform: 'translateX(0)' },
@@ -539,50 +640,49 @@
                 iterations: 2
             });
         }
-        
+
         // 显示成功消息并跳转
         function showSuccess(message) {
             const successScreen = document.getElementById('successScreen');
             const successMessage = document.getElementById('successMessage');
             const countdown = document.getElementById('countdown');
             const goHomeBtn = document.getElementById('goHomeBtn');
-            
+
             // 设置成功消息
             successMessage.textContent = message;
-            
+
             // 显示成功屏幕
             successScreen.classList.add('active');
-            
+
             // 倒计时跳转
             let seconds = 5;
             countdown.textContent = seconds;
-            
+
             const countdownInterval = setInterval(() => {
                 seconds--;
                 countdown.textContent = seconds;
-                
+
                 if (seconds <= 0) {
                     clearInterval(countdownInterval);
                     redirectToHome();
                 }
             }, 1000);
-            
+
             // 立即跳转按钮
             goHomeBtn.addEventListener('click', redirectToHome);
         }
-        
+
         // 跳转到首页
         function redirectToHome() {
-            window.location.href = 'index.html';
+            window.location.href = '/';
         }
-        
+
         // 跳转到注册页面
-        document.getElementById('goToRegister').addEventListener('click', function(e) {
+        document.getElementById('goToRegister').addEventListener('click', function (e) {
             e.preventDefault();
-            window.location.href = 'register.html';
+            window.location.href = '/register/';
         });
     </script>
-    <!-- 添加JS文件 -->
-    <script src="/static/js/auth.js"></script>
 </body>
+
 </html>
