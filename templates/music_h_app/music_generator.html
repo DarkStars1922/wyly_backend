@@ -314,6 +314,58 @@
         .notification.success {
             background: #2ecc71;
         }
+
+        /* 错误详情弹窗 */
+        .error-dialog-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .error-dialog-overlay.show {
+            display: flex;
+        }
+        .error-dialog {
+            background: rgba(20,20,40,0.95);
+            border: 1px solid rgba(231,76,60,0.5);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .error-dialog h3 {
+            color: #e74c3c;
+            margin-bottom: 12px;
+            font-size: 1.3rem;
+        }
+        .error-dialog .error-detail {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 14px;
+            color: #ccc;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .error-dialog .btn-close-dialog {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
         
         @media (max-width: 600px) {
             .options {
@@ -403,6 +455,23 @@
                 <div class="visualizer" id="visualizer"></div>
             </div>
             
+            <div id="optimized-prompt-display" style="display:none; background: linear-gradient(135deg, rgba(106,13,173,0.12), rgba(74,20,140,0.08)); border: 1px solid rgba(106,13,173,0.25); border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                    <i class="fas fa-robot" style="color: #7c3aed; font-size: 1.3rem; margin-right: 10px;"></i>
+                    <span style="color: #c4b5fd; font-weight: 600; font-size: 1rem;">AI 提示词优化</span>
+                    <span id="opt-badge" style="margin-left: 12px; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;"></span>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <small style="color: #8b8ba7;">您的输入</small>
+                    <p id="original-prompt-text" style="color: #b0b0cc; margin: 4px 0 0 0; font-size: 0.9rem; padding: 8px 12px; background: rgba(0,0,0,0.2); border-radius: 8px;"></p>
+                </div>
+                <div style="text-align: center; margin: 8px 0; color: #7c3aed;"><i class="fas fa-arrow-down"></i></div>
+                <div>
+                    <small style="color: #8b8ba7;">AI 优化后的专业提示词</small>
+                    <p id="optimized-prompt-text" style="color: #d0d0ff; margin: 4px 0 0 0; font-size: 0.9rem; padding: 8px 12px; background: rgba(106,13,173,0.12); border-radius: 8px; border-left: 3px solid #7c3aed;"></p>
+                </div>
+            </div>
+
             <div class="audio-section" id="audio-section">
                 <div class="audio-container">
                     <div class="audio-title"><i class="fas fa-headphones"></i> 您的音乐作品</div>
@@ -427,11 +496,23 @@
         </div>
         
         <footer>
-            <p>© 2025 五音疗愈音乐生成器 | 使用先进的MusicGen技术</p>
+            <p>© 2025 五音疗愈音乐生成器 | 使用先进的AI音乐生成技术</p>
         </footer>
     </div>
     
     <div class="notification" id="notification">错误消息示例</div>
+
+    <!-- 错误详情弹窗 -->
+    <div class="error-dialog-overlay" id="errorDialogOverlay">
+        <div class="error-dialog">
+            <h3><i class="fas fa-exclamation-triangle"></i> 生成失败</h3>
+            <p style="color:#e74c3c;margin-bottom:10px;" id="errorDialogSummary"></p>
+            <div class="error-detail" id="errorDialogDetail"></div>
+            <button class="btn-close-dialog" onclick="document.getElementById('errorDialogOverlay').classList.remove('show')">
+                <i class="fas fa-times"></i> 关闭
+            </button>
+        </div>
+    </div>
     
     <script>
         // DOM元素
@@ -495,67 +576,82 @@
             progressText.textContent = message;
         }
         
-        // 处理后端返回的音频文件
-        function handleAudioResponse(blob, format, headers) {
+        // 处理后端返回的 JSON 音频数据
+        function handleAudioJson(data, format) {
             console.log('处理音频响应...');
-            console.log('Blob 大小:', blob.size);
-            console.log('格式:', format);
-            
-            // 创建对象URL
-            const audioUrl = URL.createObjectURL(blob);
-            console.log('创建音频 URL:', audioUrl);
-            
+            console.log('音频 URL:', data.audio_url);
+
+            // 显示优化后的提示词
+            if (data.optimized_prompt && data.was_optimized) {
+                document.getElementById('original-prompt-text').textContent =
+                    data.original_prompt || document.getElementById('description').value.trim();
+                document.getElementById('optimized-prompt-text').textContent = data.optimized_prompt;
+
+                const badge = document.getElementById('opt-badge');
+                if (data.optimization_method === 'llm') {
+                    badge.textContent = 'AI 大模型优化';
+                    badge.style.cssText = 'background: rgba(16,185,129,0.2); color: #34d399;';
+                } else if (data.optimization_method === 'pre-optimized') {
+                    badge.textContent = '前端优化';
+                    badge.style.cssText = 'background: rgba(59,130,246,0.2); color: #60a5fa;';
+                } else {
+                    badge.textContent = '模板优化';
+                    badge.style.cssText = 'background: rgba(251,191,36,0.2); color: #fbbf24;';
+                }
+                document.getElementById('optimized-prompt-display').style.display = 'block';
+            } else {
+                document.getElementById('optimized-prompt-display').style.display = 'none';
+            }
+
             // 设置音频播放器
-            audioPlayer.src = audioUrl;
-            
+            audioPlayer.src = data.audio_url;
+
             // 设置下载链接
-            downloadBtn.href = audioUrl;
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            downloadBtn.download = `musicgen_${timestamp}.${format}`;
-            
+            downloadBtn.href = data.audio_url;
+            downloadBtn.download = data.filename || `music_${new Date().toISOString().replace(/[:.]/g, '-')}.${format}`;
+
             // 显示音频部分
             progressSection.style.display = 'none';
             audioSection.style.display = 'block';
-            
+
             // 显示成功通知
-            showNotification("音乐生成成功！", false);
-            
+            showNotification("音乐生成成功！点击播放按钮试听", false);
+
             // 启用按钮
             generateBtn.disabled = false;
             generateBtn.innerHTML = '<i class="fas fa-bolt"></i> 生成音乐';
-            
+
             console.log('音频响应处理完成');
-            
+
             // 为音频可视化器设置动画
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const analyser = audioContext.createAnalyser();
                 const source = audioContext.createMediaElementSource(audioPlayer);
-                
+
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
                 analyser.fftSize = 256;
-                
+
                 const bufferLength = analyser.frequencyBinCount;
                 const dataArray = new Uint8Array(bufferLength);
-                
+
                 function visualize() {
                     requestAnimationFrame(visualize);
-                    
+
                     analyser.getByteFrequencyData(dataArray);
-                    
+
                     const bars = audioVisualizer.querySelectorAll('.bar');
                     for (let i = 0; i < bars.length; i++) {
                         const value = dataArray[i % bufferLength] / 255;
                         const height = Math.max(10, value * 100);
                         bars[i].style.height = `${height}%`;
-                        
-                        // 颜色变化
+
                         const hue = 240 + value * 60;
                         bars[i].style.background = `linear-gradient(to top, hsl(${hue}, 70%, 60%), hsl(${hue + 30}, 80%, 50%)`;
                     }
                 }
-                
+
                 audioPlayer.addEventListener('play', () => {
                     if (audioContext.state === 'suspended') {
                         audioContext.resume();
@@ -572,34 +668,40 @@
             const description = descriptionEl.value.trim();
             const duration = durationEl.value;
             const format = formatEl.value;
-            
+
             if (!description) {
                 showNotification("请输入音乐描述");
                 return;
             }
-            
+
             console.log('开始生成音乐...');
             console.log('描述:', description);
             console.log('时长:', duration);
             console.log('格式:', format);
-            
+
             // 禁用按钮
             generateBtn.disabled = true;
             generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
-            
+
             // 显示进度部分
             progressSection.style.display = 'block';
             audioSection.style.display = 'none';
             updateProgress(1, "正在连接服务器...");
-            
-            let taskId = null;
-            let progressInterval = null;
+
+            // 生成客户端 UUID，用于轮询进度
+            const clientTaskId = crypto.randomUUID ? crypto.randomUUID() :
+                'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                });
+
+            let progressPollInterval = null;
             let vizInterval = null;
-            
+
             try {
                 console.log('发送 API 请求到 /api/generate/');
                 updateProgress(2, "发送生成请求...");
-                
+
                 // 发起生成请求
                 const generatePromise = fetch('/api/generate/', {
                     method: 'POST',
@@ -609,113 +711,115 @@
                     body: JSON.stringify({
                         prompt: description,
                         duration: duration,
-                        format: format
+                        format: format,
+                        client_task_id: clientTaskId
                     })
                 });
-                
-                // 等待一小段时间
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-                // 基于真实时间的进度估算
-                updateProgress(5, "正在处理请求...");
-                
+
+                // 等一小段时间让服务端创建任务
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
                 // 启动视觉反馈
                 vizInterval = setInterval(() => {
                     updateVisualizer(visualizer, Math.random() * 0.5 + 0.3);
                 }, 100);
-                
-                // 进度更新（基于预估时间）- 更频繁的更新
-                const estimatedTime = parseInt(duration) * 1.8; // 估计生成时间为音频时长的1.8倍
-                const startTime = Date.now();
-                let currentProgress = 5;
-                
-                progressInterval = setInterval(() => {
-                    const elapsed = (Date.now() - startTime) / 1000;
-                    // 使用非线性增长，开始快，后面慢
-                    const rawProgress = Math.min(92, 10 + (elapsed / estimatedTime) * 82);
-                    currentProgress = Math.max(currentProgress, rawProgress);
-                    
-                    let message = "正在生成音乐...";
-                    if (currentProgress < 15) {
-                        message = "正在翻译和分析描述...";
-                    } else if (currentProgress < 30) {
-                        message = "初始化音乐生成模型...";
-                    } else if (currentProgress < 50) {
-                        message = "生成音乐结构中...";
-                    } else if (currentProgress < 70) {
-                        message = "创作旋律和和声...";
-                    } else if (currentProgress < 85) {
-                        message = "添加节奏和音色...";
-                    } else {
-                        message = "最终处理和保存中...";
+
+                // 开始轮询服务端进度
+                progressPollInterval = setInterval(async () => {
+                    try {
+                        const resp = await fetch(`/api/progress/${clientTaskId}/`);
+                        if (!resp.ok) return;
+                        const progress = await resp.json();
+                        if (progress.status === 'error') {
+                            console.error('服务端报告错误:', progress.message);
+                            return;
+                        }
+                        updateProgress(progress.progress, progress.message);
+                    } catch (e) {
+                        // 忽略轮询网络错误
                     }
-                    
-                    updateProgress(currentProgress, message);
-                }, 500);  // 每0.5秒更新一次，更流畅
-                
+                }, 1500);
+
                 // 等待实际请求完成
                 const response = await generatePromise;
-                
-                // 清除进度间隔和视觉效果
-                if (progressInterval) {
-                    clearInterval(progressInterval);
+
+                // 清除轮询和视觉效果
+                if (progressPollInterval) {
+                    clearInterval(progressPollInterval);
+                    progressPollInterval = null;
                 }
                 if (vizInterval) {
                     clearInterval(vizInterval);
+                    vizInterval = null;
                 }
-                
+
                 console.log('收到响应，状态:', response.status);
-                
+
                 if (!response.ok) {
-                    // 尝试获取错误详情
                     let errorMessage = `请求失败: ${response.status} ${response.statusText}`;
+                    let errorDetails = '';
                     try {
                         const errorData = await response.json();
                         errorMessage = errorData.error || errorData.details || errorMessage;
+                        errorDetails = JSON.stringify(errorData, null, 2);
                         console.error('服务器错误:', errorData);
                     } catch (e) {
                         console.error('无法解析错误响应');
                     }
-                    throw new Error(errorMessage);
+                    const err = new Error(errorMessage);
+                    err.status = response.status;
+                    err.details = errorDetails;
+                    throw err;
                 }
-                
-                updateProgress(95, "接收音频数据...");
-                console.log('开始下载音频...');
-                
-                // 获取音频Blob
-                const blob = await response.blob();
-                console.log('音频下载完成，大小:', blob.size, 'bytes');
-                
-                updateProgress(100, "处理完成！");
-                
-                // 处理音频，传递响应头
-                handleAudioResponse(blob, format, response.headers);
-                
+
+                updateProgress(98, "处理完成！");
+
+                // 解析 JSON 响应
+                const data = await response.json();
+                console.log('JSON 响应:', data);
+
+                if (data.status !== 'completed') {
+                    throw new Error(data.error || '生成失败');
+                }
+
+                updateProgress(100, "生成完成！");
+
+                // 处理音频数据
+                handleAudioJson(data, format);
+
             } catch (error) {
                 console.error("生成音乐失败:", error);
                 console.error("错误堆栈:", error.stack);
-                
-                // 清除进度间隔
-                if (progressInterval) {
-                    progressInterval.forEach(id => clearInterval(id));
+
+                // 清除所有定时器
+                if (progressPollInterval) {
+                    clearInterval(progressPollInterval);
                 }
-                
+                if (vizInterval) {
+                    clearInterval(vizInterval);
+                }
+
                 showNotification(`生成失败: ${error.message}`);
-                
+
+                // 显示错误详情弹窗
+                document.getElementById('errorDialogSummary').textContent = error.message || '未知错误';
+                document.getElementById('errorDialogDetail').textContent =
+                    '请求接口: POST /api/generate/\n'
+                    + '状态: ' + (error.status || '网络错误') + '\n'
+                    + '错误信息: ' + (error.message || '无') + '\n'
+                    + '详情: ' + (error.details || error.stack || '无额外信息') + '\n'
+                    + '时间: ' + new Date().toLocaleString();
+                document.getElementById('errorDialogOverlay').classList.add('show');
+
                 // 启用按钮
                 generateBtn.disabled = false;
                 generateBtn.innerHTML = '<i class="fas fa-bolt"></i> 生成音乐';
-                
-                // 清除进度间隔
-                if (progressInterval) {
-                    clearInterval(progressInterval);
-                }
-                
+
                 // 隐藏进度部分
                 progressSection.style.display = 'none';
             }
         }
-        
+
         // 事件监听器
         generateBtn.addEventListener('click', generateMusic);
         

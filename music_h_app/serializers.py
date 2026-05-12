@@ -15,7 +15,7 @@ class ExpressionSerializer(serializers.ModelSerializer):
 
 class MusicGenerationSerializer(serializers.Serializer):
     prompt = serializers.CharField(
-        max_length=500,
+        max_length=2000,
         required=True,
         help_text="音乐描述文本"
     )
@@ -35,6 +35,31 @@ class MusicGenerationSerializer(serializers.Serializer):
         default='medium',
         required=False,
         help_text="生成质量"
+    )
+    tone = serializers.ChoiceField(
+        choices=['gong', 'shang', 'jue', 'zhi', 'yu'],
+        required=False,
+        help_text="五音选择: 宫/商/角/徵/羽"
+    )
+    user_group = serializers.CharField(
+        max_length=50,
+        required=False,
+        help_text="用户群体"
+    )
+    emotion = serializers.CharField(
+        max_length=50,
+        required=False,
+        help_text="当前情绪状态"
+    )
+    optimized_prompt = serializers.CharField(
+        max_length=2000,
+        required=False,
+        help_text="已优化的提示词（提供后跳过服务端二次优化）"
+    )
+    client_task_id = serializers.CharField(
+        max_length=64,
+        required=False,
+        help_text="客户端生成的UUID，用于轮询进度"
     )
 
 

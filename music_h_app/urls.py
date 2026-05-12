@@ -8,6 +8,7 @@ from .api.home_view import(
     LyricAPIView,
     MusicCreationView,
     MeditationMusicView,
+    OptimizePromptView,
     ShowcaseView
 )
 from .api.auth_view import(
@@ -41,4 +42,5 @@ urlpatterns = [
     path('music-creation/', MusicCreationView.as_view(), name='music-creation'),
     path('meditation-music/', MeditationMusicView.as_view(), name='meditation-music'),
     path('showcase/', ShowcaseView.as_view(), name='showcase'),
+    path('optimize-prompt/', OptimizePromptView.as_view(), name='optimize-prompt'),
 ]

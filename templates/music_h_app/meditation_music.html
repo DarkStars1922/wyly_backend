@@ -853,6 +853,59 @@
     background: rgba(106, 13, 173, 0.7);
   }
 
+  /* 错误详情弹窗 */
+  .error-dialog-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+  }
+  .error-dialog-overlay.show {
+    display: flex;
+  }
+  .error-dialog {
+    background: rgba(20,20,40,0.95);
+    border: 1px solid rgba(231,76,60,0.5);
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    color: #fff;
+  }
+  .error-dialog h3 {
+    color: #e74c3c;
+    margin-bottom: 12px;
+    font-size: 1.3rem;
+  }
+  .error-dialog .error-detail {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 14px;
+    color: #ccc;
+    font-size: 0.9rem;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .btn-close-dialog {
+    background: #6a0dad;
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
   .tone-card.playing .play-button i {
     color: white;
   }
@@ -1220,11 +1273,12 @@
                     冥想时长
                   </label>
                   <select class="form-control custom-input" id="duration">
-                    <option value="5">5 分钟</option>
-                    <option value="10" selected>10 分钟</option>
-                    <option value="15">15 分钟</option>
-                    <option value="30">30 分钟</option>
-                    <option value="60">60 分钟</option>
+                    <option value="30">30 秒</option>
+                    <option value="60">1 分钟</option>
+                    <option value="120">2 分钟</option>
+                    <option value="180" selected>3 分钟</option>
+                    <option value="240">4 分钟</option>
+                    <option value="300">5 分钟</option>
                   </select>
                 </div>
                 <div class="col-6">
@@ -1232,13 +1286,18 @@
                     <i class="fas fa-heartbeat mr-2" style="color: #a29bfe;"></i>
                     心率 (可选)
                   </label>
-                  <input type="number" class="form-control custom-input" id="heartRate" placeholder="例如: 75 次/分">
+                  <input type="number" class="form-control custom-input" id="heartRate" placeholder="例如: 75 次/分" min="0">
                 </div>
               </div>
             </div>
-            <button class="btn btn-primary generate-btn" id="generateButton">
-              <i class="fas fa-magic mr-2"></i> 生成冥想音乐
-            </button>
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button type="button" class="btn btn-outline-light" id="optimizePromptBtn" style="flex: 1; border-color: #7c3aed; color: #c4b5fd;">
+                <i class="fas fa-robot mr-2"></i> AI 优化提示词
+              </button>
+              <button type="button" class="btn btn-primary generate-btn" id="generateButton" style="flex: 1;">
+                <i class="fas fa-magic mr-2"></i> 生成冥想音乐
+              </button>
+            </div>
           </div>
           <div class="col-md-5">
             <div class="prompt-examples-container">
@@ -1248,7 +1307,7 @@
                 <small class="ml-2 text-muted">点击卡片使用示例</small>
               </div>
               <div class="prompt-examples-grid" id="promptExamples">
-                <div class="prompt-example-card" data-prompt="Tranquil meditation music played on traditional Chinese guqin, featuring gentle water sounds and bamboo forest ambience, helping anxious office workers find inner peace and reduce work stress">
+                <div class="prompt-example-card" data-prompt="宁静的古琴冥想音乐，流水声和竹林环境音，帮助焦虑的上班族寻找内心平静，减轻工作压力">
                   <div class="prompt-example-header">
                     <div class="prompt-tags-container">
                       <span class="prompt-tag group"><i class="fas fa-users"></i> 上班族</span>
@@ -1261,7 +1320,7 @@
                   </div>
                 </div>
                 
-                <div class="prompt-example-card" data-prompt="Soft piano melody with subtle ocean waves, designed for students under pressure, enhancing focus, reducing study fatigue, and improving memory retention and learning efficiency">
+                <div class="prompt-example-card" data-prompt="温柔的箫声配合轻微海浪声，为压力大的学生设计，帮助集中注意力，减轻学习疲劳，提升记忆力和学习效率">
                   <div class="prompt-example-header">
                     <div class="prompt-tags-container">
                       <span class="prompt-tag group"><i class="fas fa-graduation-cap"></i> 学生</span>
@@ -1273,6 +1332,29 @@
                     温柔的钢琴曲配合轻微海浪声，为压力大的学生设计，帮助集中注意力，减轻学习疲劳，提升记忆力和学习效率
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-4" id="optimizedPromptSection" style="display: none;">
+          <div class="col-12">
+            <div style="background: linear-gradient(135deg, rgba(106,13,173,0.12), rgba(74,20,140,0.08)); border: 1px solid rgba(106,13,173,0.25); border-radius: 16px; padding: 24px;">
+              <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                <i class="fas fa-feather-alt" style="color: #7c3aed; font-size: 1.3rem; margin-right: 10px;"></i>
+                <span style="color: #c4b5fd; font-weight: 600; font-size: 1.1rem;">意境优化</span>
+                <span id="optimizationBadge" style="margin-left: 12px; background: rgba(16,185,129,0.2); color: #34d399; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;"></span>
+              </div>
+              <div style="margin-bottom: 14px;">
+                <small style="color: #8b8ba7; display: block; margin-bottom: 4px;">你的描述</small>
+                <p id="originalPromptDisplay" style="color: #b0b0cc; margin: 0; font-size: 0.9rem; padding: 10px 14px; background: rgba(0,0,0,0.2); border-radius: 8px; line-height: 1.6;"></p>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                <i class="fas fa-arrow-down" style="color: #7c3aed;"></i>
+              </div>
+              <div>
+                <small style="color: #8b8ba7; display: block; margin-bottom: 4px;">优化后的意境</small>
+                <p id="optimizedPromptDisplay" style="color: #e0d0ff; margin: 0; font-size: 0.95rem; padding: 10px 14px; background: rgba(106,13,173,0.12); border-radius: 8px; border-left: 3px solid #7c3aed; line-height: 1.7;"></p>
               </div>
             </div>
           </div>
@@ -1434,6 +1516,18 @@
     </section>
   </div>
 
+  <!-- 错误详情弹窗 -->
+  <div class="error-dialog-overlay" id="errorDialogOverlay">
+    <div class="error-dialog">
+      <h3><i class="fas fa-exclamation-triangle"></i> 生成失败</h3>
+      <p style="color:#e74c3c;margin-bottom:10px;" id="errorDialogSummary"></p>
+      <div class="error-detail" id="errorDialogDetail"></div>
+      <button class="btn-close-dialog" onclick="$('#errorDialogOverlay').removeClass('show')">
+        <i class="fas fa-times"></i> 关闭
+      </button>
+    </div>
+  </div>
+
   <!-- 加载中遮罩层 -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
@@ -1449,10 +1543,10 @@
     </div>
   </footer>
 
-  <!-- 引入JS依赖 -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+  <!-- 引入JS依赖（使用国内CDN，确保国内网络可访问） -->
+  <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="/static/opera/bs/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
 
   <!-- 添加自定义JS -->
   <script>
@@ -1636,37 +1730,224 @@
         $("#meditationDescription").val(promptText);
       });
       
-      // 生成按钮点击事件
-      $("#generateButton").on("click", function() {
-        // 检查是否有描述
+      // ---- 两步骤：AI 优化提示词 → 生成音乐 ----
+      var currentAudioUrl = null;
+      var currentOptimizedPrompt = null;  // 已优化的提示词缓存
+      var currentOriginalInput = null;    // 原始用户输入（优化前保存）
+
+      // 辅助：获取当前五音/人群/情绪选择
+      function getSelections() {
+        return {
+          tone: $(".tone-card.active").data("tone") || null,
+          userGroup: $(".user-group-btn.active").data("group") || null,
+          emotion: $(".emotion-btn.active").data("emotion") || null,
+          duration: parseInt($("#duration").val()) || 30,
+        };
+      }
+
+      // 显示优化结果卡片
+      function showOptimizedCard(original, optimized, method) {
+        $("#originalPromptDisplay").text(original);
+        $("#optimizedPromptDisplay").text(optimized);
+        var badge = $("#optimizationBadge");
+        if (method === "llm") {
+          badge.text("AI 意境优化").css({"background":"rgba(16,185,129,0.2)","color":"#34d399"});
+        } else {
+          badge.text("模板优化").css({"background":"rgba(251,191,36,0.2)","color":"#fbbf24"});
+        }
+        $("#optimizedPromptSection").slideDown();
+      }
+
+      // 按钮1: AI 优化提示词（仅优化，不生成音乐）
+      $("#optimizePromptBtn").on("click", async function() {
+        var $btn = $(this);
+        if ($btn.prop("disabled")) return;  // 防止重复点击
+
         const description = $("#meditationDescription").val().trim();
         if (!description) {
           alert("请描述您想要的冥想音乐氛围");
           return;
         }
-        
-        // 显示加载状态
-        $(this).html('<i class="fas fa-spinner fa-spin mr-2"></i> 正在生成...');
+
+        const sel = getSelections();
+        const payload = { prompt: description };
+        if (sel.tone) payload.tone = sel.tone;
+        if (sel.userGroup) payload.user_group = sel.userGroup;
+        if (sel.emotion) payload.emotion = sel.emotion;
+
+        // 显示加载
+        $btn.prop("disabled", true).text(" AI 正在优化...").prepend('<i class="fas fa-spinner fa-spin mr-2"></i>');
+
+        try {
+          const resp = await fetch("/api/optimize-prompt/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!resp.ok) {
+            var errData = {};
+            try { errData = await resp.json(); } catch (_) {}
+            throw new Error(errData.error || "优化失败 (" + resp.status + ")");
+          }
+
+          const result = await resp.json();
+          currentOriginalInput = description;
+          currentOptimizedPrompt = result.optimized_prompt;
+
+          // 回填优化结果到输入框
+          $("#meditationDescription").val(result.optimized_prompt);
+
+          // 显示优化卡片
+          showOptimizedCard(description, result.optimized_prompt, result.optimization_method);
+
+          // 恢复按钮
+          $btn.prop("disabled", false).html('<i class="fas fa-robot mr-2"></i> AI 优化提示词');
+
+        } catch (error) {
+          $btn.prop("disabled", false).html('<i class="fas fa-robot mr-2"></i> AI 优化提示词');
+          alert("优化失败: " + error.message);
+        }
+      });
+
+      // 按钮2: 生成冥想音乐
+      $("#generateButton").on("click", async function() {
+        var $btn = $(this);
+        if ($btn.prop("disabled")) return;
+
+        const description = $("#meditationDescription").val().trim();
+        if (!description) {
+          alert("请描述您想要的冥想音乐氛围");
+          return;
+        }
+
+        const sel = getSelections();
+        const rawPrompt = currentOriginalInput || description;
+        const optimized = currentOptimizedPrompt || null;
+
+        // 生成客户端 UUID，用于轮询进度
+        var clientTaskId = crypto.randomUUID ? crypto.randomUUID() :
+          'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+          });
+
+        const payload = {
+          prompt: rawPrompt,
+          duration: sel.duration,
+          format: "mp3",
+          client_task_id: clientTaskId,
+        };
+        if (sel.tone) payload.tone = sel.tone;
+        if (sel.userGroup) payload.user_group = sel.userGroup;
+        if (sel.emotion) payload.emotion = sel.emotion;
+        if (optimized) payload.optimized_prompt = optimized;
+
+        // 显示加载
+        $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-2"></i> 正在生成...');
         $("#loadingOverlay").fadeIn();
-        
-        // 模拟API调用延迟
-        setTimeout(function() {
-          // 隐藏加载状态
-          $("#loadingOverlay").fadeOut();
-          $("#generateButton").html('<i class="fas fa-magic mr-2"></i> 生成冥想音乐');
-          
-          // 显示音乐播放器
-          $("#musicPlayerSection").fadeIn();
-          
-          // 设置生成的音乐
-          const audio = document.getElementById("musicPlayer");
-          audio.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3";
-          
-          // 平滑滚动到播放器
-          $('html, body').animate({
-            'scrollTop': $("#musicPlayerSection").offset().top - 100
-          }, 800, 'swing');
+
+        // 更新加载提示文字
+        var $loadingText = $("#loadingOverlay p");
+        if ($loadingText.length === 0) {
+          $loadingText = $("<p style='color: #a29bfe;'>正在生成中，请耐心等待...</p>").appendTo("#loadingOverlay");
+        }
+
+        // AbortController: 5 分钟超时
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 300000);
+
+        // 轮询进度
+        var progressPoll = setInterval(function() {
+          fetch("/api/progress/" + clientTaskId + "/")
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(p) {
+              if (p && p.message) {
+                $loadingText.text("进度 " + (p.progress || 0) + "%: " + p.message);
+              }
+            })
+            .catch(function() {});
         }, 2000);
+
+        try {
+          const response = await fetch("/api/generate/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          clearInterval(progressPoll);
+
+          if (!response.ok) {
+            var errData = {};
+            var errDetail = '';
+            try { errData = await response.json(); errDetail = JSON.stringify(errData, null, 2); } catch (_) {}
+            var err = new Error(errData.error || "音乐生成失败 (" + response.status + ")");
+            err.status = response.status;
+            err.details = errDetail;
+            throw err;
+          }
+
+          const data = await response.json();
+
+          if (data.status !== "completed") {
+            var err = new Error(data.error || "生成失败");
+            err.details = JSON.stringify(data, null, 2);
+            throw err;
+          }
+
+          currentAudioUrl = data.audio_url;
+
+          var audioEl = document.getElementById("musicPlayer");
+          audioEl.src = currentAudioUrl;
+          audioEl.load();
+
+          // 如果之前有优化提示词，显示优化卡片
+          if (data.was_optimized && data.optimized_prompt) {
+            currentOptimizedPrompt = data.optimized_prompt;
+            showOptimizedCard(data.original_prompt, data.optimized_prompt, data.optimization_method);
+          }
+
+          $("#loadingOverlay").fadeOut();
+          $btn.prop("disabled", false).html('<i class="fas fa-magic mr-2"></i> 生成冥想音乐');
+          $("#musicPlayerSection").fadeIn();
+          $("html, body").animate({
+            scrollTop: $("#musicPlayerSection").offset().top - 100
+          }, 800, "swing");
+
+        } catch (error) {
+          clearTimeout(timeoutId);
+          clearInterval(progressPoll);
+          $("#loadingOverlay").fadeOut();
+          $btn.prop("disabled", false).html('<i class="fas fa-magic mr-2"></i> 生成冥想音乐');
+          if (error.name === "AbortError") {
+            alert("生成超时，请重试（音乐生成需要 2-4 分钟）");
+          } else {
+            alert("生成失败: " + (error.message || "网络异常，请检查后端服务是否运行"));
+            // 显示错误详情弹窗
+            $("#errorDialogSummary").text(error.message || '未知错误');
+            $("#errorDialogDetail").text(
+              '请求接口: POST /api/generate/\n'
+              + '状态: ' + (error.status || '网络错误') + '\n'
+              + '错误信息: ' + (error.message || '无') + '\n'
+              + '详情: ' + (error.details || error.stack || '无额外信息') + '\n'
+              + '时间: ' + new Date().toLocaleString()
+            );
+            $("#errorDialogOverlay").addClass("show");
+          }
+        }
+      });
+
+      // 下载按钮
+      $("#downloadBtn").on("click", function() {
+        if (!currentAudioUrl) return;
+        var a = document.createElement("a");
+        a.href = currentAudioUrl;
+        a.download = "meditation_music_" + Date.now() + ".mp3";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       });
       
       // 播放按钮交互
