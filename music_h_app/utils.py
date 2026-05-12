@@ -4,32 +4,26 @@ import io
 import os
 import time
 from dotenv import load_dotenv
-from music_h import settings
+from django.conf import settings
 from deep_translator import GoogleTranslator
 from langdetect import detect, LangDetectException
 import threading
 import requests
 from requests.exceptions import RequestException
 import base64
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-#os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-
-# 加载预训练模型
-MODEL_NAME = os.getenv('AUDIOCRAFT_MODEL', 'facebook/musicgen-small')
-MODEL_CACHE_DIR = os.getenv('MODEL_CACHE_DIR', './model_cache')
-
 
 class ProgressTracker:
-    """进度跟踪器，用于跟踪音乐生成进度"""
-    
     def __init__(self):
         self.progress = {}
         self.lock = threading.Lock()
     
     def create_task(self, task_id):
-        """创建新任务"""
         with self.lock:
             self.progress[task_id] = {
                 'status': 'initializing',
@@ -39,7 +33,6 @@ class ProgressTracker:
             }
     
     def update(self, task_id, progress, message, status='processing'):
-        """更新任务进度"""
         with self.lock:
             if task_id in self.progress:
                 self.progress[task_id].update({
@@ -48,19 +41,20 @@ class ProgressTracker:
                     'message': message
                 })
     
-    def complete(self, task_id, file_path):
-        """标记任务完成"""
+    def complete(self, task_id, file_path, file_url=None):
         with self.lock:
             if task_id in self.progress:
-                self.progress[task_id].update({
+                entry = {
                     'status': 'completed',
                     'progress': 100,
                     'message': '生成完成',
-                    'file_path': file_path
-                })
+                    'file_path': file_path,
+                }
+                if file_url:
+                    entry['file_url'] = file_url
+                self.progress[task_id].update(entry)
     
     def error(self, task_id, error_message):
-        """标记任务错误"""
         with self.lock:
             if task_id in self.progress:
                 self.progress[task_id].update({
@@ -69,15 +63,8 @@ class ProgressTracker:
                 })
     
     def get_progress(self, task_id):
-        """获取任务进度"""
         with self.lock:
             return self.progress.get(task_id, None)
-    
-    def cleanup(self, task_id):
-        """清理任务记录"""
-        with self.lock:
-            if task_id in self.progress:
-                del self.progress[task_id]
 
 
 # 全局进度跟踪器
@@ -245,224 +232,156 @@ class TranslationService:
             return text, False
 
 
-class MusicGenerator:
-    _instance = None
-    _lock = threading.Lock()  # 添加线程锁，防止多线程并发初始化
+class MusicGenerationService:
+    """
+    音乐生成编排器：提示词优化 → Mureka API 调用 → 音频保存
+    """
 
-    
-    def __new__(cls):
-        if cls._instance is None:
-            with cls._lock:  # 确保线程安全
-                if cls._instance is None:
-                    cls._instance = super(MusicGenerator, cls).__new__(cls)
-                    cls._instance.model = None  # 先初始化为 None
-        return cls._instance
+    def __init__(self):
+        from .prompt_optimizer import PromptOptimizer
 
-    def _load_model(self):
-        """内部方法：实际加载模型"""
-        if self.model is not None:
-            return
+        self.prompt_optimizer = PromptOptimizer()
+        self._music_client = None
 
-        # 延迟导入重量级依赖，避免 Django 启动阶段阻塞
-        import torch
-        from audiocraft.models import MusicGen
+    @property
+    def music_client(self):
+        if self._music_client is None:
+            from .mureka_client import MurekaMusicClient
 
-        print(f"🔄 正在加载 {MODEL_NAME} 模型...")
-        start_time = time.time()
-        
-        try:
-            # 确保使用 GPU (如果可用)
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            print(f"⚙️  加载设备: {device}")
+            self._music_client = MurekaMusicClient()
+        return self._music_client
 
-            self.model = MusicGen.get_pretrained(
-                MODEL_NAME, 
-                device=device,
+    def generate(
+        self,
+        prompt,
+        duration=30,
+        format="mp3",
+        task_id=None,
+        tone=None,
+        user_group=None,
+        emotion=None,
+        optimized_prompt=None,
+    ):
+        """
+        完整音乐生成流水线。
+
+        Args:
+            prompt: 用户原始描述
+            duration: 期望时长（秒），用于提示词优化参考
+            format: 'mp3' 或 'wav'
+            task_id: 进度跟踪 ID
+            tone: 可选五音选择
+            user_group: 可选用户群体
+            emotion: 可选情绪状态
+            optimized_prompt: 前端已优化好的提示词（提供后跳过服务端二次优化）
+
+        Returns:
+            tuple: (file_path, filename, content_type, audio_bytes, metadata, file_url)
+        """
+        if optimized_prompt:
+            # 前端已优化，直接使用
+            opt_result = {
+                "optimized_prompt": optimized_prompt,
+                "negative_prompt": "",
+                "original_input": prompt,
+                "was_optimized": True,
+                "optimization_method": "pre-optimized",
+            }
+            if task_id:
+                progress_tracker.update(task_id, 10, "使用前端优化提示词...")
+            logger.info("Using pre-optimized prompt from frontend")
+        else:
+            if task_id:
+                progress_tracker.update(task_id, 5, "正在优化提示词...")
+
+            # Step 1: 提示词优化
+            opt_result = self.prompt_optimizer.optimize(
+                user_input=prompt,
+                tone=tone,
+                user_group=user_group,
+                emotion=emotion,
+                duration=duration,
             )
-            
-            # 设置默认生成参数
-            self.model.set_generation_params(
-                use_sampling=True,
-                top_k=250,
-                top_p=0.0,
-                temperature=1.0,
-                duration=30,
-                cfg_coef=3.0
+            logger.info(
+                "Prompt optimized (method=%s): '%s...' -> '%s...'",
+                opt_result["optimization_method"],
+                prompt[:60],
+                opt_result["optimized_prompt"][:60],
             )
-            print(f"✅ 模型加载成功，耗时 {time.time() - start_time:.2f} 秒")
-            
-        except Exception as e:
-            print(f"❌ 模型加载失败: {e}")
-            self.model = None # 确保失败时重置为 None
-            raise RuntimeError(f"模型加载失败，请检查网络或显存: {e}")
-    
-    def get_audio_save_path(subfolder="generated_music", extension="wav"):
-        """生成唯一的音频文件保存路径"""
-        # 创建按日期组织的目录结构
-        today = datetime.datetime.now().strftime("%Y/%m/%d")
-        save_dir = os.path.join(settings.MEDIA_ROOT, subfolder, today)
-    
-        # 确保目录存在
-        os.makedirs(save_dir, exist_ok=True)
-    
-        # 生成唯一文件名
-        filename = f"musicgen_{uuid.uuid4().hex[:8]}.{extension}"
-    
-        # 返回完整路径
-        return os.path.join(save_dir, filename)
 
-    def _extend_audio_to_minutes(self, audio_tensor, sample_rate, requested_duration_seconds):
-        """将生成的短音频扩展为指定分钟数的音频"""
-        import torch
+        optimized_prompt_text = opt_result["optimized_prompt"]
 
-        # 目标时长（秒）= 请求秒数 * 60
-        target_duration_seconds = max(requested_duration_seconds * 60, requested_duration_seconds)
-        target_samples = int(sample_rate * target_duration_seconds)
+        # Mureka 支持中文提示词，直接使用无需翻译
+        music_prompt = optimized_prompt_text
 
-        if audio_tensor.dim() == 1:
-            audio_tensor = audio_tensor.unsqueeze(0)  # [1, samples]
+        if task_id:
+            progress_tracker.update(task_id, 20, "正在调用音乐生成 API...")
 
-        channels, original_samples = audio_tensor.shape
+        # Step 2: 调用 Mureka API（异步：提交→轮询→下载，在客户端内部完成）
+        from .mureka_client import MurekaError
 
-        if target_samples <= original_samples:
-            return audio_tensor[:, :target_samples]
-
-        repeats = target_samples // original_samples
-        remainder = target_samples % original_samples
-
-        repeated = audio_tensor.repeat(1, repeats)
-        if remainder > 0:
-            repeated = torch.cat([repeated, audio_tensor[:, :remainder]], dim=1)
-
-        return repeated[:, :target_samples]
-
-    def generate_music(self, prompt, duration=30, format='mp3', task_id=None):
-        import torch
-        from audiocraft.data.audio import audio_write
+        def _on_progress(pct, msg):
+            if task_id:
+                progress_tracker.update(task_id, pct, msg)
 
         try:
-            self._load_model()
-            if self.model is None:
-                raise RuntimeError("模型未初始化")
-            print(f"\n{'='*60}")
-            print(f"🎵 MusicGenerator.generate_music() 开始")
-            print(f"{'='*60}")
-            print(f"📝 提示词: {prompt}")
-            print(f"⏱️  请求时长: {duration}秒 (将扩展为 {duration} 分钟音频)")
-            print(f"🎼 格式: {format}")
-            print(f"🆔 任务ID: {task_id}")
-            
-            # 更新进度：开始翻译
-            if task_id:
-                progress_tracker.update(task_id, 5, '准备生成参数...')
-            
-            # 生成音乐
-            start_time = time.time()
-            print(f"\n🔧 设置生成参数...")
-            self.model.set_generation_params(duration=duration)
-            
-            if task_id:
-                progress_tracker.update(task_id, 10, '模型准备就绪，开始生成音频...')
-            
-            print(f"🚀 开始生成音频...")
-            print(f"⚙️  使用设备: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
-            
-            # 生成音频（这是最耗时的部分）
-            if task_id:
-                progress_tracker.update(task_id, 15, '正在生成音乐（这可能需要一些时间）...')
-            
-            wav = self.model.generate([prompt], progress=True)
-            
-            if task_id:
-                progress_tracker.update(task_id, 80, '音频生成完成，正在保存文件...')
-            
-            print(f"✅ 音频生成完成")
-            
-            # 创建按日期组织的目录结构
-            today = datetime.datetime.now().strftime("%Y/%m/%d")
-            subfolder="generated_music"
-            save_dir = os.path.join(settings.MEDIA_ROOT, subfolder, today)
-            
-            # 确保目录存在
-            print(f"\n📁 创建目录: {save_dir}")
-            os.makedirs(save_dir, exist_ok=True)
-            
-            if task_id:
-                progress_tracker.update(task_id, 85, '准备保存音频文件...')
-            
-            # 生成唯一文件名
-            extension="wav"
-            unique_id = uuid.uuid4().hex[:8]
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"musicgen_{timestamp}_{unique_id}"
-            save_path = os.path.join(save_dir, filename)
-            
-            print(f"📝 文件名: {filename}")
-            print(f"💾 保存路径: {save_path}")
-            
-            # 转换为字节流
-            sample_rate = self.model.sample_rate
-            print(f"🎵 采样率: {sample_rate}Hz")
-
-            print(f"\n🧩 扩展音频至 {duration} 分钟...")
-            extended_audio = self._extend_audio_to_minutes(wav[0].cpu(), sample_rate, duration)
-            final_duration_seconds = extended_audio.shape[-1] / sample_rate
-            print(f"🕒 最终音频时长: {final_duration_seconds/60:.2f} 分钟")
-            
-            print(f"\n💾 开始保存音频文件...")
-            
-            if task_id:
-                progress_tracker.update(task_id, 90, f'正在保存 {format.upper()} 文件...')
-            
-            if format == 'wav':
-                print(f"📄 格式: WAV")
-                audio_write(save_path, extended_audio, sample_rate, format='wav')
-                file_path = save_path + ".wav"
-                filename += '.wav'
-                content_type = 'audio/wav'
-                print(f"✅ WAV 文件保存成功")
-            else:
-                print(f"📄 格式: MP3")
-                audio_write(
-                    save_path, 
-                    extended_audio, 
-                    sample_rate, 
-                    format='mp3',
-                )
-                file_path = save_path + ".mp3"
-                filename += '.mp3'
-                content_type = 'audio/mpeg'
-                print(f"✅ MP3 文件保存成功")
-
-            if task_id:
-                progress_tracker.update(task_id, 95, '文件保存完成，最后处理...')
-            
-            generation_time = time.time() - start_time
-            print(f"\n⏱️  总耗时: {generation_time:.2f}秒")
-            print(f"📊 生成速度: {duration/generation_time:.2f}x 实时")
-            print(f"✅ 完整路径: {file_path}")
-            
-            audio_data = extended_audio.float()
-            
-            if task_id:
-                progress_tracker.complete(task_id, file_path)
-            
-            print(f"{'='*60}")
-            print(f"✅ MusicGenerator.generate_music() 完成")
-            print(f"{'='*60}\n")
-            
-            return file_path, filename, content_type, audio_data, sample_rate
+            result = self.music_client.generate(
+                prompt=music_prompt,
+                progress_callback=_on_progress,
+            )
+        except MurekaError:
+            raise
         except Exception as e:
-            print(f"\n❌ MusicGenerator 错误: {str(e)}")
-            print(f"错误类型: {type(e).__name__}")
-            import traceback
-            traceback.print_exc()
-            print(f"{'='*60}\n")
-            
+            logger.error("Music generation error: %s", e)
             if task_id:
                 progress_tracker.error(task_id, str(e))
-            
             raise
+
+        if task_id:
+            progress_tracker.update(task_id, 85, "正在保存音频文件...")
+
+        audio_bytes = result["audio_bytes"]
+
+        if not audio_bytes:
+            if task_id:
+                progress_tracker.error(task_id, "API 未返回音频数据")
+            raise MurekaError(-1, "No audio data", "API 未返回音频数据，请重试")
+
+        # Step 4: 保存到文件
+        file_path, filename, content_type, file_url = self._save_audio(audio_bytes, format)
+
+        if task_id:
+            progress_tracker.complete(task_id, file_path, file_url)
+
+        metadata = {
+            **result["metadata"],
+            "optimized_prompt": optimized_prompt_text,
+            "original_prompt": prompt,
+            "was_optimized": opt_result["was_optimized"],
+            "optimization_method": opt_result["optimization_method"],
+        }
+
+        return file_path, filename, content_type, audio_bytes, metadata, file_url
+
+    def _save_audio(self, audio_bytes, fmt):
+        """保存音频字节到文件，并返回网页可访问的 file_url。"""
+        today = datetime.datetime.now().strftime("%Y/%m/%d")
+        save_dir = os.path.join(settings.MEDIA_ROOT, "generated_music", today)
+        os.makedirs(save_dir, exist_ok=True)
+
+        unique_id = uuid.uuid4().hex[:8]
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        extension = "mp3" if fmt == "mp3" else "wav"
+        filename = f"meditation_{timestamp}_{unique_id}.{extension}"
+        file_path = os.path.join(save_dir, filename)
+
+        with open(file_path, "wb") as f:
+            f.write(audio_bytes)
+
+        file_url = f"{settings.MEDIA_URL}generated_music/{today}/{filename}"
+
+        content_type = "audio/mpeg" if fmt == "mp3" else "audio/wav"
+        return file_path, filename, content_type, file_url
 
 
 class VideoGenerationError(Exception):
@@ -522,7 +441,7 @@ class VideoGenerator:
         os.makedirs(save_dir, exist_ok=True)
 
         unique_id = uuid.uuid4().hex[:8]
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f'videogen_{timestamp}_{unique_id}.{extension}'
         file_path = os.path.join(save_dir, filename)
 

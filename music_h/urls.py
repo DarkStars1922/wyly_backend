@@ -20,9 +20,9 @@ from django.conf.urls.static import static
 from django.urls import path, include
 
 urlpatterns = [
-    path('', include('music_h_app.urls')), 
     path('admin/', admin.site.urls),
-    path('',include('music_h_app.urls')),
+    path('api/', include('music_h_app.urls')),
+    path('', include('music_h_app.urls')),
 ]
 
 if settings.DEBUG:
