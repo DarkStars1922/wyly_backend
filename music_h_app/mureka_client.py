@@ -116,7 +116,7 @@ class MurekaMusicClient:
     def _submit_task(self, prompt):
         """提交生成任务，返回 task_id"""
         payload = {
-            "model": self.model,
+            "model": "auto",
             "n": 1,
             "prompt": prompt[:1024],
             "stream": False
