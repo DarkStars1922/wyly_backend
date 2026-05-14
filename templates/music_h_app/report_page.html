@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>星璇律动 - 疗愈总结报告</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -20,7 +20,7 @@
 
         body {
             background-color: #faf5eb;
-            background-image: url("{% static 'report/background.png' %}?v=20260511-reportbg1");
+            background-image: url("{% static 'report/background.png' %}");
             background-size: 100% 100%;
             background-position: center;
             background-repeat: no-repeat;
@@ -600,200 +600,7 @@
             margin-left: auto;
             color: var(--accent-gold);
         }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem 0.75rem 1.5rem;
-                background-attachment: scroll;
-                background-size: cover;
-                background-position: center top;
-            }
-
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-                margin-bottom: 1.25rem;
-                padding: 0 0.25rem;
-            }
-
-            header h1 {
-                font-size: clamp(1.7rem, 8vw, 2.4rem);
-                line-height: 1.05;
-                margin-bottom: 0.4rem;
-            }
-
-            header img {
-                width: 48px;
-                height: 48px;
-                margin-bottom: 0.5rem;
-            }
-
-            header .text-right {
-                align-self: flex-end;
-                text-align: right;
-            }
-
-            .main-container {
-                max-width: 100%;
-                width: 100%;
-            }
-
-            .left-sidebar,
-            .right-sidebar {
-                display: none !important;
-            }
-
-            .main-container > .w-full > .grid.grid-cols-12 {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 0.9rem !important;
-            }
-
-            .main-container > .w-full > .grid.grid-cols-12 > section {
-                grid-column: 1 / -1 !important;
-                width: 100% !important;
-            }
-
-            .user-profile-card > div.flex.items-start.gap-3 {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .user-profile-card .profile-avatar {
-                width: 72px;
-                height: 72px;
-            }
-
-            .user-profile-card .flex.gap-4.mb-2 {
-                flex-wrap: wrap;
-                gap: 0.75rem;
-            }
-
-            .user-profile-card .flex.gap-4.mb-2 > div {
-                flex: 1 1 120px;
-            }
-
-            .healing-overview-card .flex.justify-between.items-start {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .emotion-score-circle {
-                align-self: center;
-            }
-
-            .pentatonic-analysis-card > .flex.gap-4.items-center {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .pentatonic-analysis-card > .flex.gap-4.items-center > div {
-                width: 100% !important;
-            }
-
-            .col-span-12.flex.gap-5.tech-card.p-0.overflow-hidden {
-                flex-direction: column;
-            }
-
-            .col-span-12.flex.gap-5.tech-card.p-0.overflow-hidden > div {
-                width: 100% !important;
-                border-left: 0 !important;
-                border-top: 1px solid var(--border-color);
-                padding: 1rem !important;
-            }
-
-            .ai-recommendation-container {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .recommendation-header {
-                align-items: flex-start;
-                gap: 0.5rem;
-            }
-
-            .recommendation-track-item {
-                align-items: flex-start;
-            }
-
-            .track-cover {
-                width: 52px;
-                height: 52px;
-            }
-
-            .quote-box {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .quote-box .heart-icon {
-                margin-left: 0;
-            }
-
-            .long-term-track-entry {
-                margin-top: 1rem;
-            }
-
-            .long-track-header {
-                padding: 0.9rem 1rem;
-            }
-
-            .long-term-track-entry .h-28,
-            .long-term-track-entry .h-72,
-            .long-term-track-entry .h-64 {
-                height: 220px;
-            }
-
-            .end-healing-btn {
-                width: 100%;
-                max-width: 280px;
-                padding: 12px 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            header h1 {
-                font-size: 1.75rem;
-            }
-
-            .module-title {
-                font-size: 1rem;
-            }
-
-            .multimodal-card {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .multimodal-ring {
-                width: 42px;
-                height: 42px;
-            }
-
-            .multimodal-trend {
-                width: 100%;
-                height: 24px;
-            }
-
-            .profile-name {
-                font-size: 1.1rem;
-            }
-
-            .music-personal-tag {
-                font-size: 0.78rem;
-            }
-
-            .space-tag {
-                font-size: 11px;
-            }
-
-            .end-healing-btn {
-                font-size: 0.95rem;
-            }
-        }
     </style>
-    <link rel="stylesheet" href="/static/css/site-mobile.css?v=20260507-mobile2">
 </head>
 
 <body>
@@ -804,7 +611,7 @@
             <p class="text-sm opacity-60">以乐养心 · 五音调和 · 身心共愈</p>
         </div>
         <div class="text-right flex flex-col items-end">
-            <img src="{% static 'images/logo2.png' %}?v=20260511-logoalpha1" alt="星璇律动Logo" class="w-16 h-16 object-contain mb-2">
+            <img src="{% static 'images/logo2.png' %}" alt="星璇律动Logo" class="w-16 h-16 object-contain mb-2">
             <p class="text-xs opacity-50 font-mono" id="session-date"></p>
         </div>
     </header>
@@ -858,7 +665,7 @@
                                         </svg>
                                     </div>
                                     <p class="stat-label">累计疗愈时长</p>
-                                    <p class="stat-number" id="long-total-duration">17 min 21 s</p>
+                                    <p class="stat-number" id="long-total-duration">--</p>
                                 </div>
                             </div>
                             <!-- 音乐个性标签 -->
@@ -1357,28 +1164,51 @@
         }
 
         // 加载长期数据
-        function loadLongTermData() {
-            const history = JSON.parse(localStorage.getItem('healing_history') || '[]');
-            let totalSec = 0;
-            history.forEach(item => totalSec += item.duration || 0);
-            const totalMin = Math.round(totalSec / 60);
-            document.getElementById('long-total-duration-bottom').innerText = totalMin + " 分钟";
+        // 加载长期数据
+// 加载长期数据
+function loadLongTermData() {
+    const history = JSON.parse(localStorage.getItem('healing_history') || '[]');
+    let totalSec = 0;
+    history.forEach(item => totalSec += item.duration || 0);
 
-            new Chart(document.getElementById('long-month-chart'), {
-                type: 'line',
-                data: {
-                    labels: ['1日', '10日', '20日', '30日'],
-                    datasets: [{
-                        data: [1, 3, 4, 6],
-                        borderColor: '#8fb8b0',
-                        backgroundColor: 'rgba(143,184,176,0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: { plugins: { legend: false }, scales: { y: { beginAtZero: true } }, maintainAspectRatio: false }
-            });
-        }
+    // -------- 1. 累计次数：本地条数 + 打底12 --------
+    const baseCount = 12;
+    const realLocalCount = history.length;
+    const showTotalCount = baseCount + realLocalCount;
+    document.getElementById('total-sessions').innerText = showTotalCount;
+
+    // -------- 2. 累计时长：固定打底 27分15秒 + 本地时长 --------
+    // 打底固定 27min15s 转秒
+    const baseTotalSec = 1635; 
+    // 总秒数 = 打底 + 本地存储
+    const allSec = baseTotalSec + totalSec;
+
+    // 时分秒格式化
+    const m = Math.floor(allSec / 60);
+    const s = allSec % 60;
+    const totalMin = Math.round(allSec / 60);
+
+    // 顶部显示：分秒
+    document.getElementById('long-total-duration').innerText = `${m} min ${s} s`;
+    // 底部显示：总分钟
+    document.getElementById('long-total-duration-bottom').innerText = totalMin + " 分钟";
+
+    // 下面折线图保留原样不动
+    new Chart(document.getElementById('long-month-chart'), {
+        type: 'line',
+        data: {
+            labels: ['1日', '10日', '20日', '30日'],
+            datasets: [{
+                data: [1, 3, 4, 6],
+                borderColor: '#8fb8b0',
+                backgroundColor: 'rgba(143,184,176,0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: { plugins: { legend: false }, scales: { y: { beginAtZero: true } }, maintainAspectRatio: false }
+    });
+}
 
         document.addEventListener('DOMContentLoaded', () => {
             const history = JSON.parse(localStorage.getItem('healing_history') || '[]');
@@ -1415,9 +1245,9 @@
             let audio = Math.min(95, Math.round(hitRate));
             let body = Math.max(1, Math.round(totalHits / Math.max(1, totalTime / 60)));
             // 提升率
-            const visualChange = 16;
-            const audioChange = 12;
-            const bodyChange = 9;
+            const visualChange = 5;
+            const audioChange = 3;
+            const bodyChange = 3;
 
             // 环形进度条
             function createRing(canvasId, value, color) {
@@ -1509,7 +1339,7 @@
                         // 上次评估 金色淡线
                         {
                             label: '上次评估',
-                            data: [stabilityScore - 10, moodStability - 8, 62, 60, 48],
+                            data: [Math.max(0, stabilityScore - 10), moodStability - 8, 62, 60, 48],
                             borderColor: '#c5a059',
                             backgroundColor: 'rgba(197, 160, 89, 0.15)',
                             borderWidth: 1.8,
@@ -1560,7 +1390,6 @@
 
             // 基础数据
             document.getElementById('session-date').innerText = new Date().toLocaleString();
-            document.getElementById('total-sessions').innerText = history.length || 3;
             document.getElementById('overview-duration').innerText = totalTime > 0 ? totalTime + 's' : '40s';
             document.getElementById('overview-hits').innerText = totalHits > 0 ? totalHits : '6';
             document.getElementById('mood-improve-score').innerText = stabilityScore > 0 ? stabilityScore : '60';
