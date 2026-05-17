@@ -793,37 +793,6 @@
       color: #eee;
     }
 
-    /* 加载遮罩样式 */
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 9999;
-      backdrop-filter: blur(5px);
-      display: none;
-    }
-    
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid #6a0dad;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
 
     /* 播放按钮样式 */
     .play-button {
@@ -909,6 +878,48 @@
   .tone-card.playing .play-button i {
     color: white;
   }
+
+  .generation-status {
+    display: none;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    border-radius: 8px;
+    background: rgba(20, 20, 40, 0.42);
+  }
+
+  .generation-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #d8ccff;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .generation-status-percent {
+    color: #a78bfa;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .generation-progress-track {
+    height: 4px;
+    margin-top: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+  }
+
+  .generation-progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    transition: width 0.25s ease;
+  }
+
 
   /* 播放状态样式 */
   .playing {
@@ -1299,6 +1310,15 @@
                 <i class="fas fa-magic mr-2"></i> 生成冥想音乐
               </button>
             </div>
+            <div class="generation-status" id="generationStatus">
+              <div class="generation-status-row">
+                <span id="generationStatusText">准备生成...</span>
+                <span class="generation-status-percent" id="generationStatusPercent">0%</span>
+              </div>
+              <div class="generation-progress-track">
+                <div class="generation-progress-bar" id="generationProgressBar"></div>
+              </div>
+            </div>
           </div>
           <div class="col-md-5">
             <div class="prompt-examples-container">
@@ -1392,18 +1412,18 @@
             </div>
 
             <div class="controls">
-              <button class="control-btn" id="rewindBtn">
+              <button type="button" class="control-btn" id="rewindBtn">
                 <i class="fas fa-step-backward"></i>
               </button>
-              <button class="control-btn play-btn" id="playBtn">
+              <button type="button" class="control-btn play-btn" id="playBtn">
                 <i class="fas fa-play"></i>
               </button>
-              <button class="control-btn" id="forwardBtn">
+              <button type="button" class="control-btn" id="forwardBtn">
                 <i class="fas fa-step-forward"></i>
               </button>
             </div>
 
-            <audio id="musicPlayer" style="display: none;"></audio>
+            <audio id="musicPlayer" preload="auto" style="display: none;"></audio>
 
             <div class="row mt-3">
               <div class="col-md-6">
@@ -1529,12 +1549,6 @@
     </div>
   </div>
 
-  <!-- 加载中遮罩层 -->
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <h4 style="color: white; margin-bottom: 10px;">正在生成您的冥想音乐</h4>
-    <p style="color: #a29bfe;">这可能需要1-2分钟时间，请耐心等待...</p>
-  </div>
 
   <!-- 页脚 -->
   <footer>
@@ -1844,15 +1858,24 @@
         if (sel.emotion) payload.emotion = sel.emotion;
         if (optimized) payload.optimized_prompt = optimized;
 
-        // 显示加载
+        // 显示按钮下方的小状态条
         $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-2"></i> 正在生成...');
-        $("#loadingOverlay").fadeIn();
-
-        // 更新加载提示文字
-        var $loadingText = $("#loadingOverlay p");
-        if ($loadingText.length === 0) {
-          $loadingText = $("<p style='color: #a29bfe;'>正在生成中，请耐心等待...</p>").appendTo("#loadingOverlay");
+        var $generationStatus = $("#generationStatus");
+        var $generationStatusText = $("#generationStatusText");
+        var $generationStatusPercent = $("#generationStatusPercent");
+        var $generationProgressBar = $("#generationProgressBar");
+        var latestProgress = 2;
+        function renderGenerationStatus(progress, message, isError) {
+          var numericProgress = Number(progress);
+          if (!Number.isFinite(numericProgress)) numericProgress = latestProgress;
+          latestProgress = isError ? latestProgress : Math.max(latestProgress, numericProgress);
+          var displayProgress = latestProgress;
+          $generationStatus.toggleClass("text-danger", !!isError).show();
+          $generationStatusText.text(message || "正在生成音乐...");
+          $generationStatusPercent.text(Math.round(displayProgress) + "%");
+          $generationProgressBar.css("width", Math.max(0, Math.min(100, displayProgress)) + "%");
         }
+        renderGenerationStatus(latestProgress, "正在提交音乐生成任务...");
 
         // AbortController: 5 分钟超时
         var controller = new AbortController();
@@ -1864,7 +1887,7 @@
             .then(function(r) { return r.ok ? r.json() : null; })
             .then(function(p) {
               if (p && p.message) {
-                $loadingText.text("进度 " + (p.progress || 0) + "%: " + p.message);
+                renderGenerationStatus(p.progress || latestProgress, p.message);
               }
             })
             .catch(function() {});
@@ -1891,6 +1914,9 @@
           }
 
           let data = await response.json();
+          if (data.message) {
+            renderGenerationStatus(latestProgress, data.message);
+          }
 
           if (data.status !== "completed") {
             var waitTaskId = data.task_id || clientTaskId;
@@ -1900,7 +1926,7 @@
               if (pollResp.ok) {
                 var progress = await pollResp.json();
                 if (progress && progress.message) {
-                  $loadingText.text("进度 " + (progress.progress || 0) + "%: " + progress.message);
+                  renderGenerationStatus(progress.progress || latestProgress, progress.message);
                 }
                 if (progress.status === "completed") {
                   data = Object.assign({}, progress, {
@@ -1931,8 +1957,12 @@
           currentAudioUrl = data.audio_url;
 
           var audioEl = document.getElementById("musicPlayer");
+          audioEl.pause();
+          audioEl.currentTime = 0;
           audioEl.src = currentAudioUrl;
+          audioEl.volume = parseInt($("#volumeSlider").val(), 10) / 100 || 0.8;
           audioEl.load();
+          setGeneratedPlayerPlaying(false);
 
           // 如果之前有优化提示词，显示优化卡片
           if (data.was_optimized && data.optimized_prompt) {
@@ -1940,7 +1970,7 @@
             showOptimizedCard(data.original_prompt, data.optimized_prompt, data.optimization_method);
           }
 
-          $("#loadingOverlay").fadeOut();
+          renderGenerationStatus(100, "生成完成，可以播放");
           $btn.prop("disabled", false).html('<i class="fas fa-magic mr-2"></i> 生成冥想音乐');
           $("#musicPlayerSection").fadeIn();
           $("html, body").animate({
@@ -1950,10 +1980,10 @@
         } catch (error) {
           clearTimeout(timeoutId);
           clearInterval(progressPoll);
-          $("#loadingOverlay").fadeOut();
+          renderGenerationStatus(latestProgress, error.message || "生成失败", true);
           $btn.prop("disabled", false).html('<i class="fas fa-magic mr-2"></i> 生成冥想音乐');
           if (error.name === "AbortError") {
-            alert("生成超时，请重试（音乐生成需要 2-4 分钟）");
+            alert("生成超时，请重试");
           } else {
             alert("生成失败: " + (error.message || "网络异常，请检查后端服务是否运行"));
             // 显示错误详情弹窗
@@ -1981,20 +2011,55 @@
         document.body.removeChild(a);
       });
       
+      function setGeneratedPlayerPlaying(isPlaying) {
+        var iconClass = isPlaying ? "fa-pause" : "fa-play";
+        var label = isPlaying ? "暂停" : "播放";
+        $("#playBtn")
+          .attr("aria-label", label)
+          .attr("title", label)
+          .html('<i class="fas ' + iconClass + '"></i>');
+        $(".waveform-container").toggleClass("waveform-playing", isPlaying);
+      }
+
       // 播放按钮交互
       $("#playBtn").on("click", function() {
-        const icon = $(this).find("i");
-        const audio = document.getElementById("musicPlayer");
-        
-        if (icon.hasClass("fa-play")) {
-          audio.play();
-          icon.removeClass("fa-play").addClass("fa-pause");
-          $(".waveform-container").addClass("waveform-playing");
+        var audio = document.getElementById("musicPlayer");
+        if (!currentAudioUrl || !audio.src) {
+          alert("音频还没有准备好，请稍后再试");
+          return;
+        }
+
+        if (audio.paused) {
+          var playPromise = audio.play();
+          if (playPromise && typeof playPromise.then === "function") {
+            playPromise.then(function() {
+              setGeneratedPlayerPlaying(true);
+            }).catch(function(err) {
+              console.error("音频播放失败", err);
+              setGeneratedPlayerPlaying(false);
+              alert("播放失败，请稍后重试或先保存音频后播放");
+            });
+          } else {
+            setGeneratedPlayerPlaying(true);
+          }
         } else {
           audio.pause();
-          icon.removeClass("fa-pause").addClass("fa-play");
-          $(".waveform-container").removeClass("waveform-playing");
+          setGeneratedPlayerPlaying(false);
         }
+      });
+
+      document.getElementById("musicPlayer").addEventListener("play", function() {
+        setGeneratedPlayerPlaying(true);
+      });
+      document.getElementById("musicPlayer").addEventListener("pause", function() {
+        setGeneratedPlayerPlaying(false);
+      });
+      document.getElementById("musicPlayer").addEventListener("ended", function() {
+        setGeneratedPlayerPlaying(false);
+      });
+      document.getElementById("musicPlayer").addEventListener("error", function() {
+        setGeneratedPlayerPlaying(false);
+        console.error("音频加载失败", this.error);
       });
       
       // 倒退按钮

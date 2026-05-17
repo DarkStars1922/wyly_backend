@@ -192,7 +192,16 @@
         .progress-text {
             text-align: center;
             font-size: 1.1rem;
-            color: #aab2c8;
+            color: #dfe6ff;
+            font-weight: 600;
+        }
+
+        .progress-subtext {
+            margin-top: 10px;
+            text-align: center;
+            color: #8fa3c7;
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
         
         .audio-section {
@@ -453,6 +462,7 @@
                     <div class="progress-bar" id="progress-bar"></div>
                 </div>
                 <div class="progress-text" id="progress-text">初始化模型...</div>
+                <div class="progress-subtext" id="progress-subtext">后台生成中，完成后会自动出现播放器。</div>
                 <div class="visualizer" id="visualizer"></div>
             </div>
             
@@ -524,6 +534,7 @@
         const progressSection = document.getElementById('progress-section');
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
+        const progressSubtext = document.getElementById('progress-subtext');
         const audioSection = document.getElementById('audio-section');
         const audioPlayer = document.getElementById('audio-player');
         const downloadBtn = document.getElementById('download-btn');
@@ -572,9 +583,17 @@
         }
         
         // 更新进度
-        function updateProgress(percent, message) {
-            progressBar.style.width = `${percent}%`;
+        function updateProgress(percent, message, detail = '') {
+            const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+            progressBar.style.width = `${safePercent}%`;
             progressText.textContent = message;
+            if (progressSubtext && detail) {
+                progressSubtext.textContent = detail;
+            }
+        }
+
+        function getGenerationDetail() {
+            return '后台生成中，完成后会自动出现播放器。';
         }
         
         // 处理后端返回的 JSON 音频数据
@@ -698,6 +717,8 @@
 
             let progressPollInterval = null;
             let vizInterval = null;
+            let latestProgress = 2;
+            let latestMessage = "正在提交生成请求...";
 
             try {
                 console.log('发送 API 请求到 /api/generate/');
@@ -711,7 +732,9 @@
                             if (resp.ok) {
                                 const progress = await resp.json();
                                 if (progress.message) {
-                                    updateProgress(progress.progress || 0, progress.message);
+                                    latestProgress = Math.max(latestProgress, Number(progress.progress) || 0);
+                                    latestMessage = progress.message;
+                                    updateProgress(latestProgress, latestMessage, getGenerationDetail());
                                 }
                                 if (progress.status === 'completed') {
                                     return {
@@ -772,6 +795,10 @@
 
                 const initialData = await response.json();
                 console.log('JSON 响应:', initialData);
+                if (initialData.message) {
+                    latestMessage = initialData.message;
+                    updateProgress(latestProgress, latestMessage, getGenerationDetail());
+                }
 
                 const data = initialData.status === 'completed'
                     ? initialData
@@ -785,8 +812,7 @@
                     clearInterval(vizInterval);
                     vizInterval = null;
                 }
-
-                updateProgress(100, "生成完成！");
+                updateProgress(100, "生成完成！", "音频已准备好，可以播放或下载。");
 
                 // 处理音频数据
                 handleAudioJson(data, format);
@@ -802,7 +828,6 @@
                 if (vizInterval) {
                     clearInterval(vizInterval);
                 }
-
                 showNotification(`生成失败: ${error.message}`);
 
                 // 显示错误详情弹窗
