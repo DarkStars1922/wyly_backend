@@ -52,7 +52,7 @@ class MurekaMusicClient:
     QUERY_URL = "https://api.mureka.cn/v1/instrumental/query/{}"
     DEFAULT_MODEL = "auto"
     POLL_INTERVAL = 3
-    MAX_POLL_TIME = 120
+    MAX_POLL_TIME = int(os.getenv("MUREKA_MAX_POLL_TIME", "900"))
     SUBMIT_TIMEOUT = 30
     DOWNLOAD_TIMEOUT = 60
 

@@ -1286,9 +1286,9 @@
                   </label>
                   <select class="form-control custom-input" id="duration">
                     <option value="30">30 秒</option>
-                    <option value="60">1 分钟</option>
+                    <option value="60" selected>1 分钟</option>
                     <option value="120">2 分钟</option>
-                    <option value="180" selected>3 分钟</option>
+                    <option value="180">3 分钟</option>
                     <option value="240">4 分钟</option>
                     <option value="300">5 分钟</option>
                   </select>
@@ -1537,12 +1537,12 @@
     </section>
   </div>
 
-  <!-- 错误详情弹窗 -->
+  <!-- 生成失败提示 -->
   <div class="error-dialog-overlay" id="errorDialogOverlay">
     <div class="error-dialog">
       <h3><i class="fas fa-exclamation-triangle"></i> 生成失败</h3>
       <p style="color:#e74c3c;margin-bottom:10px;" id="errorDialogSummary"></p>
-      <div class="error-detail" id="errorDialogDetail"></div>
+      <div class="error-detail" id="errorDialogDetail" style="display:none;"></div>
       <button class="btn-close-dialog" onclick="$('#errorDialogOverlay').removeClass('show')">
         <i class="fas fa-times"></i> 关闭
       </button>
@@ -1895,11 +1895,26 @@
           $generationStatusPercent.text(Math.round(displayProgress) + "%");
           $generationProgressBar.css("width", Math.max(0, Math.min(100, displayProgress)) + "%");
         }
+        function getUserFacingMusicError(error) {
+          if (error && error.name === "AbortError") {
+            return "音乐生成时间较长，请稍后重试。";
+          }
+          var status = error && error.status;
+          var data = error && error.data;
+          var message = (data && data.error) || (error && error.message) || "";
+          if (status === 400 || message.indexOf("参数") !== -1 || message.indexOf("duration") !== -1) {
+            return "请选择支持的音乐时长后再试。";
+          }
+          if (message.indexOf("超时") !== -1) {
+            return "音乐生成时间较长，请稍后重试。";
+          }
+          return "音乐暂时没有生成成功，请稍后重试。";
+        }
         renderGenerationStatus(latestProgress, "正在提交音乐生成任务...");
 
-        // AbortController: 5 分钟超时
+        // AbortController: 15 分钟超时
         var controller = new AbortController();
-        var timeoutId = setTimeout(function() { controller.abort(); }, 300000);
+        var timeoutId = setTimeout(function() { controller.abort(); }, 15 * 60 * 1000);
 
         // 轮询进度
         var progressPoll = setInterval(function() {
@@ -1925,11 +1940,10 @@
           if (!response.ok) {
             clearInterval(progressPoll);
             var errData = {};
-            var errDetail = '';
-            try { errData = await response.json(); errDetail = JSON.stringify(errData, null, 2); } catch (_) {}
-            var err = new Error(errData.error || "音乐生成失败 (" + response.status + ")");
+            try { errData = await response.json(); } catch (_) {}
+            console.error("音乐生成请求失败", response.status, errData);
+            var err = new Error(getUserFacingMusicError({ status: response.status, data: errData }));
             err.status = response.status;
-            err.details = errDetail;
             throw err;
           }
 
@@ -1940,7 +1954,7 @@
 
           if (data.status !== "completed") {
             var waitTaskId = data.task_id || clientTaskId;
-            var deadline = Date.now() + 5 * 60 * 1000;
+            var deadline = Date.now() + 15 * 60 * 1000;
             while (Date.now() < deadline) {
               var pollResp = await fetch("/api/progress/" + waitTaskId + "/", { cache: "no-store" });
               if (pollResp.ok) {
@@ -2000,23 +2014,13 @@
         } catch (error) {
           clearTimeout(timeoutId);
           clearInterval(progressPoll);
-          renderGenerationStatus(latestProgress, error.message || "生成失败", true);
+          var userMessage = getUserFacingMusicError(error);
+          console.error("音乐生成失败", error);
+          renderGenerationStatus(latestProgress, userMessage, true);
           $btn.prop("disabled", false).html('<i class="fas fa-magic mr-2"></i> 生成冥想音乐');
-          if (error.name === "AbortError") {
-            alert("生成超时，请重试");
-          } else {
-            alert("生成失败: " + (error.message || "网络异常，请检查后端服务是否运行"));
-            // 显示错误详情弹窗
-            $("#errorDialogSummary").text(error.message || '未知错误');
-            $("#errorDialogDetail").text(
-              '请求接口: POST /api/generate/\n'
-              + '状态: ' + (error.status || '网络错误') + '\n'
-              + '错误信息: ' + (error.message || '无') + '\n'
-              + '详情: ' + (error.details || error.stack || '无额外信息') + '\n'
-              + '时间: ' + new Date().toLocaleString()
-            );
-            $("#errorDialogOverlay").addClass("show");
-          }
+          $("#errorDialogSummary").text(userMessage);
+          $("#errorDialogDetail").text("").hide();
+          $("#errorDialogOverlay").addClass("show");
         }
       });
 

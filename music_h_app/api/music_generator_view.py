@@ -37,11 +37,18 @@ class GenerateMusicView(APIView):
     def post(self, request):
         serializer = MusicGenerationSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            logger.info("Invalid music generation request: %s", serializer.errors)
+            return Response(
+                {
+                    "error": "请求参数不正确，请检查音乐描述和时长后重试。",
+                    "code": "invalid_request",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         data = serializer.validated_data
         original_prompt = data["prompt"]
-        duration = min(data.get("duration", 30), 120)
+        duration = min(data.get("duration", 60), 300)
         audio_format = data.get("format", "mp3")
         tone = data.get("tone")
         user_group = data.get("user_group")

@@ -21,9 +21,9 @@ class MusicGenerationSerializer(serializers.Serializer):
     )
     duration = serializers.IntegerField(
         min_value=5,
-        max_value=120,
-        default=30,
-        help_text="音乐时长(秒), 5-120秒"
+        max_value=300,
+        default=60,
+        help_text="音乐时长(秒), 5-300秒"
     )
     format = serializers.ChoiceField(
         choices=['mp3', 'wav'],

@@ -513,12 +513,12 @@
     
     <div class="notification" id="notification">错误消息示例</div>
 
-    <!-- 错误详情弹窗 -->
+    <!-- 生成失败提示 -->
     <div class="error-dialog-overlay" id="errorDialogOverlay">
         <div class="error-dialog">
             <h3><i class="fas fa-exclamation-triangle"></i> 生成失败</h3>
             <p style="color:#e74c3c;margin-bottom:10px;" id="errorDialogSummary"></p>
-            <div class="error-detail" id="errorDialogDetail"></div>
+            <div class="error-detail" id="errorDialogDetail" style="display:none;"></div>
             <button class="btn-close-dialog" onclick="document.getElementById('errorDialogOverlay').classList.remove('show')">
                 <i class="fas fa-times"></i> 关闭
             </button>
@@ -605,6 +605,18 @@
             if (text.includes('提交')) return 2;
             if (text.includes('创建') || text.includes('排队')) return 1;
             return 0;
+        }
+
+        function getUserFacingMusicError(error) {
+            const status = error && error.status;
+            const message = (error && error.message) || '';
+            if (status === 400 || message.includes('参数') || message.includes('duration')) {
+                return '请选择支持的音乐时长后再试。';
+            }
+            if (message.includes('超时')) {
+                return '音乐生成时间较长，请稍后重试。';
+            }
+            return '音乐暂时没有生成成功，请稍后重试。';
         }
         
         // 处理后端返回的 JSON 音频数据
@@ -750,7 +762,7 @@
                 updateProgress(2, "发送生成请求...");
 
                 const waitForMusicResult = async (taskId) => {
-                    const deadline = Date.now() + 5 * 60 * 1000;
+                    const deadline = Date.now() + 15 * 60 * 1000;
                     while (Date.now() < deadline) {
                         try {
                             const resp = await fetch(`/api/progress/${taskId}/`, { cache: 'no-store' });
@@ -800,19 +812,15 @@
                 console.log('收到响应，状态:', response.status);
 
                 if (!response.ok) {
-                    let errorMessage = `请求失败: ${response.status} ${response.statusText}`;
-                    let errorDetails = '';
+                    let errorData = {};
                     try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.error || errorData.details || errorMessage;
-                        errorDetails = JSON.stringify(errorData, null, 2);
-                        console.error('服务器错误:', errorData);
+                        errorData = await response.json();
+                        console.error('服务器错误:', response.status, errorData);
                     } catch (e) {
                         console.error('无法解析错误响应');
                     }
-                    const err = new Error(errorMessage);
+                    const err = new Error(getUserFacingMusicError({ status: response.status, message: errorData.error || '' }));
                     err.status = response.status;
-                    err.details = errorDetails;
                     throw err;
                 }
 
@@ -850,16 +858,12 @@
                 if (vizInterval) {
                     clearInterval(vizInterval);
                 }
-                showNotification(`生成失败: ${error.message}`);
+                const userMessage = getUserFacingMusicError(error);
+                showNotification(userMessage);
 
-                // 显示错误详情弹窗
-                document.getElementById('errorDialogSummary').textContent = error.message || '未知错误';
-                document.getElementById('errorDialogDetail').textContent =
-                    '请求接口: POST /api/generate/\n'
-                    + '状态: ' + (error.status || '网络错误') + '\n'
-                    + '错误信息: ' + (error.message || '无') + '\n'
-                    + '详情: ' + (error.details || error.stack || '无额外信息') + '\n'
-                    + '时间: ' + new Date().toLocaleString();
+                document.getElementById('errorDialogSummary').textContent = userMessage;
+                document.getElementById('errorDialogDetail').textContent = '';
+                document.getElementById('errorDialogDetail').style.display = 'none';
                 document.getElementById('errorDialogOverlay').classList.add('show');
 
                 // 启用按钮
