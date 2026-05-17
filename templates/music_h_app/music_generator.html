@@ -595,6 +595,17 @@
         function getGenerationDetail() {
             return '后台生成中，完成后会自动出现播放器。';
         }
+
+        function getProgressStage(message) {
+            const text = message || '';
+            if (text.includes('完成')) return 6;
+            if (text.includes('保存')) return 5;
+            if (text.includes('下载')) return 4;
+            if (text.includes('生成中') || text.includes('正在生成') || text.includes('任务已提交')) return 3;
+            if (text.includes('提交')) return 2;
+            if (text.includes('创建') || text.includes('排队')) return 1;
+            return 0;
+        }
         
         // 处理后端返回的 JSON 音频数据
         function handleAudioJson(data, format) {
@@ -719,6 +730,20 @@
             let vizInterval = null;
             let latestProgress = 2;
             let latestMessage = "正在提交生成请求...";
+            let latestStage = getProgressStage(latestMessage);
+
+            function applyProgressUpdate(progressValue, message) {
+                const numericProgress = Number(progressValue);
+                const incomingProgress = Number.isFinite(numericProgress) ? numericProgress : latestProgress;
+                const incomingStage = getProgressStage(message);
+                const isStale = incomingProgress < latestProgress || incomingStage < latestStage;
+                latestProgress = Math.max(latestProgress, incomingProgress);
+                if (!isStale) {
+                    latestStage = Math.max(latestStage, incomingStage);
+                    latestMessage = message || latestMessage;
+                }
+                updateProgress(latestProgress, latestMessage, getGenerationDetail());
+            }
 
             try {
                 console.log('发送 API 请求到 /api/generate/');
@@ -732,9 +757,7 @@
                             if (resp.ok) {
                                 const progress = await resp.json();
                                 if (progress.message) {
-                                    latestProgress = Math.max(latestProgress, Number(progress.progress) || 0);
-                                    latestMessage = progress.message;
-                                    updateProgress(latestProgress, latestMessage, getGenerationDetail());
+                                    applyProgressUpdate(progress.progress, progress.message);
                                 }
                                 if (progress.status === 'completed') {
                                     return {
@@ -796,8 +819,7 @@
                 const initialData = await response.json();
                 console.log('JSON 响应:', initialData);
                 if (initialData.message) {
-                    latestMessage = initialData.message;
-                    updateProgress(latestProgress, latestMessage, getGenerationDetail());
+                    applyProgressUpdate(latestProgress, initialData.message);
                 }
 
                 const data = initialData.status === 'completed'

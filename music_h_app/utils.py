@@ -86,11 +86,33 @@ class ProgressTracker:
                 next_progress = int(data.get('progress') or 0)
             next_progress = max(0, min(100, next_progress))
 
+            def message_stage(value):
+                text = value or ''
+                if '完成' in text:
+                    return 6
+                if '保存' in text:
+                    return 5
+                if '下载' in text:
+                    return 4
+                if '生成中' in text or '正在生成' in text or '任务已提交' in text:
+                    return 3
+                if '提交' in text:
+                    return 2
+                if '创建' in text or '排队' in text:
+                    return 1
+                return 0
+
             current_progress = int(data.get('progress') or 0)
             current_status = data.get('status') or 'processing'
-            if status == current_status == 'processing' and next_progress < current_progress:
-                # Multiple workers/callbacks can report slightly older stages; never move the UI backwards.
+            current_stage = message_stage(data.get('message'))
+            next_stage = message_stage(message)
+            is_processing_update = status == current_status == 'processing'
+            is_stale_progress = is_processing_update and next_progress < current_progress
+            is_stale_message = is_processing_update and next_stage < current_stage
+            if is_stale_progress:
+                # Multiple workers/callbacks can report slightly older progress; never move the UI backwards.
                 next_progress = current_progress
+            if is_stale_message:
                 message = data.get('message') or message
 
             data.update({

@@ -1865,13 +1865,33 @@
         var $generationStatusPercent = $("#generationStatusPercent");
         var $generationProgressBar = $("#generationProgressBar");
         var latestProgress = 2;
+        var latestStatusMessage = "正在提交音乐生成任务...";
+        var latestStatusStage = 1;
+        function getGenerationStage(message) {
+          var text = message || "";
+          if (text.indexOf("完成") !== -1) return 6;
+          if (text.indexOf("保存") !== -1) return 5;
+          if (text.indexOf("下载") !== -1) return 4;
+          if (text.indexOf("生成中") !== -1 || text.indexOf("正在生成") !== -1 || text.indexOf("任务已提交") !== -1) return 3;
+          if (text.indexOf("提交") !== -1) return 2;
+          if (text.indexOf("创建") !== -1 || text.indexOf("排队") !== -1) return 1;
+          return latestStatusStage;
+        }
         function renderGenerationStatus(progress, message, isError) {
           var numericProgress = Number(progress);
           if (!Number.isFinite(numericProgress)) numericProgress = latestProgress;
-          latestProgress = isError ? latestProgress : Math.max(latestProgress, numericProgress);
+          var incomingStage = getGenerationStage(message);
+          var isStale = !isError && (numericProgress < latestProgress || incomingStage < latestStatusStage);
+          if (!isError) {
+            latestProgress = Math.max(latestProgress, numericProgress);
+            if (!isStale) {
+              latestStatusStage = Math.max(latestStatusStage, incomingStage);
+              latestStatusMessage = message || latestStatusMessage;
+            }
+          }
           var displayProgress = latestProgress;
           $generationStatus.toggleClass("text-danger", !!isError).show();
-          $generationStatusText.text(message || "正在生成音乐...");
+          $generationStatusText.text(isError ? (message || "生成失败") : latestStatusMessage);
           $generationStatusPercent.text(Math.round(displayProgress) + "%");
           $generationProgressBar.css("width", Math.max(0, Math.min(100, displayProgress)) + "%");
         }
