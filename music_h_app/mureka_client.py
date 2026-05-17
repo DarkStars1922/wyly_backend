@@ -85,12 +85,12 @@ class MurekaMusicClient:
         """
         # Step 1: 提交任务
         if progress_callback:
-            progress_callback(10, "正在提交音乐生成任务...")
+            progress_callback(15, "正在提交音乐生成任务...")
         task_id = self._submit_task(prompt)
         logger.info("Mureka task submitted: id=%s, model=%s", task_id, self.model)
 
         if progress_callback:
-            progress_callback(20, f"任务已提交 ({task_id[:8]}...)，等待生成...")
+            progress_callback(25, "任务已提交，正在生成音乐...")
 
         # Step 2: 轮询等待完成
         result_data = self._poll_until_complete(task_id, progress_callback)
@@ -199,7 +199,7 @@ class MurekaMusicClient:
             if progress_callback:
                 progress_pct = 25 + int((elapsed / self.MAX_POLL_TIME) * 55)
                 progress_pct = min(80, max(25, progress_pct))
-                progress_callback(progress_pct, f"音乐生成中... ({int(elapsed)}秒)")
+                progress_callback(progress_pct, "音乐生成中...")
 
             time.sleep(self.POLL_INTERVAL)
 

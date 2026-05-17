@@ -79,9 +79,23 @@ class ProgressTracker:
             data = self.progress.get(task_id) or self._load(task_id)
             if data is None:
                 return
+
+            try:
+                next_progress = int(float(progress))
+            except (TypeError, ValueError):
+                next_progress = int(data.get('progress') or 0)
+            next_progress = max(0, min(100, next_progress))
+
+            current_progress = int(data.get('progress') or 0)
+            current_status = data.get('status') or 'processing'
+            if status == current_status == 'processing' and next_progress < current_progress:
+                # Multiple workers/callbacks can report slightly older stages; never move the UI backwards.
+                next_progress = current_progress
+                message = data.get('message') or message
+
             data.update({
                 'status': status,
-                'progress': progress,
+                'progress': next_progress,
                 'message': message
             })
             self.progress[task_id] = data
@@ -384,7 +398,7 @@ class MusicGenerationService:
         music_prompt = optimized_prompt_text
 
         if task_id:
-            progress_tracker.update(task_id, 20, "正在调用音乐生成 API...")
+            progress_tracker.update(task_id, 15, "正在提交音乐生成任务...")
 
         # Step 2: 调用 Mureka API（异步：提交→轮询→下载，在客户端内部完成）
         from .mureka_client import MurekaError
@@ -407,7 +421,7 @@ class MusicGenerationService:
             raise
 
         if task_id:
-            progress_tracker.update(task_id, 85, "正在保存音频文件...")
+            progress_tracker.update(task_id, 90, "正在保存音频文件...")
 
         audio_bytes = result["audio_bytes"]
 
