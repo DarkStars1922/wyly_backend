@@ -703,8 +703,42 @@
                 console.log('发送 API 请求到 /api/generate/');
                 updateProgress(2, "发送生成请求...");
 
-                // 发起生成请求
-                const generatePromise = fetch('/api/generate/', {
+                const waitForMusicResult = async (taskId) => {
+                    const deadline = Date.now() + 5 * 60 * 1000;
+                    while (Date.now() < deadline) {
+                        try {
+                            const resp = await fetch(`/api/progress/${taskId}/`, { cache: 'no-store' });
+                            if (resp.ok) {
+                                const progress = await resp.json();
+                                if (progress.message) {
+                                    updateProgress(progress.progress || 0, progress.message);
+                                }
+                                if (progress.status === 'completed') {
+                                    return {
+                                        ...progress,
+                                        status: 'completed',
+                                        task_id: taskId,
+                                        audio_url: progress.audio_url || progress.file_url
+                                    };
+                                }
+                                if (progress.status === 'error') {
+                                    throw new Error(progress.message || '音乐生成失败');
+                                }
+                            }
+                        } catch (e) {
+                            if (e.message && e.message !== 'Failed to fetch') throw e;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                    }
+                    throw new Error('生成超时，请稍后在网络较稳定时重试');
+                };
+
+                // 启动视觉反馈
+                vizInterval = setInterval(() => {
+                    updateVisualizer(visualizer, Math.random() * 0.5 + 0.3);
+                }, 100);
+
+                const response = await fetch('/api/generate/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -716,43 +750,6 @@
                         client_task_id: clientTaskId
                     })
                 });
-
-                // 等一小段时间让服务端创建任务
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // 启动视觉反馈
-                vizInterval = setInterval(() => {
-                    updateVisualizer(visualizer, Math.random() * 0.5 + 0.3);
-                }, 100);
-
-                // 开始轮询服务端进度
-                progressPollInterval = setInterval(async () => {
-                    try {
-                        const resp = await fetch(`/api/progress/${clientTaskId}/`);
-                        if (!resp.ok) return;
-                        const progress = await resp.json();
-                        if (progress.status === 'error') {
-                            console.error('服务端报告错误:', progress.message);
-                            return;
-                        }
-                        updateProgress(progress.progress, progress.message);
-                    } catch (e) {
-                        // 忽略轮询网络错误
-                    }
-                }, 1500);
-
-                // 等待实际请求完成
-                const response = await generatePromise;
-
-                // 清除轮询和视觉效果
-                if (progressPollInterval) {
-                    clearInterval(progressPollInterval);
-                    progressPollInterval = null;
-                }
-                if (vizInterval) {
-                    clearInterval(vizInterval);
-                    vizInterval = null;
-                }
 
                 console.log('收到响应，状态:', response.status);
 
@@ -773,14 +770,20 @@
                     throw err;
                 }
 
-                updateProgress(98, "处理完成！");
+                const initialData = await response.json();
+                console.log('JSON 响应:', initialData);
 
-                // 解析 JSON 响应
-                const data = await response.json();
-                console.log('JSON 响应:', data);
+                const data = initialData.status === 'completed'
+                    ? initialData
+                    : await waitForMusicResult(initialData.task_id || clientTaskId);
 
-                if (data.status !== 'completed') {
-                    throw new Error(data.error || '生成失败');
+                if (!data.audio_url) {
+                    throw new Error('生成完成但未返回音频地址');
+                }
+
+                if (vizInterval) {
+                    clearInterval(vizInterval);
+                    vizInterval = null;
                 }
 
                 updateProgress(100, "生成完成！");

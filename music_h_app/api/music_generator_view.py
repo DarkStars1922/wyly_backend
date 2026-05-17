@@ -1,6 +1,7 @@
 import os
 import uuid
 import logging
+import threading
 
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -50,10 +51,10 @@ class GenerateMusicView(APIView):
 
         task_id = client_task_id or str(uuid.uuid4())
         progress_tracker.create_task(task_id)
-        progress_tracker.update(task_id, 2, "正在准备生成...")
+        progress_tracker.update(task_id, 2, "任务已创建，正在排队生成...")
 
         logger.info(
-            "Music generation request: prompt='%s', duration=%s, format=%s, "
+            "Music generation request queued: prompt='%s', duration=%s, format=%s, "
             "tone=%s, group=%s, emotion=%s, pre_optimized=%s, task=%s",
             original_prompt[:80],
             duration,
@@ -65,6 +66,43 @@ class GenerateMusicView(APIView):
             task_id,
         )
 
+        worker = threading.Thread(
+            target=self._run_generation,
+            name=f"music-generation-{task_id[:8]}",
+            kwargs={
+                "task_id": task_id,
+                "original_prompt": original_prompt,
+                "duration": duration,
+                "audio_format": audio_format,
+                "tone": tone,
+                "user_group": user_group,
+                "emotion": emotion,
+                "optimized_prompt": optimized_prompt,
+            },
+            daemon=True,
+        )
+        worker.start()
+
+        return Response(
+            {
+                "status": "processing",
+                "task_id": task_id,
+                "message": "音乐生成任务已开始，请通过进度接口查询结果",
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    def _run_generation(
+        self,
+        task_id,
+        original_prompt,
+        duration,
+        audio_format,
+        tone=None,
+        user_group=None,
+        emotion=None,
+        optimized_prompt=None,
+    ):
         try:
             file_path, filename, content_type, audio_bytes, metadata, file_url = (
                 self.service.generate(
@@ -81,43 +119,31 @@ class GenerateMusicView(APIView):
 
             if not os.path.exists(file_path):
                 progress_tracker.error(task_id, "音频文件未找到")
-                return Response(
-                    {"error": "音频文件未找到"}, status=status.HTTP_404_NOT_FOUND
-                )
-
-            media_url = file_url
+                logger.error("Generated music file missing: task=%s file=%s", task_id, file_path)
+                return
 
             logger.info("Music generation success: task=%s, file=%s", task_id, filename)
-            progress_tracker.complete(task_id, file_path, file_url)
-
-            return Response({
-                "status": "completed",
-                "task_id": task_id,
-                "audio_url": media_url,
-                "filename": filename,
-                "content_type": content_type,
-                "original_prompt": original_prompt,
-                "optimized_prompt": metadata.get("optimized_prompt", ""),
-                "was_optimized": metadata.get("was_optimized", False),
-                "optimization_method": metadata.get("optimization_method", "none"),
-                "music_duration_ms": metadata.get("music_duration_ms", 0),
-            })
+            progress_tracker.complete(
+                task_id,
+                file_path,
+                file_url,
+                audio_url=file_url,
+                filename=filename,
+                content_type=content_type,
+                original_prompt=original_prompt,
+                optimized_prompt=metadata.get("optimized_prompt", ""),
+                was_optimized=metadata.get("was_optimized", False),
+                optimization_method=metadata.get("optimization_method", "none"),
+                music_duration_ms=metadata.get("music_duration_ms", 0),
+            )
 
         except MurekaError as e:
             logger.error("Mureka API error [%s]: %s", e.code, e.message)
             progress_tracker.error(task_id, e.user_message)
-            return Response(
-                {"error": e.user_message, "code": e.code},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
         except Exception as e:
             logger.exception("Music generation failed")
             progress_tracker.error(task_id, str(e))
-            return Response(
-                {"error": "音乐生成失败，请稍后重试", "details": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
 
 class ProgressView(APIView):
@@ -126,7 +152,9 @@ class ProgressView(APIView):
     def get(self, request, task_id):
         progress = progress_tracker.get_progress(task_id)
         if progress is None:
-            return Response(
-                {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({
+                "status": "initializing",
+                "progress": 0,
+                "message": "任务正在排队或初始化...",
+            })
         return Response(progress)

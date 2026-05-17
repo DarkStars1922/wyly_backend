@@ -1878,9 +1878,9 @@
             signal: controller.signal,
           });
           clearTimeout(timeoutId);
-          clearInterval(progressPoll);
 
           if (!response.ok) {
+            clearInterval(progressPoll);
             var errData = {};
             var errDetail = '';
             try { errData = await response.json(); errDetail = JSON.stringify(errData, null, 2); } catch (_) {}
@@ -1890,10 +1890,40 @@
             throw err;
           }
 
-          const data = await response.json();
+          let data = await response.json();
 
           if (data.status !== "completed") {
-            var err = new Error(data.error || "生成失败");
+            var waitTaskId = data.task_id || clientTaskId;
+            var deadline = Date.now() + 5 * 60 * 1000;
+            while (Date.now() < deadline) {
+              var pollResp = await fetch("/api/progress/" + waitTaskId + "/", { cache: "no-store" });
+              if (pollResp.ok) {
+                var progress = await pollResp.json();
+                if (progress && progress.message) {
+                  $loadingText.text("进度 " + (progress.progress || 0) + "%: " + progress.message);
+                }
+                if (progress.status === "completed") {
+                  data = Object.assign({}, progress, {
+                    status: "completed",
+                    task_id: waitTaskId,
+                    audio_url: progress.audio_url || progress.file_url
+                  });
+                  break;
+                }
+                if (progress.status === "error") {
+                  var progressErr = new Error(progress.message || "生成失败");
+                  progressErr.details = JSON.stringify(progress, null, 2);
+                  throw progressErr;
+                }
+              }
+              await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+            }
+          }
+
+          clearInterval(progressPoll);
+
+          if (data.status !== "completed" || !data.audio_url) {
+            var err = new Error(data.error || "生成失败或未返回音频地址");
             err.details = JSON.stringify(data, null, 2);
             throw err;
           }

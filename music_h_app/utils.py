@@ -3,6 +3,7 @@ import uuid
 import io
 import os
 import time
+import json
 from dotenv import load_dotenv
 from django.conf import settings
 from deep_translator import GoogleTranslator
@@ -22,49 +23,117 @@ class ProgressTracker:
     def __init__(self):
         self.progress = {}
         self.lock = threading.Lock()
+        default_dir = os.path.join(str(settings.BASE_DIR), 'tmp', 'progress')
+        self.progress_dir = os.getenv('PROGRESS_TRACKER_DIR', default_dir)
+        os.makedirs(self.progress_dir, exist_ok=True)
+
+    def _task_path(self, task_id):
+        safe_task_id = ''.join(
+            c for c in str(task_id) if c.isalnum() or c in ('-', '_')
+        )[:128]
+        if not safe_task_id:
+            safe_task_id = 'invalid'
+        return os.path.join(self.progress_dir, f'{safe_task_id}.json')
+
+    def _save(self, task_id, data):
+        path = self._task_path(task_id)
+        tmp_path = f'{path}.{os.getpid()}.tmp'
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False)
+        os.replace(tmp_path, path)
+
+    def _load(self, task_id):
+        path = self._task_path(task_id)
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            return None
+
+    def _cleanup_old_files(self, max_age=86400):
+        now = time.time()
+        try:
+            for name in os.listdir(self.progress_dir):
+                if not name.endswith('.json'):
+                    continue
+                path = os.path.join(self.progress_dir, name)
+                if now - os.path.getmtime(path) > max_age:
+                    os.remove(path)
+        except OSError:
+            logger.warning('Failed to cleanup progress files', exc_info=True)
     
     def create_task(self, task_id):
+        data = {
+            'status': 'initializing',
+            'progress': 0,
+            'message': '初始化...',
+            'start_time': time.time()
+        }
         with self.lock:
-            self.progress[task_id] = {
-                'status': 'initializing',
-                'progress': 0,
-                'message': '初始化...',
-                'start_time': time.time()
-            }
+            self.progress[task_id] = data
+            self._save(task_id, data)
+        self._cleanup_old_files()
     
     def update(self, task_id, progress, message, status='processing'):
         with self.lock:
-            if task_id in self.progress:
-                self.progress[task_id].update({
-                    'status': status,
-                    'progress': progress,
-                    'message': message
-                })
+            data = self.progress.get(task_id) or self._load(task_id)
+            if data is None:
+                return
+            data.update({
+                'status': status,
+                'progress': progress,
+                'message': message
+            })
+            self.progress[task_id] = data
+            self._save(task_id, data)
     
-    def complete(self, task_id, file_path, file_url=None):
+    def complete(self, task_id, file_path, file_url=None, **extra):
         with self.lock:
-            if task_id in self.progress:
-                entry = {
-                    'status': 'completed',
-                    'progress': 100,
-                    'message': '生成完成',
-                    'file_path': file_path,
-                }
-                if file_url:
-                    entry['file_url'] = file_url
-                self.progress[task_id].update(entry)
+            data = self.progress.get(task_id) or self._load(task_id)
+            if data is None:
+                return
+            entry = {
+                'status': 'completed',
+                'progress': 100,
+                'message': '生成完成',
+                'file_path': file_path,
+            }
+            if file_url:
+                entry['file_url'] = file_url
+            entry.update(extra)
+            data.update(entry)
+            self.progress[task_id] = data
+            self._save(task_id, data)
     
     def error(self, task_id, error_message):
         with self.lock:
-            if task_id in self.progress:
-                self.progress[task_id].update({
-                    'status': 'error',
-                    'message': error_message
-                })
+            data = self.progress.get(task_id) or self._load(task_id)
+            if data is None:
+                data = {'start_time': time.time()}
+            data.update({
+                'status': 'error',
+                'progress': data.get('progress', 0),
+                'message': error_message
+            })
+            self.progress[task_id] = data
+            self._save(task_id, data)
     
     def get_progress(self, task_id):
         with self.lock:
-            return self.progress.get(task_id, None)
+            data = self.progress.get(task_id) or self._load(task_id)
+            if data is not None:
+                self.progress[task_id] = data
+            return data
+
+    def cleanup(self, task_id):
+        with self.lock:
+            self.progress.pop(task_id, None)
+            try:
+                os.remove(self._task_path(task_id))
+            except FileNotFoundError:
+                pass
+            except OSError:
+                logger.warning('Failed to remove progress file for task %s', task_id, exc_info=True)
 
 
 # 全局进度跟踪器
