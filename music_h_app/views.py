@@ -2,76 +2,94 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from json import JSONDecodeError
 from music_h_app.models import User
-from django.contrib.auth import logout
+from django.contrib.auth import authenticate, login, logout
+
+
+def _read_json_body(request):
+    try:
+        return json.loads(request.body or b"{}")
+    except (TypeError, JSONDecodeError):
+        return None
+
+
+def _api_error(message, status=400):
+    return JsonResponse({'success': False, 'message': message}, status=status)
+
 
 @csrf_exempt
 def register_user(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            print('收到注册信息:', data)  # 打印收到的数据
-            username = data.get('username')
-            email = data.get('email')
-            password = data.get('password')
-            confirm_password = data.get('confirm_password')
+    if request.method != 'POST':
+        return _api_error('请使用 POST 提交注册信息', status=405)
 
-            if password != confirm_password:
-                return JsonResponse({'success': False, 'message': '两次密码不一致'})
+    data = _read_json_body(request)
+    if data is None:
+        return _api_error('请求格式不正确，请刷新页面后重试')
 
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({'success': False, 'message': '用户名已存在'})
+    username = (data.get('username') or '').strip()
+    email = (data.get('email') or '').strip()
+    password = data.get('password') or ''
+    confirm_password = data.get('confirm_password') or ''
 
-            if User.objects.filter(email=email).exists():
-                return JsonResponse({'success': False, 'message': '邮箱已注册'})
+    if not username or not email or not password:
+        return _api_error('用户名、邮箱和密码不能为空')
 
-            user = User.objects.create_user(username=username, email=email, password=password)
-            user.save()
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
-    elif request.method == 'GET':
-        return JsonResponse({'success': False, 'message': '请使用POST提交注册信息'})
-    else:
-        return JsonResponse({'success': False, 'message': '不支持的请求方法'})
-    
+    if password != confirm_password:
+        return _api_error('两次密码不一致')
+
+    if User.objects.filter(username=username).exists():
+        return _api_error('用户名已存在')
+
+    if User.objects.filter(email=email).exists():
+        return _api_error('邮箱已注册')
+
+    try:
+        user = User.objects.create_user(username=username, email=email, password=password)
+    except Exception:
+        return _api_error('注册失败，请稍后重试', status=500)
+
+    return JsonResponse({'success': True, 'username': user.username})
+
+
 def register_page(request):
-    # 只负责渲染注册页面
     return render(request, 'music_h_app/register.html')
 
-from django.contrib.auth import authenticate, login
 
 @csrf_exempt
 def login_user(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            print('收到登录信息:', data)  # 打印收到的数据
-            username = data.get('username')
-            password = data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return JsonResponse({'success': True, 'username': user.username })
-            else:
-                return JsonResponse({'success': False, 'message': '用户名或密码错误'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
-    else:
-        return JsonResponse({'success': False, 'message': '仅支持POST'})
-    
+    if request.method != 'POST':
+        return _api_error('请使用 POST 提交登录信息', status=405)
+
+    data = _read_json_body(request)
+    if data is None:
+        return _api_error('请求格式不正确，请刷新页面后重试')
+
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+
+    if not username or not password:
+        return _api_error('请输入用户名和密码')
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return _api_error('用户名或密码错误')
+
+    login(request, user)
+    return JsonResponse({'success': True, 'username': user.username})
+
+
 def login_page(request):
-    # 登录页面
     return render(request, 'music_h_app/login.html')
 
 
 @csrf_exempt
 def logout_view(request):
-    if request.method == 'POST':
-        logout(request)
-        return JsonResponse({'success': True})
-    else:
-        return JsonResponse({'success': False, 'message': '仅支持 POST 请求'})
+    if request.method != 'POST':
+        return _api_error('请使用 POST 退出登录', status=405)
+
+    logout(request)
+    return JsonResponse({'success': True})
     
 # 其他页面视图
 def music_creation_page(request):

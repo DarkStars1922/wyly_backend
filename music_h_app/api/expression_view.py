@@ -8,7 +8,7 @@ from ..serializers import ExpressionSerializer
 from django.utils import timezone
 
 class ExpressionAPIView(APIView):
-    enderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
     template_name = 'music_h_app/expression.html'
 
     def get(self,request):
