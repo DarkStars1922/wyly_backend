@@ -1,13 +1,6 @@
-from pathlib import Path
-
-from django.conf import settings
 from django.http import JsonResponse
-from django.templatetags.static import static
 from django.views import View
 
-
-DEFAULT_PHOTO_DIR = Path("graduation_wall/defaults")
-DEFAULT_PHOTO_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 GRADUATION_WALL_COPY = {
     "year": "2026",
@@ -40,40 +33,13 @@ GRADUATION_WALL_CAPTIONS = [
 ]
 
 
-def _default_photo_names():
-    candidates = []
-    for root in getattr(settings, "STATICFILES_DIRS", []):
-        candidates.append(Path(root) / DEFAULT_PHOTO_DIR)
-    static_root = getattr(settings, "STATIC_ROOT", None)
-    if static_root:
-        candidates.append(Path(static_root) / DEFAULT_PHOTO_DIR)
-
-    names = []
-    seen = set()
-    for directory in candidates:
-        if not directory.exists():
-            continue
-        for photo in sorted(directory.iterdir()):
-            if not photo.is_file() or photo.suffix.lower() not in DEFAULT_PHOTO_EXTENSIONS:
-                continue
-            if photo.name in seen:
-                continue
-            seen.add(photo.name)
-            names.append(photo.name)
-    return names
-
-
 def build_graduation_wall_config():
-    default_photos = [
-        static(f"{DEFAULT_PHOTO_DIR.as_posix()}/{name}")
-        for name in _default_photo_names()
-    ]
     return {
         "copy": GRADUATION_WALL_COPY,
         "sections": GRADUATION_WALL_SECTIONS,
         "captions": GRADUATION_WALL_CAPTIONS,
-        "default_photos": default_photos,
-        "photo_count": len(default_photos),
+        "default_photos": [],
+        "photo_count": 0,
         "upload_enabled": True,
         "poster_enabled": True,
     }
