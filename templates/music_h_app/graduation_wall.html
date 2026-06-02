@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>有你真好 · 2026 毕业回忆墙</title>
+
+    <!-- 字体：Cinzel 用于 2026 与拉丁标题；Ma Shan Zheng / Long Cang 用于书法；Noto Serif SC 用于中文正文 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Noto+Serif+SC:wght@200;300;500;700&family=Ma+Shan+Zheng&family=Long+Cang&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink: #03060f;
+            --deep-blue: #0a1530;
+            --night: #050a1c;
+            --star-blue: #7ea6ff;
+            --star-soft: #9db8ff;
+            --gold: #e6c47e;
+            --gold-bright: #ffe6a8;
+            --gold-soft: #f3e6bd;
+            --warm: #ffd6a0;
+            --rose: #ffc2cf;
+            --panel: rgba(8, 14, 30, 0.55);
+            --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            margin: 0; overflow: hidden; background-color: var(--ink);
+            font-family: 'Noto Serif SC', 'Helvetica Neue', Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; user-select: none; color: #fff;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #canvas-wrapper { position: relative; background: var(--ink); overflow: hidden; width: 100vw; height: 100vh; }
+        #canvas-container { width: 100%; height: 100%; display: block; }
+
+        /* 背景细微的深蓝星河氛围光，避免死黑 */
+        #canvas-wrapper::before {
+            content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+            background:
+                radial-gradient(ellipse 70% 50% at 50% 42%, rgba(40, 64, 130, 0.30), transparent 72%),
+                radial-gradient(ellipse 50% 40% at 50% 44%, rgba(120, 96, 60, 0.10), transparent 70%),
+                radial-gradient(ellipse 90% 70% at 50% 120%, rgba(20, 36, 80, 0.25), transparent 70%);
+        }
+        /* 一层缓慢呼吸的暖光，让画面“活着” */
+        #canvas-wrapper::after {
+            content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+            background: radial-gradient(circle at 50% 44%, rgba(230, 196, 126, 0.06), transparent 45%);
+            animation: breathe 9s ease-in-out infinite;
+        }
+        @keyframes breathe { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* --- 摄像头取景 + 手部骨架（默认隐藏，开启手势后淡入） --- */
+        #video-container {
+            position: absolute; top: 20px; right: 20px; width: 158px; height: 120px; z-index: 20;
+            border: 1px solid rgba(230, 196, 126, 0.40); border-radius: 14px; overflow: hidden;
+            transform: scaleX(-1); box-shadow: 0 6px 26px rgba(0,0,0,0.8); background: #000;
+            opacity: 0; transition: opacity 0.8s ease; pointer-events: none;
+        }
+        #video-container.live { opacity: 1; }
+        #video-container::after {
+            content: 'LIVE'; position: absolute; left: 8px; top: 6px; font-size: 9px; letter-spacing: 2px;
+            color: var(--gold-bright); transform: scaleX(-1); z-index: 12; text-shadow: 0 0 6px rgba(0,0,0,0.9);
+        }
+        #input-video { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; position: absolute; top: 0; left: 0; }
+        #skeleton-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
+
+        /* --- HTML 照片层（特写 / 照片墙 / 环廊 / 终章） --- */
+        #html-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 6, 15, 0.45); backdrop-filter: blur(5px);
+            z-index: 5; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.9s ease, background 0.9s ease;
+        }
+
+        /* 单张特写 + 轻文案 */
+        #zoom-stage {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            max-width: 86%; max-height: 88%;
+        }
+        #single-photo-view {
+            max-width: 76vw; max-height: 64vh; object-fit: contain;
+            border: 1px solid rgba(255,255,255,0.7); border-radius: 14px;
+            box-shadow: 0 0 70px rgba(230, 196, 126, 0.45), 0 18px 60px rgba(0,0,0,0.7);
+            opacity: 0; transform: scale(0.94);
+            animation: photoBreathe 1.6s var(--ease-soft) forwards;
+        }
+        @keyframes photoBreathe {
+            0% { opacity: 0; transform: scale(0.94); filter: blur(8px); }
+            100% { opacity: 1; transform: scale(1); filter: blur(0); }
+        }
+        #zoom-caption {
+            margin-top: 28px; font-family: 'Long Cang', 'Noto Serif SC', cursive;
+            font-size: clamp(1.3rem, 3.6vw, 2.4rem); color: var(--gold-soft); letter-spacing: 0.12em;
+            text-align: center; opacity: 0; text-shadow: 0 0 20px rgba(0,0,0,0.7);
+            animation: softUp 1.8s ease 0.7s forwards; max-width: 80vw; line-height: 1.6;
+        }
+        #zoom-progress {
+            margin-top: 16px; font-size: 0.72rem; letter-spacing: 4px; color: rgba(255,255,255,0.45);
+            opacity: 0; animation: fadeIn 1.5s ease 1.6s forwards;
+        }
+
+        /* 照片墙：分组、留白、穿插小标题 */
+        #wall-view {
+            display: none; width: 100%; height: 100%;
+            overflow-y: auto; padding: 12vh 6vw 14vh; box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+        #wall-view::-webkit-scrollbar { width: 7px; }
+        #wall-view::-webkit-scrollbar-thumb { background: rgba(230,196,126,0.35); border-radius: 4px; }
+        .wall-title {
+            text-align: center; margin: 0 0 8vh; opacity: 0;
+            animation: softUp 1.4s ease 0.1s forwards;
+        }
+        .wall-title h2 {
+            font-family: 'Cinzel', serif; font-weight: 600; letter-spacing: 8px; margin: 0;
+            font-size: clamp(1.3rem, 3vw, 2.2rem);
+            background: linear-gradient(180deg, #fff, var(--gold)); -webkit-background-clip: text;
+            background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .wall-title p { margin: 12px 0 0; color: var(--star-soft); letter-spacing: 5px; font-size: 0.84rem; font-weight: 300; }
+
+        .wall-section { margin-bottom: 7vh; }
+        .wall-section-label {
+            text-align: center; font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+            font-size: clamp(1.3rem, 3.4vw, 2.1rem); color: var(--gold-soft); letter-spacing: 0.18em;
+            margin: 0 0 4vh; opacity: 0; transform: translateY(20px);
+            text-shadow: 0 0 22px rgba(230,196,126,0.25);
+        }
+        .wall-section-label.in { animation: softUp 1.6s var(--ease-soft) forwards; }
+        .wall-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 26px; max-width: 1180px; margin: 0 auto;
+        }
+        .meteor-img {
+            width: 100%; height: 220px; object-fit: cover;
+            border-radius: 12px; border: 1px solid rgba(230,196,126,0.45);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.55), inset 0 0 0 4px rgba(255,255,255,0.05);
+            opacity: 0; transform: translateY(40px) scale(0.96); filter: blur(6px);
+        }
+        .meteor-img.in { animation: riseUp 1.4s var(--ease-soft) forwards; }
+        @keyframes riseUp {
+            0% { opacity: 0; transform: translateY(40px) scale(0.96); filter: blur(6px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        .wall-end-hint {
+            text-align: center; margin-top: 6vh; color: rgba(255,255,255,0.55);
+            letter-spacing: 3px; font-size: 0.82rem; font-weight: 300; opacity: 0;
+            animation: fadeIn 2s ease 1s forwards;
+        }
+        .wall-end-hint .k { color: var(--gold-bright); }
+
+        /* --- 多维环形画廊（可选的一段） --- */
+        #ring-scene {
+            display: none; width: 86vw; height: 80vh;
+            position: absolute; top: 10vh; left: 7vw;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 18px; perspective: 2000px; z-index: 6;
+        }
+        .ring-cell { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; perspective: 800px; }
+        .ring-tilt { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; transform-style: preserve-3d; }
+        .ring-wrapper { width: 120px; height: 80px; position: relative; transform-style: preserve-3d; }
+        @keyframes spinRingNormal { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+        @keyframes spinRingReverse { from { transform: rotateY(360deg); } to { transform: rotateY(0deg); } }
+        .ring-img {
+            position: absolute; width: 100%; height: 100%; object-fit: cover;
+            border: 1px solid rgba(230, 196, 126, 0.7); border-radius: 6px;
+            box-shadow: 0 0 16px rgba(230, 196, 126, 0.45); backface-visibility: visible;
+        }
+        #ring-hint {
+            position: absolute; bottom: 4vh; left: 0; width: 100%; text-align: center;
+            color: rgba(255,255,255,0.6); letter-spacing: 3px; font-size: 0.82rem; z-index: 7;
+        }
+        #ring-hint .k { color: var(--gold-bright); }
+
+        /* --- 终章：2026 / 毕业快乐 / 有你真好 --- */
+        #finale-view {
+            display: none; position: absolute; inset: 0; z-index: 7; overflow: hidden;
+            flex-direction: column; justify-content: center; align-items: center;
+            pointer-events: none;
+        }
+        #finale-rays {
+            position: absolute; inset: -30%; z-index: -1;
+            background: conic-gradient(from 0deg at 50% 48%,
+                rgba(230,196,126,0.0) 0deg, rgba(230,196,126,0.10) 12deg, rgba(230,196,126,0.0) 24deg,
+                rgba(255,255,255,0.0) 90deg, rgba(126,166,255,0.08) 110deg, rgba(255,255,255,0.0) 130deg,
+                rgba(230,196,126,0.0) 200deg, rgba(230,196,126,0.10) 220deg, rgba(230,196,126,0.0) 240deg);
+            opacity: 0; animation: rayspin 48s linear infinite;
+        }
+        @keyframes rayspin { to { transform: rotate(360deg); } }
+        .finale-on #finale-rays { animation: rayspin 48s linear infinite, fadeIn 4s ease 0.4s forwards; }
+
+        .finale-year {
+            font-family: 'Cinzel', serif; font-weight: 800;
+            font-size: clamp(4.5rem, 18vw, 14rem); line-height: 0.95; margin: 0;
+            letter-spacing: 0.04em; opacity: 0;
+            background: linear-gradient(180deg, #fff 0%, var(--gold-bright) 45%, var(--gold) 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 60px rgba(230,196,126,0.35); transform: translateY(30px) scale(0.92);
+            filter: drop-shadow(0 0 28px rgba(230, 196, 126, 0.5));
+        }
+        .finale-zh {
+            font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+            font-size: clamp(2.4rem, 9vw, 6.4rem); line-height: 1.1; margin: 0.18em 0 0;
+            color: var(--gold-bright); letter-spacing: 0.14em; opacity: 0;
+            text-shadow: 0 0 30px rgba(230,196,126,0.55), 0 4px 18px rgba(0,0,0,0.8);
+            transform: translateY(34px) scale(0.94);
+        }
+        .finale-sub {
+            font-family: 'Long Cang', 'Noto Serif SC', cursive;
+            font-size: clamp(2rem, 8vw, 5rem); margin: 0.22em 0 0; color: #fff; opacity: 0;
+            letter-spacing: 0.2em; text-shadow: 0 0 26px rgba(255,255,255,0.5);
+            transform: translateY(28px);
+        }
+        .finale-meta { margin-top: 5vh; color: var(--gold-soft); letter-spacing: 6px; font-size: 0.82rem; opacity: 0; font-weight: 300; }
+        .finale-actions {
+            margin-top: 3.2vh; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+            opacity: 0; pointer-events: none;
+        }
+        .finale-actions.in { opacity: 1; pointer-events: auto; animation: fadeIn 1.6s ease forwards; }
+
+        /* 终章逐句揭示（由 JS 添加类触发） */
+        .reveal-year .finale-year { animation: revealGlow 2s var(--ease-soft) forwards; }
+        .reveal-zh   .finale-zh   { animation: revealGlow 2s var(--ease-soft) forwards; }
+        .reveal-sub  .finale-sub  { animation: revealGlow 2s var(--ease-soft) forwards; }
+        .reveal-sub  .finale-meta { animation: fadeIn 2.4s ease 0.8s forwards; }
+
+        @keyframes revealGlow {
+            0% { opacity: 0; transform: translateY(34px) scale(0.92); filter: blur(10px); }
+            55% { opacity: 1; filter: blur(0); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes softUp { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* 飘落金箔花瓣（终章 JS 注入） */
+        .petal {
+            position: absolute; top: -8vh; width: 12px; height: 12px; border-radius: 60% 0 60% 0;
+            opacity: 0; pointer-events: none; will-change: transform; z-index: 8;
+        }
+        @keyframes petalFall {
+            0% { opacity: 0; transform: translateY(-10vh) translateX(0) rotate(0deg); }
+            8% { opacity: 0.85; }
+            100% { opacity: 0; transform: translateY(112vh) translateX(var(--drift, 60px)) rotate(540deg); }
+        }
+
+        /* 状态控制类 */
+        .show-zoom #html-overlay { opacity: 1; pointer-events: auto; }
+        .show-zoom #zoom-stage { display: flex; }
+        .show-wall #html-overlay { opacity: 1; pointer-events: auto; background: rgba(3, 6, 15, 0.92); backdrop-filter: blur(14px); }
+        .show-wall #wall-view { display: block; }
+        .show-ring #html-overlay { opacity: 1; pointer-events: auto; background: rgba(3, 6, 15, 0.72); }
+        .show-ring #ring-scene { display: grid; }
+        .show-ring #ring-hint { display: block; }
+        .show-finale #html-overlay {
+            opacity: 1; pointer-events: none; backdrop-filter: none;
+            background: radial-gradient(ellipse 90% 80% at 50% 48%, rgba(3,6,15,0) 26%, rgba(3,6,15,0.72) 100%);
+        }
+        .show-finale #finale-view { display: flex; }
+
+        /* --- 顶部标题 --- */
+        #title-bar {
+            position: absolute; top: 26px; left: 0; width: 100%; text-align: center; z-index: 9;
+            pointer-events: none; transition: opacity 0.8s;
+        }
+        #title-bar .t-main {
+            font-family: 'Cinzel', serif; font-weight: 600; letter-spacing: 7px; font-size: 1rem;
+            color: var(--gold-soft); text-shadow: 0 2px 14px rgba(0,0,0,0.9);
+        }
+        #title-bar .t-sub {
+            margin-top: 6px; font-size: 0.92rem; letter-spacing: 8px; color: rgba(255,255,255,0.62);
+            font-family: 'Ma Shan Zheng','Noto Serif SC',serif;
+        }
+        .hide-chrome #title-bar, .hide-chrome #ui-layer { opacity: 0; }
+
+        /* --- 左下 陪伴式引导 --- */
+        #ui-layer {
+            position: absolute; bottom: 30px; left: 30px; z-index: 10; pointer-events: none;
+            color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.9); transition: opacity 0.6s; max-width: 380px;
+        }
+        .guide {
+            font-size: 0.84rem; color: #e8e8ee; line-height: 2;
+            background: var(--panel); padding: 18px 22px; border-radius: 16px;
+            border-left: 2px solid var(--gold); backdrop-filter: blur(10px);
+        }
+        .guide b { color: var(--gold-bright); letter-spacing: 1px; font-weight: 500; }
+        .guide .hl { color: var(--gold-bright); }
+        .guide .dim { color: #8893ad; font-size: 0.74rem; }
+        #status-text {
+            margin-bottom: 14px; font-size: 1rem; color: #fff; display: flex; align-items: center; gap: 10px;
+            font-weight: 300; letter-spacing: 0.5px;
+        }
+        .status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); display: inline-block; box-shadow: 0 0 10px var(--gold); transition: 0.4s; flex-shrink: 0; }
+
+        /* --- 底部控制条 --- */
+        #control-bar {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 12;
+            display: flex; gap: 9px; align-items: center; flex-wrap: wrap; justify-content: center;
+            max-width: 92vw;
+        }
+        .ctrl-btn {
+            pointer-events: auto; background: rgba(230,196,126,0.07); border: 1px solid rgba(230,196,126,0.38);
+            color: var(--gold-soft); padding: 10px 17px; cursor: pointer; border-radius: 30px;
+            font-size: 0.8rem; letter-spacing: 1px; transition: 0.28s; font-family: 'Noto Serif SC', sans-serif;
+            white-space: nowrap;
+        }
+        .ctrl-btn:hover { background: var(--gold); color: #1a1300; box-shadow: 0 0 22px rgba(230,196,126,0.45); }
+        .ctrl-btn.icon { padding: 10px 14px; }
+        .ctrl-sep { width: 1px; height: 22px; background: rgba(255,255,255,0.16); margin: 0 2px; }
+
+        /* --- 右下 上传 --- */
+        #upload-zone { position: absolute; bottom: 32px; right: 30px; z-index: 12; text-align: right; }
+        #upload-btn {
+            pointer-events: auto; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.22);
+            color: #fff; padding: 12px 24px; cursor: pointer; border-radius: 30px; font-size: 0.78rem;
+            transition: 0.3s; letter-spacing: 1px; font-family: 'Noto Serif SC', sans-serif;
+        }
+        #upload-btn:hover { background: #fff; color: #000; box-shadow: 0 0 25px rgba(255,255,255,0.4); }
+        #photo-count { display: block; margin-top: 8px; font-size: 0.7rem; color: var(--gold-soft); letter-spacing: 2px; }
+        #file-input, #audio-input { display: none; }
+
+        /* --- 加载 / 进入屏 --- */
+        #loading-screen {
+            position: absolute; inset: 0; background: radial-gradient(ellipse at center, #060b1c 0%, #02040c 82%);
+            z-index: 99; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: var(--gold); text-align: center; transition: opacity 1s ease; padding: 24px;
+        }
+        .spinner { border: 3px solid rgba(230,196,126,0.22); border-top: 3px solid var(--gold); border-radius: 50%; width: 42px; height: 42px; animation: spin 1s linear infinite; margin-bottom: 22px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-text { letter-spacing: 4px; font-weight: 300; line-height: 1.8; }
+
+        #entry-block { display: none; flex-direction: column; align-items: center; max-width: 560px; }
+        #entry-block .eb-kicker {
+            font-family: 'Cinzel', serif; font-weight: 600; letter-spacing: 9px; font-size: 0.85rem;
+            color: var(--star-soft); margin-bottom: 14px;
+        }
+        #entry-block .eb-title {
+            font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif; letter-spacing: 6px; font-size: clamp(2.2rem, 7vw, 3.4rem);
+            background: linear-gradient(180deg, #fff, var(--gold)); -webkit-background-clip: text;
+            background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 6px;
+        }
+        #entry-block .eb-sub { color: var(--gold-soft); letter-spacing: 4px; font-size: 0.9rem; margin-bottom: 26px; }
+
+        /* 进入屏内的音乐选择 */
+        .music-pick { width: 100%; margin-bottom: 24px; }
+        .music-pick .mp-label { color: rgba(255,255,255,0.5); letter-spacing: 3px; font-size: 0.72rem; margin-bottom: 12px; }
+        .music-options { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .music-opt {
+            cursor: pointer; pointer-events: auto; padding: 12px 18px; border-radius: 14px;
+            border: 1px solid rgba(230,196,126,0.3); background: rgba(230,196,126,0.05);
+            color: var(--gold-soft); font-size: 0.8rem; letter-spacing: 1px; transition: 0.25s;
+            font-family: 'Noto Serif SC', sans-serif; text-align: center; min-width: 132px;
+        }
+        .music-opt .mo-title { font-size: 0.92rem; color: #fff; margin-bottom: 4px; }
+        .music-opt .mo-desc { font-size: 0.66rem; color: #8893ad; line-height: 1.5; letter-spacing: 0; }
+        .music-opt.active { border-color: var(--gold); background: rgba(230,196,126,0.16); box-shadow: 0 0 20px rgba(230,196,126,0.25); }
+        .music-opt.active .mo-title { color: var(--gold-bright); }
+        .music-opt.disabled { opacity: 0.42; cursor: not-allowed; filter: grayscale(0.3); }
+        .music-opt.disabled:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); }
+
+        #entry-note { color: rgba(255,255,255,0.45); letter-spacing: 2px; font-size: 0.72rem; margin-bottom: 26px; max-width: 420px; line-height: 1.8; }
+        #entry-btn {
+            cursor: pointer; background: transparent; border: 1px solid var(--gold);
+            color: var(--gold-bright); padding: 16px 50px; border-radius: 40px; letter-spacing: 6px;
+            font-size: 0.98rem; transition: 0.4s; font-family: 'Noto Serif SC', serif;
+        }
+        #entry-btn:hover { background: var(--gold); color: #1a1300; box-shadow: 0 0 44px rgba(230,196,126,0.55); letter-spacing: 8px; }
+
+        /* --- 开场轻语 --- */
+        #intro-line {
+            position: absolute; inset: 0; z-index: 14; display: none;
+            justify-content: center; align-items: center; text-align: center; pointer-events: none;
+            background: radial-gradient(ellipse at center, rgba(3,6,15,0) 30%, rgba(3,6,15,0.4) 100%);
+        }
+        #intro-line p {
+            font-family: 'Long Cang', 'Noto Serif SC', cursive; color: var(--gold-soft);
+            font-size: clamp(1.6rem, 5vw, 3rem); letter-spacing: 0.16em; margin: 0; opacity: 0;
+            text-shadow: 0 0 30px rgba(230,196,126,0.4); max-width: 86vw; line-height: 1.7;
+        }
+        #intro-line.in { display: flex; }
+        #intro-line.in p { animation: introBreath 6s ease forwards; }
+        @keyframes introBreath {
+            0% { opacity: 0; transform: translateY(16px); letter-spacing: 0.3em; filter: blur(8px); }
+            28% { opacity: 1; transform: translateY(0); letter-spacing: 0.16em; filter: blur(0); }
+            72% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-10px); filter: blur(4px); }
+        }
+
+        /* --- 海报导出弹层 --- */
+        #poster-modal {
+            position: absolute; inset: 0; z-index: 40; display: none;
+            background: rgba(2, 4, 12, 0.86); backdrop-filter: blur(10px);
+            justify-content: center; align-items: center; padding: 4vh 4vw;
+        }
+        #poster-modal.show { display: flex; }
+        .poster-card {
+            background: linear-gradient(160deg, #0b1226, #060a18); border: 1px solid rgba(230,196,126,0.3);
+            border-radius: 20px; padding: 26px; max-width: 920px; width: 100%; max-height: 92vh; overflow-y: auto;
+            display: flex; gap: 26px; flex-wrap: wrap; box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+        }
+        .poster-left { flex: 1 1 320px; min-width: 280px; }
+        .poster-right { flex: 1 1 320px; min-width: 280px; display: flex; flex-direction: column; align-items: center; }
+        .poster-card h3 {
+            font-family: 'Ma Shan Zheng','Noto Serif SC',serif; color: var(--gold-bright);
+            letter-spacing: 3px; font-size: 1.5rem; margin: 0 0 6px;
+        }
+        .poster-card .pc-sub { color: #8893ad; font-size: 0.78rem; letter-spacing: 1px; margin-bottom: 20px; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; color: var(--gold-soft); font-size: 0.76rem; letter-spacing: 2px; margin-bottom: 7px; }
+        .field input, .field textarea {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(230,196,126,0.25);
+            border-radius: 10px; color: #fff; padding: 11px 13px; font-size: 0.9rem;
+            font-family: 'Noto Serif SC', sans-serif; transition: 0.25s; resize: vertical;
+        }
+        .field input:focus, .field textarea:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,0.08); }
+        .field .hint { color: #6b7693; font-size: 0.68rem; margin-top: 5px; letter-spacing: 0.5px; }
+        .poster-canvas-box { width: 100%; display: flex; justify-content: center; }
+        #poster-canvas {
+            width: 100%; max-width: 360px; border-radius: 12px; border: 1px solid rgba(230,196,126,0.25);
+            box-shadow: 0 14px 44px rgba(0,0,0,0.6); background: #060a18;
+        }
+        .poster-buttons { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        .pbtn {
+            cursor: pointer; border-radius: 30px; padding: 12px 26px; font-size: 0.82rem; letter-spacing: 2px;
+            font-family: 'Noto Serif SC', sans-serif; transition: 0.28s; border: 1px solid var(--gold);
+        }
+        .pbtn.primary { background: var(--gold); color: #1a1300; border-color: var(--gold); }
+        .pbtn.primary:hover { box-shadow: 0 0 30px rgba(230,196,126,0.55); }
+        .pbtn.ghost { background: transparent; color: var(--gold-soft); }
+        .pbtn.ghost:hover { background: rgba(230,196,126,0.12); }
+        .poster-tip { color: #6b7693; font-size: 0.72rem; margin-top: 14px; letter-spacing: 1px; text-align: center; line-height: 1.6; }
+
+        @media (max-width: 760px) {
+            #ui-layer { max-width: 70vw; bottom: 96px; left: 16px; }
+            .guide { font-size: 0.78rem; padding: 14px 16px; }
+            #upload-zone { bottom: 96px; right: 16px; }
+            #control-bar { bottom: 18px; gap: 6px; }
+            .ctrl-btn { padding: 9px 12px; font-size: 0.74rem; }
+            .ctrl-sep { display: none; }
+        }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    {{ graduation_wall_config|json_script:"graduation-wall-config" }}
+
+    <div id="loading-screen">
+        <div id="loading-inner">
+            <div class="spinner"></div>
+            <div id="loading-text">正在点亮记忆星河...<br><span style="font-size:0.76rem; color:#7c86a0; display:block; margin-top:10px;">若想用手势互动，请允许浏览器访问摄像头</span></div>
+        </div>
+
+        <div id="entry-block">
+            <div class="eb-kicker" data-wall-copy="kicker">CLASS OF 2026</div>
+            <h1 class="eb-title" data-wall-copy="title">有你真好</h1>
+            <div class="eb-sub" data-wall-copy="subtitle">2 0 2 6 毕 业 回 忆 墙</div>
+
+            <div class="music-pick">
+                <div class="mp-label">为这段回忆，选一首背景音乐</div>
+                <div class="music-options">
+                    <div class="music-opt active" data-music="qifengle">
+                        <div class="mo-title">起风了</div>
+                        <div class="mo-desc">那首属于青春的<br>毕业季原曲</div>
+                    </div>
+                    <div class="music-opt" data-music="gentle">
+                        <div class="mo-title">温柔钢琴</div>
+                        <div class="mo-desc">原创氛围旋律<br>安静而温柔</div>
+                    </div>
+                    <div class="music-opt disabled" data-music="ai">
+                        <div class="mo-title">AI 即兴创作</div>
+                        <div class="mo-desc">暂未开放<br>敬请期待 ✦</div>
+                    </div>
+                    <div class="music-opt" data-music="upload">
+                        <div class="mo-title">上传我的歌</div>
+                        <div class="mo-desc">放进你自己的<br>那首毕业歌</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="entry-note">轻触进入，我们一起慢慢回到 2026。<br>星光会一点点亮起，照片像星星一样落在记忆星河上。</div>
+            <button id="entry-btn">✦ 进 入 回 忆 ✦</button>
+        </div>
+    </div>
+
+    <div id="canvas-wrapper">
+        <div id="canvas-container"></div>
+
+        <div id="title-bar">
+            <div class="t-main" data-wall-copy="kicker">CLASS OF 2026</div>
+            <div class="t-sub" data-wall-copy="spacedTitle">有 你 真 好</div>
+        </div>
+
+        <div id="video-container">
+            <video id="input-video" autoplay playsinline muted></video>
+            <canvas id="skeleton-canvas"></canvas>
+        </div>
+
+        <!-- 开场轻语 -->
+        <div id="intro-line"><p id="intro-text">别急，我们一起慢慢回到 2026。</p></div>
+
+        <div id="html-overlay">
+            <!-- 单张特写 -->
+            <div id="zoom-stage">
+                <img id="single-photo-view" src="" alt="Memory" />
+                <div id="zoom-caption">这一刻，被时间好好收藏了起来。</div>
+                <div id="zoom-progress">1 / 1</div>
+            </div>
+
+            <!-- 照片墙 -->
+            <div id="wall-view"></div>
+
+            <!-- 环廊 -->
+            <div id="ring-scene"></div>
+            <div id="ring-hint">让回忆再转一会儿 · 握拳 <span class="k">✊</span>，让它们汇成 2026</div>
+
+            <!-- 终章 -->
+            <div id="finale-view">
+                <div id="finale-rays"></div>
+                <h1 class="finale-year">2026</h1>
+                <p class="finale-zh">毕业快乐</p>
+                <p class="finale-sub" data-wall-copy="finaleTitle">有你真好！</p>
+                <div class="finale-meta" data-wall-copy="finaleMeta">CLASS OF 2026 · 此刻为我们而闪耀</div>
+                <div class="finale-actions" id="finale-actions">
+                    <button class="ctrl-btn" id="save-poster-btn">✦ 保存这份 2026 回忆</button>
+                    <button class="ctrl-btn" id="restart-btn">↻ 重新回到那一年</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="ui-layer">
+            <div id="status-text"><span class="status-dot" id="status-dot"></span><span id="status-msg">初始化...</span></div>
+            <div class="guide">
+                <b>四步，慢慢走完这段回忆</b><br/>
+                &nbsp;1. <span class="hl">✊ 握拳</span> ：把回忆轻轻收拢<br/>
+                &nbsp;2. <span class="hl">🖐️ 张开手</span> ：让青春慢慢散开<br/>
+                &nbsp;3. <span class="hl">👋 挥挥手</span> ：翻开下一张照片<br/>
+                &nbsp;4. <span class="hl">✊ 再握拳</span> ：让一切汇成 2026<br/>
+                <span class="dim">没有摄像头也没关系：用下方按钮，或键盘 1/2/3/4、空格、R</span>
+            </div>
+        </div>
+
+        <div id="control-bar">
+            <button class="ctrl-btn" data-act="fist">✊ 收拢</button>
+            <button class="ctrl-btn" data-act="open">🖐️ 散开</button>
+            <button class="ctrl-btn" data-act="wave">👋 翻阅</button>
+            <button class="ctrl-btn" data-act="finale">✦ 终章</button>
+            <span class="ctrl-sep"></span>
+            <button class="ctrl-btn icon" data-act="mute" id="mute-btn">🔊</button>
+        </div>
+
+        <div id="upload-zone">
+            <button id="upload-btn" onclick="document.getElementById('file-input').click()">+ 放入毕业照片（可多选）</button>
+            <span id="photo-count">还没有照片 · 先放几张进来吧</span>
+            <input type="file" id="file-input" multiple accept="image/*">
+            <input type="file" id="audio-input" accept="audio/*">
+        </div>
+    </div>
+
+    <!-- 海报导出弹层 -->
+    <div id="poster-modal">
+        <div class="poster-card">
+            <div class="poster-left">
+                <h3>保存这份 2026 回忆</h3>
+                <div class="pc-sub">填上专属信息，生成一张可以收藏、可以分享的纪念海报。</div>
+                <div class="field">
+                    <label>学校 / 班级</label>
+                    <input id="p-school" type="text" maxlength="28" placeholder="如：第一中学 · 高三(7)班" value="">
+                </div>
+                <div class="field">
+                    <label>一句祝福</label>
+                    <textarea id="p-bless" rows="2" maxlength="40" placeholder="如：愿此去前程似锦，再相逢依旧如故。">愿此去前程似锦，再相逢依旧如故。</textarea>
+                </div>
+                <div class="field">
+                    <label>署名（可选）</label>
+                    <input id="p-sign" type="text" maxlength="40" placeholder="如：2026 届全体" value="致敬 2026 · 致敬每一颗相遇的珍珠">
+                    <div class="hint">海报会自动拼入你上传的照片，最多取 9 张。</div>
+                </div>
+                <div class="poster-buttons">
+                    <button class="pbtn primary" id="poster-download">⬇ 下载纪念海报</button>
+                    <button class="pbtn ghost" id="poster-refresh">↻ 刷新预览</button>
+                    <button class="pbtn ghost" id="poster-close">关闭</button>
+                </div>
+                <div class="poster-tip">提示：手机端可长按预览图保存；电脑端点“下载”即可得到 PNG。</div>
+            </div>
+            <div class="poster-right">
+                <div class="poster-canvas-box">
+                    <canvas id="poster-canvas" width="1080" height="1920"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* =========================================================
+   有你真好 · 2026 毕业回忆墙
+   倾斜椭圆「记忆星河」—— 像打开的相册，也像温柔的拥抱
+   ① 握拳 收拢  ② 张手 散开  ③ 挥手 翻阅  ④ 再握拳 汇成 2026
+   ========================================================= */
+
+const PERF = (() => {
+    const cores = navigator.hardwareConcurrency || 4;
+    const mobile = matchMedia('(max-width: 760px)').matches;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tier = reducedMotion || mobile || cores <= 4 ? 'lite' : (cores <= 6 ? 'balanced' : 'full');
+    return {
+        tier, mobile, reducedMotion,
+        particleScale: tier === 'lite' ? 0.42 : (tier === 'balanced' ? 0.68 : 1),
+        starFieldCount: tier === 'lite' ? 320 : (tier === 'balanced' ? 650 : 1100),
+        finalePoints: tier === 'lite' ? 1200 : (tier === 'balanced' ? 2200 : 3200),
+        pixelRatio: Math.min(window.devicePixelRatio || 1, tier === 'full' ? 1.25 : 1),
+        useBloom: tier === 'full',
+        handFps: tier === 'lite' ? 8 : 12
+    };
+})();
+
+const CONFIG = {
+    goldCount: Math.round(460 * PERF.particleScale),
+    whiteCount: Math.round(520 * PERF.particleScale),
+    blueCount: Math.round(380 * PERF.particleScale),
+    roseCount: Math.round(240 * PERF.particleScale),
+    dustCount: Math.round(1200 * PERF.particleScale),
+    galaxyRadius: 60, galaxyArms: 3, galaxyTilt: -0.46, galaxyWind: 2.5,
+    camDistance: 120, camFinale: 96,
+    bloomStrength: PERF.tier === 'full' ? 0.62 : 0, bloomThreshold: 0.36, bloomRadius: 0.55
+};
+const WALL_BACKEND_CONFIG = JSON.parse(document.getElementById('graduation-wall-config')?.textContent || '{}');
+const WALL_COPY = WALL_BACKEND_CONFIG.copy || {};
+const MAX_PHOTOS = PERF.tier === 'lite' ? 36 : 72;
+
+// 视觉状态
+const STATE = { GALAXY: 'galaxy', SCATTER: 'scatter', ZOOM: 'zoom', WALL: 'wall', RING: 'ring', FINALE: 'finale' };
+let currentState = STATE.GALAXY; // 开场即缓缓汇聚成星河
+
+// 陪伴式流程: 0=待收拢, 1=待散开, 2=待翻阅, 3=照片流, 4=终章
+let seqStep = 0;
+
+let scene, camera, renderer, composer, mainGroup = new THREE.Group();
+let goldMesh, whiteMesh, blueMesh, roseMesh, dustSystem;
+let photoMeshes = [];
+let photoUrls = [];
+let zoomTargetIndex = -1;
+let logicData = { gold: [], white: [], blue: [], rose: [], dust: [], star: null };
+const dummy = new THREE.Object3D();
+const tempVec = new THREE.Vector3();
+let time = 0;
+let gatherScale = 1.0;   // 握拳「收拢」时的内聚脉冲
+let started = false;
+
+// 终章「2026」点云
+let finalePool = [];
+let finaleCounter = 0;
+
+// 手势变量
+let handPos = { x: 0, y: 0 };
+let lastHandPos = { x: 0, y: 0 };
+let lastMarks = null;
+let lastWaveTime = 0;
+
+// 单张特写的轻文案池
+const DEFAULT_ZOOM_CAPTIONS = [
+    '原来那天的笑，我们一直都记得。',
+    '这一刻，被时间好好收藏了起来。',
+    '风把那年的声音，又吹了回来。',
+    '有些瞬间，后来才懂它的重量。',
+    '我们都在这张照片里，刚刚好。',
+    '后排传来的纸条，是只有我们懂的暗号。',
+    '黑板上的倒计时，悄悄把我们推向远方。',
+    '操场那圈跑道，记得每一双奔跑的鞋。',
+    '食堂那张桌子，坐过最热闹的我们。',
+    '走廊尽头的夕阳，替我们记下了放学路。',
+    '老师转身写字时，我们偷偷拍下了青春。',
+    '熬过的那些夜，都变成了今天的底气。',
+    '考试卷上的红叉，如今想起来也温柔。',
+    '雨天共撑的那把伞，比天气更让人记得。',
+    '说好要一起的事，有的实现了，有的还在路上。',
+    '镜头之外，是再也回不去却最想回去的日子。',
+    '那天没说完的话，就让它留在这张照片里吧。',
+    '我们没察觉，那竟是最好的时光。'
+];
+const ZOOM_CAPTIONS = WALL_BACKEND_CONFIG.captions?.length ? WALL_BACKEND_CONFIG.captions : DEFAULT_ZOOM_CAPTIONS;
+// 照片墙分组小标题
+const DEFAULT_WALL_SECTIONS = [
+    '那些普通却闪光的日子',
+    '我们一起走过的走廊和操场',
+    '那些没说出口的谢谢',
+    '后来才知道，那就是青春',
+    '风一来，回忆就都醒了',
+    '愿我们都被这个世界温柔以待'
+];
+const WALL_SECTIONS = WALL_BACKEND_CONFIG.sections?.length ? WALL_BACKEND_CONFIG.sections : DEFAULT_WALL_SECTIONS;
+
+/* ---------------- Three.js 初始化 ---------------- */
+function initThree() {
+    const container = document.getElementById('canvas-container');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x03060f);
+    scene.fog = new THREE.FogExp2(0x05091a, 0.0019);
+
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1200);
+    camera.position.set(0, 8, CONFIG.camDistance);
+    camera.lookAt(0, 0, 0);
+
+    renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(PERF.pixelRatio);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    container.appendChild(renderer.domElement);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.24));
+    const spot = new THREE.SpotLight(0xffe7b3, 95); spot.position.set(20, 70, 60); spot.angle = Math.PI / 4; spot.penumbra = 1; scene.add(spot);
+    const blue = new THREE.PointLight(0x5f86ff, 55, 240); blue.position.set(-50, -10, 50); scene.add(blue);
+    const warm = new THREE.PointLight(0xffd27a, 32, 220); warm.position.set(40, 24, 30); scene.add(warm);
+
+    const renderPass = new RenderPass(scene, camera);
+    if (PERF.useBloom) {
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = CONFIG.bloomThreshold; bloomPass.strength = CONFIG.bloomStrength; bloomPass.radius = CONFIG.bloomRadius;
+        composer = new EffectComposer(renderer); composer.addPass(renderPass); composer.addPass(bloomPass);
+    }
+
+    finalePool = sampleTextPoints('2026', PERF.finalePoints, 96, 2);
+    createMaterialsAndMeshes(); createDust(); createStarField();
+    scene.add(mainGroup);
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
+
+/* ---------------- 倾斜椭圆星河采样 ---------------- */
+function galaxyPoint() {
+    const arms = CONFIG.galaxyArms;
+    const rMax = CONFIG.galaxyRadius;
+    const t = Math.random();
+    const r = Math.pow(t, 0.55) * rMax;                 // 向中心略微聚集
+    const arm = Math.floor(Math.random() * arms);
+    const armAngle = (arm / arms) * Math.PI * 2;
+    const spiral = (r / rMax) * Math.PI * CONFIG.galaxyWind;
+    const fuzz = (Math.random() - 0.5) * (0.45 + (r / rMax) * 1.0);
+    const angle = armAngle + spiral + fuzz;
+    const bulge = 1 - r / rMax;
+    const thickness = (Math.random() - 0.5) * (1.6 + bulge * 9);
+    const x = Math.cos(angle) * r;
+    const z = Math.sin(angle) * r;
+    const y = thickness;
+    // 绕 X 轴倾斜，呈现为一片斜着的椭圆星河
+    const tilt = CONFIG.galaxyTilt;
+    const ny = y * Math.cos(tilt) - z * Math.sin(tilt);
+    const nz = y * Math.sin(tilt) + z * Math.cos(tilt);
+    return new THREE.Vector3(x, ny, nz);
+}
+
+/* ---------------- 「2026」文字采样为点云 ---------------- */
+function sampleTextPoints(text, maxPoints, worldWidth, yOffset) {
+    const c = document.createElement('canvas');
+    c.width = 900; c.height = 300;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff';
+    g.font = 'bold 232px Georgia, "Times New Roman", serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, c.width / 2, c.height / 2 + 6);
+    const data = g.getImageData(0, 0, c.width, c.height).data;
+    const pts = [];
+    const step = 3;
+    for (let y = 0; y < c.height; y += step) {
+        for (let x = 0; x < c.width; x += step) {
+            if (data[(y * c.width + x) * 4 + 3] > 128) pts.push({ x, y });
+        }
+    }
+    for (let i = pts.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const tmp = pts[i]; pts[i] = pts[j]; pts[j] = tmp; }
+    const chosen = pts.slice(0, maxPoints);
+    const aspect = c.height / c.width;
+    return chosen.map(p => {
+        const wx = (p.x - c.width / 2) / c.width * worldWidth;
+        const wy = -(p.y - c.height / 2) / c.height * (worldWidth * aspect) + yOffset;
+        const wz = (Math.random() - 0.5) * 4;
+        return new THREE.Vector3(wx, wy, wz);
+    });
+}
+function nextFinalePos() {
+    if (finalePool.length === 0) return randomSpherePoint(50);
+    const base = finalePool[finaleCounter % finalePool.length]; finaleCounter++;
+    return base.clone().add(new THREE.Vector3((Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2));
+}
+
+/* ---------------- 材质与粒子（金 / 星白 / 星蓝 / 暖粉） ---------------- */
+function createMaterialsAndMeshes() {
+    const goldMat = new THREE.MeshPhysicalMaterial({ color: 0xffba33, metalness: 1.0, roughness: 0.16, clearcoat: 1.0, emissive: 0xaa5e00, emissiveIntensity: 0.14 });
+    const whiteMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.55, roughness: 0.25, emissive: 0x8899cc, emissiveIntensity: 0.12 });
+    const blueMat = new THREE.MeshPhysicalMaterial({ color: 0x4f86ff, metalness: 0.2, roughness: 0.05, transmission: 0.5, thickness: 1.5, emissive: 0x122a66, emissiveIntensity: 0.4 });
+    const roseMat = new THREE.MeshPhysicalMaterial({ color: 0xff9bb0, metalness: 0.25, roughness: 0.18, transmission: 0.35, thickness: 1.2, emissive: 0x3a0e1a, emissiveIntensity: 0.3 });
+
+    goldMesh = createInstancedMesh(new THREE.SphereGeometry(0.62, 10, 10), goldMat, CONFIG.goldCount, logicData.gold);
+    whiteMesh = createInstancedMesh(new THREE.IcosahedronGeometry(0.5, 0), whiteMat, CONFIG.whiteCount, logicData.white);
+    blueMesh = createInstancedMesh(new THREE.OctahedronGeometry(0.72, 0), blueMat, CONFIG.blueCount, logicData.blue);
+    roseMesh = createInstancedMesh(new THREE.TetrahedronGeometry(0.78, 0), roseMat, CONFIG.roseCount, logicData.rose);
+
+    // 中心一颗稍亮的「核心星」
+    const starGeo = new THREE.IcosahedronGeometry(2.6, 1);
+    const starMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.7, roughness: 0, emissive: 0xfff0c8, emissiveIntensity: 1.6 });
+    const star = new THREE.Mesh(starGeo, starMat);
+    star.userData = {
+        galaxyPos: new THREE.Vector3(0, 0, 0),
+        scatterPos: new THREE.Vector3(0, 0, 0),
+        finalePos: new THREE.Vector3(0, 30, 0)
+    };
+    star.position.copy(star.userData.galaxyPos); mainGroup.add(star); logicData.star = star;
+}
+
+function createInstancedMesh(geo, mat, count, dataArray) {
+    const mesh = new THREE.InstancedMesh(geo, mat, count);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mainGroup.add(mesh);
+    for (let i = 0; i < count; i++) {
+        const galaxyPos = galaxyPoint();
+        const scatterPos = randomSpherePoint(46 + Math.random() * 48);
+        const finalePos = nextFinalePos();
+        // 开场：从画面四周很远处缓缓汇入
+        const edgePos = randomSpherePoint(150 + Math.random() * 120);
+        dataArray.push({
+            galaxyPos, scatterPos, finalePos,
+            currentPos: edgePos.clone(),
+            scale: 0.45 + Math.random() * 0.85,
+            rotSpeed: new THREE.Euler(Math.random() * 0.02, Math.random() * 0.02, 0),
+            rotation: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, 0)
+        });
+    }
+    return mesh;
+}
+
+function randomSpherePoint(r) {
+    const u = Math.random(), v = Math.random(), theta = 2 * Math.PI * u, phi = Math.acos(2 * v - 1);
+    return new THREE.Vector3(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+}
+
+function createDust() {
+    const geo = new THREE.BufferGeometry(); const pos = new Float32Array(CONFIG.dustCount * 3);
+    for (let i = 0; i < CONFIG.dustCount; i++) {
+        const galaxyPos = galaxyPoint();
+        const scatterPos = randomSpherePoint(72);
+        const finalePos = nextFinalePos();
+        const edge = randomSpherePoint(170 + Math.random() * 120);
+        pos[i * 3] = edge.x; pos[i * 3 + 1] = edge.y; pos[i * 3 + 2] = edge.z;
+        logicData.dust.push({ galaxyPos, scatterPos, finalePos, currentPos: edge.clone() });
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ color: 0xffe6a8, size: 0.55, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false });
+    dustSystem = new THREE.Points(geo, mat); mainGroup.add(dustSystem);
+}
+
+function createStarField() {
+    const geo = new THREE.BufferGeometry(); const pos = [];
+    for (let i = 0; i < PERF.starFieldCount; i++) pos.push((Math.random() - 0.5) * 900, (Math.random() - 0.5) * 900, (Math.random() - 0.5) * 900);
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x44557a, size: 1.0, transparent: true, opacity: 0.55 })));
+}
+
+/* ---------------- 照片：散落在星河轨迹上 ---------------- */
+function addPhotoMesh(img, index) {
+    const tex = new THREE.Texture(img); tex.needsUpdate = true; tex.colorSpace = THREE.SRGBColorSpace;
+    let w = 5, h = 5; if (img.width > img.height) h = 5 * (img.height / img.width); else w = 5 * (img.width / img.height);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true }));
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.24, h + 0.24, 0.08), new THREE.MeshPhysicalMaterial({ color: 0xffe6a8, roughness: 0.25, metalness: 1 }));
+    frame.position.z = -0.05; mesh.add(frame);
+
+    // 沿星河旋臂放置：有的靠近中心（重要回忆），有的在远处（未来方向）
+    const arms = CONFIG.galaxyArms;
+    const near = (index % 3 !== 0);                       // 约 2/3 靠内，1/3 靠外
+    const rMax = CONFIG.galaxyRadius;
+    const r = near ? (8 + Math.random() * rMax * 0.42) : (rMax * 0.6 + Math.random() * rMax * 0.5);
+    const arm = index % arms;
+    const angle = (arm / arms) * Math.PI * 2 + (r / rMax) * Math.PI * CONFIG.galaxyWind + (Math.random() - 0.5) * 0.5;
+    const thickness = (Math.random() - 0.5) * 6;
+    let x = Math.cos(angle) * r, z = Math.sin(angle) * r, y = thickness;
+    const tilt = CONFIG.galaxyTilt;
+    const ny = y * Math.cos(tilt) - z * Math.sin(tilt);
+    const nz = y * Math.sin(tilt) + z * Math.cos(tilt);
+
+    const baseScale = near ? 1.25 : 0.8;                  // 靠中心更大更亮
+    const scatterPos = randomSpherePoint(54 + Math.random() * 24);
+    const edge = randomSpherePoint(160 + Math.random() * 90);
+    mesh.userData = { galaxyPos: new THREE.Vector3(x, ny, nz), scatterPos, baseScale };
+    mesh.position.copy(edge); mesh.lookAt(camera.position);
+    photoMeshes.push(mesh); mainGroup.add(mesh);
+}
+
+/* ---------------- 动画循环 ---------------- */
+function animate() {
+    requestAnimationFrame(animate); time += 0.01;
+    const mode = currentState === STATE.FINALE ? 'finalePos'
+        : (currentState === STATE.SCATTER ? 'scatterPos' : 'galaxyPos');
+    const isGalaxy = (currentState === STATE.GALAXY);
+    const isFinale = (currentState === STATE.FINALE);
+
+    // 收拢脉冲缓缓回弹（接近 1 时吸附，避免持续 clone）
+    gatherScale += (1.0 - gatherScale) * 0.02;
+    if (Math.abs(1 - gatherScale) < 0.002) gatherScale = 1.0;
+
+    updateMeshLogic(goldMesh, logicData.gold, mode, isFinale, isGalaxy);
+    updateMeshLogic(whiteMesh, logicData.white, mode, isFinale, isGalaxy);
+    updateMeshLogic(blueMesh, logicData.blue, mode, isFinale, isGalaxy);
+    updateMeshLogic(roseMesh, logicData.rose, mode, isFinale, isGalaxy);
+    updateDustLogic(mode, isGalaxy);
+    updatePhotoLogic(isGalaxy);
+
+    if (logicData.star) {
+        const s = logicData.star;
+        s.position.lerp(s.userData[mode], 0.05);
+        s.rotation.y += 0.008;
+    }
+
+    if (isFinale) {
+        let r = mainGroup.rotation.y % (Math.PI * 2);
+        if (r > Math.PI) r -= Math.PI * 2; if (r < -Math.PI) r += Math.PI * 2;
+        mainGroup.rotation.y = r + (0 - r) * 0.06;
+        mainGroup.rotation.x += (0 - mainGroup.rotation.x) * 0.06;
+        camera.position.z += (CONFIG.camFinale - camera.position.z) * 0.035;
+        camera.position.y += (4 - camera.position.y) * 0.035;
+    } else {
+        mainGroup.rotation.y += isGalaxy ? 0.0026 : 0.004;   // 星河更慢，更温柔
+        camera.position.z += (CONFIG.camDistance - camera.position.z) * 0.03;
+        camera.position.y += (8 - camera.position.y) * 0.03;
+    }
+    camera.lookAt(0, isFinale ? 2 : 0, 0);
+
+    if (composer) composer.render();
+    else renderer.render(scene, camera);
+}
+
+function updateMeshLogic(mesh, dataArray, mode, isFinale, isGalaxy) {
+    const scatter = (mode === 'scatterPos');
+    for (let i = 0; i < dataArray.length; i++) {
+        const item = dataArray[i];
+        let target = item[mode];
+        if (isGalaxy && gatherScale !== 1.0) target = tempVec.copy(item.galaxyPos).multiplyScalar(gatherScale);
+        if (scatter) item.currentPos.y += Math.sin(time + i * 0.1) * 0.012;
+        const lerpA = isFinale ? 0.10 : (started ? 0.06 : 0.03);  // 开场更慢，慢慢汇入
+        item.currentPos.lerp(target, lerpA);
+        item.rotation.x += item.rotSpeed.x; item.rotation.y += item.rotSpeed.y;
+        dummy.position.copy(item.currentPos); dummy.rotation.copy(item.rotation);
+        dummy.scale.setScalar(isFinale ? item.scale * 0.85 : item.scale); dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+}
+
+function updateDustLogic(mode, isGalaxy) {
+    const positions = dustSystem.geometry.attributes.position.array;
+    for (let i = 0; i < logicData.dust.length; i++) {
+        const item = logicData.dust[i];
+        let target = item[mode];
+        if (isGalaxy && gatherScale !== 1.0) target = tempVec.copy(item.galaxyPos).multiplyScalar(gatherScale);
+        item.currentPos.lerp(target, started ? 0.05 : 0.025);
+        positions[i * 3] = item.currentPos.x; positions[i * 3 + 1] = item.currentPos.y; positions[i * 3 + 2] = item.currentPos.z;
+    }
+    dustSystem.geometry.attributes.position.needsUpdate = true;
+}
+
+function updatePhotoLogic(isGalaxy) {
+    const isFinale = (currentState === STATE.FINALE);
+    photoMeshes.forEach((mesh, idx) => {
+        if (isFinale) {
+            // 照片慢慢缩小、淡出、聚向中心，化作星河里的光点
+            mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, 0.02, 0.07));
+            mesh.material.opacity = THREE.MathUtils.lerp(mesh.material.opacity, 0, 0.06);
+            mesh.position.lerp(new THREE.Vector3(0, 14, 0), 0.04);
+            return;
+        }
+        if (mesh.material.opacity < 1) mesh.material.opacity = THREE.MathUtils.lerp(mesh.material.opacity, 1, 0.12);
+        let targetPos, targetScale;
+        if (isGalaxy) {
+            targetPos = mesh.userData.galaxyPos.clone();
+            if (gatherScale !== 1.0) targetPos.multiplyScalar(gatherScale);
+            targetScale = mesh.userData.baseScale;
+        } else {
+            targetPos = mesh.userData.scatterPos; mesh.position.y += Math.sin(time + idx) * 0.018; targetScale = mesh.userData.baseScale * 1.3;
+        }
+        mesh.position.lerp(targetPos, started ? 0.08 : 0.03);
+        mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, targetScale, 0.08));
+        mesh.lookAt(camera.position);
+    });
+}
+
+/* ---------------- AI 视觉识别（MediaPipe 手部） ---------------- */
+let handTrackerStarted = false;
+async function initAI() {
+    if (handTrackerStarted) return;
+    handTrackerStarted = true;
+    if (!navigator.mediaDevices?.getUserMedia || PERF.reducedMotion) {
+        document.getElementById('video-container').style.display = 'none';
+        return;
+    }
+    try {
+        const { FilesetResolver, HandLandmarker } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
+        const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm');
+        const landmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate: PERF.tier === 'lite' ? 'CPU' : 'GPU' },
+            runningMode: 'VIDEO', numHands: 1
+        });
+        const video = document.getElementById('input-video');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.addEventListener('loadeddata', () => {
+            document.getElementById('video-container').classList.add('live');
+            processVideo(landmarker, video);
+        });
+    } catch (error) {
+        document.getElementById('video-container').style.display = 'none';
+    }
+}
+
+let lastVideoTime = -1;
+let lastHandDetectTime = 0;
+function processVideo(landmarker, video) {
+    const now = performance.now();
+    if (video.currentTime !== lastVideoTime && now - lastHandDetectTime > 1000 / PERF.handFps) {
+        lastVideoTime = video.currentTime;
+        lastHandDetectTime = now;
+        const result = landmarker.detectForVideo(video, now);
+        handleResult(result, video);
+    }
+    requestAnimationFrame(() => processVideo(landmarker, video));
+}
+
+function handleResult(result, video) {
+    const canvas = document.getElementById('skeleton-canvas'); const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight; ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (result.landmarks && result.landmarks.length > 0) {
+        const marks = result.landmarks[0];
+        drawHand(ctx, marks, canvas.width, canvas.height);
+        analyzeGesture(marks);
+    }
+}
+
+function drawHand(ctx, marks, w, h) {
+    ctx.lineWidth = 2; ctx.strokeStyle = '#ffe6a8'; ctx.fillStyle = '#7ea6ff';
+    const connects = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
+    ctx.beginPath();
+    for (const c of connects) { ctx.moveTo(marks[c[0]].x * w, marks[c[0]].y * h); ctx.lineTo(marks[c[1]].x * w, marks[c[1]].y * h); }
+    ctx.stroke();
+    for (const p of marks) { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, 3, 0, 2 * Math.PI); ctx.fill(); }
+}
+
+/* ---------------- 手势分析 → 调用统一动作 ---------------- */
+function analyzeGesture(marks) {
+    if (!started) return;
+    const palmX = 1 - marks[9].x; const palmY = marks[9].y;
+    handPos.x = handPos.x * 0.7 + palmX * 0.3; handPos.y = handPos.y * 0.7 + palmY * 0.3;
+
+    let folded = 0;
+    [8, 12, 16, 20].forEach(tip => {
+        const d = Math.sqrt((marks[tip].x - marks[0].x) ** 2 + (marks[tip].y - marks[0].y) ** 2);
+        if (d < 0.25) folded++;
+    });
+    const isFist = folded >= 3;
+    const isOpen = folded <= 1;
+
+    const deltaX = handPos.x - lastHandPos.x;
+    const deltaY = handPos.y - lastHandPos.y;
+    const palmSpeed = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    let fingerSpeed = 0;
+    if (lastMarks) {
+        [8, 12, 16, 20].forEach(tip => {
+            fingerSpeed += Math.sqrt((marks[tip].x - lastMarks[tip].x) ** 2 + (marks[tip].y - lastMarks[tip].y) ** 2);
+        });
+        fingerSpeed /= 4;
+    }
+    lastMarks = marks;
+
+    const totalMovement = palmSpeed + fingerSpeed;
+    const now = performance.now();
+    const canWave = (now - lastWaveTime) > 700;
+
+    if (seqStep === 0) {
+        if (isFist) actionFist();
+        else updateStatus('握拳 ✊，把这些散落的光点轻轻收拢', '#e6c47e');
+    } else if (seqStep === 1) {
+        if (isOpen && !isFist) actionOpen();
+        else updateStatus('张开手 🖐️，让这一年的青春慢慢散开', '#7ea6ff');
+    } else if (seqStep === 2) {
+        if (canWave && totalMovement > 0.16) { actionWave(); lastWaveTime = now; }
+        else updateStatus('挥挥手 👋，翻开第一张照片', '#ff9bb0');
+    } else if (seqStep === 3) {
+        if (currentState === STATE.ZOOM) {
+            if (canWave && totalMovement > 0.11) { actionWave(); lastWaveTime = now; }
+            else updateStatus(`第 ${zoomTargetIndex + 1} / ${photoUrls.length} 张 · 挥手，再翻开下一张`, '#ffe6a8');
+        } else if (currentState === STATE.WALL) {
+            if (canWave && totalMovement > 0.11) { actionWave(); lastWaveTime = now; }
+            else if (isFist) actionFist();
+            else updateStatus('慢慢看 · 挥手进环廊，或握拳 ✊ 让它们汇成 2026', '#ff9bb0');
+        } else if (currentState === STATE.RING) {
+            if (isFist) actionFist();
+            else updateStatus('让回忆再转一会儿 · 握拳 ✊ 汇成 2026', '#ff9bb0');
+        }
+    } else if (seqStep === 4) {
+        if (isFist) actionFist();
+    }
+
+    lastHandPos.x = handPos.x; lastHandPos.y = handPos.y;
+}
+
+/* ---------------- 统一动作（手势 / 按钮 / 键盘共用） ---------------- */
+function actionFist() {
+    if (seqStep === 0) {
+        seqStep = 1; currentState = STATE.GALAXY; gatherScale = 0.78; Music.setPhase(1);
+        updateStatus('✊ 回忆，被轻轻收拢了 —— 接着，张开手 🖐️', '#e6c47e');
+    } else if (seqStep === 3 && (currentState === STATE.WALL || currentState === STATE.RING)) {
+        triggerFinale();
+    } else if (seqStep === 4) {
+        restartJourney();
+    }
+}
+function actionOpen() {
+    if (seqStep === 1) {
+        seqStep = 2; currentState = STATE.SCATTER; Music.setPhase(2);
+        updateStatus('🖐️ 青春散成了星河 —— 接着，挥挥手 👋 看照片', '#7ea6ff');
+    }
+}
+function actionWave() {
+    if (seqStep === 2) {
+        if (photoUrls.length === 0) { updateStatus('先把几张毕业照片放进来吧（右下角）', '#ff9bb0'); return; }
+        seqStep = 3; Music.setPhase(3); triggerPhotoFlow();
+    } else if (seqStep === 3 && (currentState === STATE.ZOOM || currentState === STATE.WALL)) { triggerPhotoFlow(); }
+}
+function actionAdvance() {
+    if (seqStep === 0) actionFist();
+    else if (seqStep === 1) actionOpen();
+    else if (seqStep === 2) actionWave();
+    else if (seqStep === 3) { if (currentState === STATE.RING) triggerFinale(); else actionWave(); }
+    else if (seqStep === 4) restartJourney();
+}
+
+let wallAutoTimer = null;
+function clearWallAutoTimer() { if (wallAutoTimer) { clearTimeout(wallAutoTimer); wallAutoTimer = null; } }
+
+function triggerPhotoFlow() {
+    if (photoUrls.length === 0) { updateStatus('先把几张毕业照片放进来吧（右下角）', '#ff9bb0'); return; }
+    if (currentState === STATE.SCATTER) {
+        currentState = STATE.ZOOM; zoomTargetIndex = 0;
+    } else if (currentState === STATE.ZOOM) {
+        zoomTargetIndex++;
+        if (zoomTargetIndex >= photoUrls.length) { currentState = STATE.WALL; renderMeteorWall(); }
+    } else if (currentState === STATE.WALL) {
+        // 照片墙之后，自动衔接进入终章
+        clearWallAutoTimer();
+        triggerFinale();
+        return;
+    }
+    updateHTMLOverlay();
+}
+
+function triggerFinale() {
+    clearWallAutoTimer();
+    seqStep = 4; currentState = STATE.FINALE;
+    Music.finale();
+    updateHTMLOverlay();
+    updateStatus('✦ 此刻，为我们而闪耀 · 2026', '#ffe6a8');
+}
+
+function restartJourney() {
+    clearWallAutoTimer();
+    seqStep = 0; currentState = STATE.GALAXY; gatherScale = 1.0;
+    clearPetals();
+    const fv = document.getElementById('finale-view');
+    fv.classList.remove('reveal-year', 'reveal-zh', 'reveal-sub');
+    document.getElementById('finale-actions').classList.remove('in');
+    updateHTMLOverlay();
+    updateStatus('↻ 我们又回到了那一年 · 握拳 ✊ 把回忆收拢', '#e6c47e');
+}
+
+function updateHTMLOverlay() {
+    const wrapper = document.getElementById('canvas-wrapper');
+    wrapper.classList.remove('show-zoom', 'show-wall', 'show-ring', 'show-finale', 'finale-on', 'hide-chrome');
+
+    if (currentState === STATE.ZOOM) {
+        document.getElementById('single-photo-view').src = photoUrls[zoomTargetIndex];
+        document.getElementById('zoom-caption').innerText = ZOOM_CAPTIONS[zoomTargetIndex % ZOOM_CAPTIONS.length];
+        document.getElementById('zoom-progress').innerText = `${zoomTargetIndex + 1} / ${photoUrls.length}`;
+        // 重新触发图片揭示动画
+        const img = document.getElementById('single-photo-view');
+        img.style.animation = 'none'; void img.offsetWidth; img.style.animation = '';
+        wrapper.classList.add('show-zoom', 'hide-chrome');
+    } else if (currentState === STATE.WALL) {
+        wrapper.classList.add('show-wall', 'hide-chrome');
+    } else if (currentState === STATE.RING) {
+        wrapper.classList.add('show-ring', 'hide-chrome');
+    } else if (currentState === STATE.FINALE) {
+        wrapper.classList.add('show-finale', 'finale-on', 'hide-chrome');
+        runFinaleReveal();
+    }
+}
+
+/* ---------------- 照片墙：分组、留白、慢慢浮上来 ---------------- */
+function renderMeteorWall() {
+    const wall = document.getElementById('wall-view'); wall.innerHTML = '';
+    wall.scrollTop = 0;
+
+    const title = document.createElement('div'); title.className = 'wall-title';
+    title.innerHTML = '<h2>OUR MEMORIES</h2><p>那些一起走过的日子 · 共 ' + photoUrls.length + ' 帧</p>';
+    wall.appendChild(title);
+
+    const groupSize = 6;
+    const groups = [];
+    for (let i = 0; i < photoUrls.length; i += groupSize) groups.push(photoUrls.slice(i, i + groupSize));
+
+    let globalDelay = 0.4;
+    const allImgs = [];
+    groups.forEach((group, gi) => {
+        const section = document.createElement('div'); section.className = 'wall-section';
+        const label = document.createElement('div'); label.className = 'wall-section-label';
+        label.innerText = WALL_SECTIONS[gi % WALL_SECTIONS.length];
+        label.style.animationDelay = globalDelay + 's';
+        section.appendChild(label);
+
+        const grid = document.createElement('div'); grid.className = 'wall-grid';
+        group.forEach((url) => {
+            const img = document.createElement('img'); img.src = url; img.className = 'meteor-img';
+            img.style.animationDelay = (globalDelay + 0.5) + 's';
+            grid.appendChild(img); allImgs.push({ el: img, label });
+            globalDelay += 0.35;   // 一张一张慢慢出现
+        });
+        section.appendChild(grid);
+        wall.appendChild(section);
+        globalDelay += 0.7;        // 组与组之间留出呼吸
+    });
+
+    const hint = document.createElement('div'); hint.className = 'wall-end-hint';
+    hint.innerHTML = '稍后，这些光点会自己慢慢汇成 2026 …<br><span class="k">（也可以握拳 ✊ 或挥手 👋 直接进入终章）</span>';
+    wall.appendChild(hint);
+
+    // 用 IntersectionObserver 让标题/照片滚动到视野时才浮现；同时也启动入场
+    requestAnimationFrame(() => {
+        wall.querySelectorAll('.wall-section-label').forEach(el => el.classList.add('in'));
+        wall.querySelectorAll('.meteor-img').forEach(el => el.classList.add('in'));
+    });
+
+    // 自动衔接：照片墙浏览完后，安静地进入终章（无需手势）
+    clearWallAutoTimer();
+    const appearMs = globalDelay * 1000;          // 全部照片浮现所需时间
+    const viewPause = 5200 + photoUrls.length * 350;  // 看完后停留，照片越多停得越久
+    const total = Math.min(appearMs + viewPause, 30000);  // 上限 30s
+    wallAutoTimer = setTimeout(() => {
+        if (currentState === STATE.WALL) triggerFinale();
+    }, total);
+}
+
+/* ---------------- 多维环形画廊（可选的一段） ---------------- */
+function renderMultiRingView() {
+    const ringScene = document.getElementById('ring-scene'); ringScene.innerHTML = '';
+    const tilts = ['rotateX(-15deg)', 'rotateZ(90deg) rotateX(-15deg)', 'rotateZ(45deg) rotateX(-15deg)', 'rotateZ(-45deg) rotateX(-15deg)'];
+    const pattern = [0, 1, 2, 3, 3, 0, 1, 2, 2, 3, 0, 1];
+    let photoIndex = 0;
+    const photosPerRing = Math.max(5, Math.ceil(photoUrls.length / 12));
+    const imgWidth = 120;
+    const radius = Math.max(130, (photosPerRing * (imgWidth + 10)) / (2 * Math.PI));
+    for (let i = 0; i < 12; i++) {
+        const cell = document.createElement('div'); cell.className = 'ring-cell';
+        const tilt = document.createElement('div'); tilt.className = 'ring-tilt'; tilt.style.transform = tilts[pattern[i]];
+        const wrapper = document.createElement('div'); wrapper.className = 'ring-wrapper';
+        const speed = 20 + Math.random() * 10;
+        const animName = Math.random() > 0.5 ? 'spinRingNormal' : 'spinRingReverse';
+        wrapper.style.animation = `${animName} ${speed}s linear infinite`;
+        for (let j = 0; j < photosPerRing; j++) {
+            const img = document.createElement('img'); img.src = photoUrls[photoIndex % photoUrls.length]; img.className = 'ring-img';
+            const angle = (360 / photosPerRing) * j;
+            img.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+            wrapper.appendChild(img); photoIndex++;
+        }
+        tilt.appendChild(wrapper); cell.appendChild(tilt); ringScene.appendChild(cell);
+    }
+}
+
+/* ---------------- 终章：安静而郑重的逐句揭示 ---------------- */
+let finaleTimers = [];
+function runFinaleReveal() {
+    finaleTimers.forEach(t => clearTimeout(t)); finaleTimers = [];
+    const fv = document.getElementById('finale-view');
+    fv.classList.remove('reveal-year', 'reveal-zh', 'reveal-sub');
+    document.getElementById('finale-actions').classList.remove('in');
+    // 先让照片化为光点（约 1.2s），再缓缓浮现文字；每句之间留一秒的停顿
+    finaleTimers.push(setTimeout(() => fv.classList.add('reveal-year'), 1400));
+    finaleTimers.push(setTimeout(() => fv.classList.add('reveal-zh'), 1400 + 3000));
+    finaleTimers.push(setTimeout(() => {
+        fv.classList.add('reveal-sub');
+        document.getElementById('finale-actions').classList.add('in');
+        spawnPetals();
+    }, 1400 + 3000 + 3000));
+}
+
+/* ---------------- 终章金箔花瓣 ---------------- */
+function spawnPetals() {
+    clearPetals();
+    const layer = document.getElementById('finale-view');
+    const colors = ['#ffe6a8', '#fff3c4', '#e6c47e', '#7ea6ff', '#ffc2cf', '#ffffff'];
+    for (let i = 0; i < 44; i++) {
+        const p = document.createElement('div'); p.className = 'petal';
+        p.style.left = (Math.random() * 100) + 'vw';
+        p.style.background = colors[(Math.random() * colors.length) | 0];
+        p.style.boxShadow = '0 0 8px ' + p.style.background;
+        const size = 7 + Math.random() * 12; p.style.width = size + 'px'; p.style.height = size + 'px';
+        p.style.setProperty('--drift', ((Math.random() - 0.5) * 220) + 'px');
+        const dur = 7 + Math.random() * 7; const delay = Math.random() * 7;
+        p.style.animation = `petalFall ${dur}s linear ${delay}s infinite`;
+        layer.appendChild(p);
+    }
+}
+function clearPetals() {
+    document.querySelectorAll('#finale-view .petal').forEach(el => el.remove());
+}
+
+function updateStatus(msg, color) {
+    document.getElementById('status-msg').innerText = msg;
+    const dot = document.getElementById('status-dot');
+    dot.style.background = color; dot.style.boxShadow = `0 0 10px ${color}`;
+}
+
+function spacedText(text) {
+    return String(text || '').split('').join(' ');
+}
+
+function applyBackendCopy() {
+    document.title = `${WALL_COPY.title || '有你真好'} · ${WALL_COPY.year || '2026'} 毕业回忆墙`;
+    document.querySelectorAll('[data-wall-copy="kicker"]').forEach(el => { el.innerText = WALL_COPY.kicker || 'CLASS OF 2026'; });
+    document.querySelectorAll('[data-wall-copy="title"]').forEach(el => { el.innerText = WALL_COPY.title || '有你真好'; });
+    document.querySelectorAll('[data-wall-copy="subtitle"]').forEach(el => { el.innerText = WALL_COPY.subtitle || '2 0 2 6 毕 业 回 忆 墙'; });
+    document.querySelectorAll('[data-wall-copy="spacedTitle"]').forEach(el => { el.innerText = spacedText(WALL_COPY.title || '有你真好'); });
+    document.querySelectorAll('[data-wall-copy="finaleTitle"]').forEach(el => { el.innerText = `${WALL_COPY.title || '有你真好'}！`; });
+    document.querySelectorAll('[data-wall-copy="finaleMeta"]').forEach(el => { el.innerText = `${WALL_COPY.kicker || 'CLASS OF 2026'} · 此刻为我们而闪耀`; });
+
+    const schoolInput = document.getElementById('p-school');
+    const blessInput = document.getElementById('p-bless');
+    const signInput = document.getElementById('p-sign');
+    if (schoolInput && WALL_COPY.poster_school_placeholder) schoolInput.placeholder = WALL_COPY.poster_school_placeholder;
+    if (blessInput && WALL_COPY.poster_blessing) {
+        blessInput.placeholder = `如：${WALL_COPY.poster_blessing}`;
+        blessInput.value = WALL_COPY.poster_blessing;
+    }
+    if (signInput && WALL_COPY.poster_signature) signInput.value = WALL_COPY.poster_signature;
+}
+
+/* =========================================================
+   音乐引擎：起风了（在线音源）/ 温柔钢琴（原创氛围）/ 上传我的歌
+   说明：默认播放《起风了》（使用用户提供的在线音频地址）；
+        亦可切换为本程序自创的温柔钢琴氛围，或上传自己的版本。
+        「AI 即兴创作」暂未开放。
+   ========================================================= */
+const QIFENGLE_URL = 'https://videotourl.com/audio/1780296378482-5e4c6836-269f-4b84-998b-201485efaf8d.mp3';
+let toneLoadPromise = null;
+function loadTone() {
+    if (window.Tone) return Promise.resolve(window.Tone);
+    if (!toneLoadPromise) {
+        toneLoadPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js';
+            script.async = true;
+            script.onload = () => resolve(window.Tone);
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    return toneLoadPromise;
+}
+
+const Music = {
+    ready: false, started: false, phase: 0, muted: false, bar: 0,
+    mode: 'qifengle',              // qifengle | gentle | upload
+    streamUrl: QIFENGLE_URL,
+    streamAudio: null,
+    userAudio: null, userAudioFile: null,
+
+    // —— 原创和声进行（和弦走向本身不受版权限制）——
+    chords: [
+        { root: 'A2', notes: ['A3', 'C4', 'E4'] },
+        { root: 'F2', notes: ['F3', 'A3', 'C4'] },
+        { root: 'C2', notes: ['C3', 'E3', 'G3'] },
+        { root: 'G2', notes: ['G2', 'B3', 'D4'] },
+        { root: 'A2', notes: ['A3', 'C4', 'E4'] },
+        { root: 'F2', notes: ['F3', 'A3', 'C4'] },
+        { root: 'C2', notes: ['C3', 'E3', 'G3'] },
+        { root: 'G2', notes: ['G2', 'B3', 'D4'] }
+    ],
+    // —— 我原创的一段温柔旋律动机（这些音符为本程序自创，非任何既有歌曲）——
+    gentleMelody: [
+        ['E4', 'A4', 'C5', 'B4'],
+        ['A4', 'C5', 'F5', 'E5'],
+        ['G4', 'E4', 'G4', 'C5'],
+        ['D5', 'B4', 'G4', 'A4'],
+        ['C5', 'B4', 'A4', 'E4'],
+        ['F4', 'A4', 'C5', 'A4'],
+        ['E5', 'D5', 'C5', 'G4'],
+        ['A4', 'B4', 'D5', null]
+    ],
+    aiScale: ['C4', 'D4', 'E4', 'G4', 'A4', 'C5', 'D5', 'E5', 'G5'],
+
+    selectMode(m) { this.mode = m; },
+
+    build() {
+        if (this.ready || !window.Tone) return;
+        const T = window.Tone;
+        this.reverb = new T.Reverb({ decay: 7, wet: 0.36 }).toDestination();
+        this.master = new T.Gain(0.0).connect(this.reverb);
+        // 铺底 pad
+        this.pad = new T.PolySynth(T.Synth, { maxPolyphony: 16, oscillator: { type: 'sine' }, envelope: { attack: 1.6, decay: 0.6, sustain: 0.8, release: 3.6 } }).connect(this.master);
+        this.pad.volume.value = -12;
+        // 贝斯
+        this.bass = new T.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.1, decay: 0.3, sustain: 0.6, release: 1.4 } }).connect(this.master);
+        this.bass.volume.value = -16;
+        // 钢琴感旋律（FM）
+        this.piano = new T.FMSynth({ harmonicity: 2.4, modulationIndex: 4, oscillator: { type: 'sine' }, envelope: { attack: 0.008, decay: 0.5, sustain: 0.1, release: 1.1 }, modulationEnvelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 0.4 } }).connect(this.master);
+        this.piano.volume.value = -12;
+        // AI 即兴用的钟琴 + 微光
+        this.bell = new T.FMSynth({ harmonicity: 2.2, modulationIndex: 6, oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 0.6 } }).connect(this.master);
+        this.bell.volume.value = -20;
+        this.sparkle = new T.PolySynth(T.Synth, { maxPolyphony: 12, oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.3, sustain: 0, release: 0.5 } }).connect(this.master);
+        this.sparkle.volume.value = -17;
+
+        T.Transport.bpm.value = 66;
+        this.loop = new T.Loop((t) => this.onBar(t), '1m').start(0);
+        this.ready = true;
+    },
+
+    onBar(time) {
+        if (this.mode !== 'gentle') return;          // 仅「温柔钢琴」使用合成器
+        const T = window.Tone;
+        const idx = this.bar % 8;
+        const chord = this.chords[idx];
+        this.pad.triggerAttackRelease(chord.notes, '1m', time, 0.42);
+        if (this.phase >= 1) this.bass.triggerAttackRelease(chord.root, '1m', time, 0.7);
+
+        const q = T.Time('4n').toSeconds();
+
+        // 前 1 小节只有 pad（前奏慢慢进入），之后旋律温柔流动
+        if (this.bar >= 1) {
+            const line = this.gentleMelody[idx];
+            for (let i = 0; i < 4; i++) {
+                const n = line[i];
+                if (n) this.piano.triggerAttackRelease(n, '4n', time + i * q, 0.55 + Math.random() * 0.12);
+            }
+        }
+        this.bar++;
+    },
+
+    async start() {
+        this.started = true;
+
+        // 《起风了》在线音源：在用户点击手势内直接播放，避免自动播放被拦截
+        if (this.mode === 'qifengle') {
+            this.playStream(this.streamUrl);
+            return;
+        }
+        // 上传的歌
+        if (this.mode === 'upload') {
+            if (this.userAudioFile) {
+                this.playUserAudio();
+                return;
+            }
+            this.mode = 'gentle';   // 选了上传却没文件 → 回退到温柔钢琴
+        }
+        // 温柔钢琴（合成器）
+        const T = await loadTone().catch(() => null);
+        if (!T) {
+            updateStatus('音乐引擎加载失败，仍可继续浏览回忆墙', '#e6c47e');
+            return;
+        }
+        try { await T.start(); } catch (e) {}
+        this.build();
+        T.Transport.start();
+        this.master.gain.rampTo(0.82, 6);   // 前奏慢慢进入
+    },
+
+    playStream(url) {
+        if (!this.streamAudio) this.streamAudio = new Audio();
+        this.streamAudio.src = url;
+        this.streamAudio.loop = true;
+        this.streamAudio.volume = 0;
+        this.streamAudio.muted = this.muted;
+        const p = this.streamAudio.play();
+        if (p && p.catch) p.catch(() => {
+            try { updateStatus('🎵 若没有声音，点一下「🔊」或屏幕即可开启《起风了》', '#e6c47e'); } catch (e) {}
+        });
+        let v = 0; const fade = setInterval(() => {
+            v += 0.025; if (this.streamAudio) this.streamAudio.volume = Math.min(0.82, v);
+            if (v >= 0.82) clearInterval(fade);
+        }, 240);
+    },
+
+    activeMedia() { return this.streamAudio || this.userAudio || null; },
+
+    playUserAudio() {
+        if (!this.userAudioFile) return;
+        if (!this.userAudio) this.userAudio = new Audio();
+        this.userAudio.src = URL.createObjectURL(this.userAudioFile);
+        this.userAudio.loop = true; this.userAudio.volume = 0;
+        this.userAudio.muted = this.muted;
+        this.userAudio.play().catch(() => {});
+        // 渐入
+        let v = 0; const fade = setInterval(() => {
+            v += 0.03; if (this.userAudio) this.userAudio.volume = Math.min(0.85, v);
+            if (v >= 0.85) clearInterval(fade);
+        }, 220);
+    },
+
+    setUserAudioFile(file) { this.userAudioFile = file; },
+
+    setPhase(p) {
+        this.phase = Math.max(this.phase, p);
+        if (!this.ready || this.mode !== 'gentle') return;
+        if (this.phase >= 2) this.piano.volume.rampTo(-9, 2);
+        if (this.phase >= 3) this.pad.volume.rampTo(-9, 2);
+    },
+
+    finale() {
+        const T = window.Tone;
+        this.phase = 4;
+        // 在线/上传音源：终章时稍微提一点音量
+        const media = this.activeMedia();
+        if (this.mode !== 'gentle' && media) {
+            try { media.volume = Math.min(1, (media.volume || 0.7) + 0.12); } catch (e) {}
+            return;
+        }
+        if (!this.ready || !T) return;
+        T.Transport.bpm.rampTo(72, 5);
+        this.master.gain.rampTo(0.98, 3);
+        const now = T.now();
+        const run = ['C4', 'E4', 'G4', 'C5', 'E5', 'G5', 'C6', 'E6'];
+        run.forEach((n, i) => this.sparkle.triggerAttackRelease(n, '8n', now + i * 0.12, 0.8));
+        this.piano.volume.rampTo(-6, 1);
+    },
+
+    toggleMute() {
+        this.muted = !this.muted;
+        if (window.Tone) window.Tone.Destination.mute = this.muted;
+        if (this.streamAudio) this.streamAudio.muted = this.muted;
+        if (this.userAudio) this.userAudio.muted = this.muted;
+        return this.muted;
+    }
+};
+
+/* ---------------- 上传 / 控制 / 进入 ---------------- */
+function refreshPhotoCount() {
+    const n = photoUrls.length;
+    const defaultCount = WALL_BACKEND_CONFIG.photo_count || 0;
+    document.getElementById('photo-count').innerText = n === 0
+        ? '还没有照片 · 先放几张进来吧'
+        : (defaultCount && n === defaultCount ? `已预置 ${n} 张毕业回忆 · 也可以继续添加` : `已收藏 ${n} 张回忆`);
+}
+
+function addPhotoUrl(url) {
+    if (photoUrls.length >= MAX_PHOTOS) {
+        updateStatus(`为了保持流畅，当前最多展示 ${MAX_PHOTOS} 张照片`, '#e6c47e');
+        return;
+    }
+    const idx = photoUrls.length;
+    photoUrls.push(url);
+    const img = new Image();
+    img.onload = () => addPhotoMesh(img, idx);
+    img.src = url;
+    refreshPhotoCount();
+}
+
+function loadDefaultPhotos() {
+    (WALL_BACKEND_CONFIG.default_photos || []).forEach(url => addPhotoUrl(url));
+}
+
+function optimizeImageFile(file) {
+    return new Promise((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            const maxSide = PERF.tier === 'lite' ? 1200 : 1600;
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const width = Math.max(1, Math.round(img.width * scale));
+            const height = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#03060f';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            URL.revokeObjectURL(objectUrl);
+            resolve(canvas.toDataURL('image/jpeg', 0.84));
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('image-load-failed'));
+        };
+        img.src = objectUrl;
+    });
+}
+
+document.getElementById('file-input').addEventListener('change', (e) => {
+    if (!e.target.files.length) return;
+    Array.from(e.target.files).forEach(async (file) => {
+        try {
+            addPhotoUrl(await optimizeImageFile(file));
+        } catch (error) {
+            const reader = new FileReader();
+            reader.onload = (evt) => addPhotoUrl(evt.target.result);
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+// 音乐选择（进入屏）
+document.querySelectorAll('.music-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+        if (opt.classList.contains('disabled')) {
+            updateStatus('「AI 即兴创作」暂未开放，敬请期待 ✦', '#8893ad');
+            return;
+        }
+        document.querySelectorAll('.music-opt').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        const m = opt.dataset.music;
+        Music.selectMode(m);
+        if (m === 'upload') document.getElementById('audio-input').click();
+    });
+});
+document.getElementById('audio-input').addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+        Music.setUserAudioFile(e.target.files[0]);
+        const opt = document.querySelector('.music-opt[data-music="upload"] .mo-desc');
+        if (opt) opt.innerHTML = '已选择：<br>' + e.target.files[0].name.slice(0, 14);
+    }
+});
+
+document.getElementById('control-bar').addEventListener('click', (e) => {
+    const btn = e.target.closest('.ctrl-btn'); if (!btn) return;
+    const act = btn.dataset.act;
+    if (act === 'fist') actionFist();
+    else if (act === 'open') actionOpen();
+    else if (act === 'wave') actionWave();
+    else if (act === 'finale') { if (seqStep < 4) triggerFinale(); }
+    else if (act === 'mute') {
+        const m = Music.toggleMute();
+        document.getElementById('mute-btn').innerText = m ? '🔇' : '🔊';
+    }
+});
+
+window.addEventListener('keydown', (e) => {
+    switch (e.key) {
+        case '1': actionFist(); break;
+        case '2': actionOpen(); break;
+        case '3': actionWave(); break;
+        case '4': if (seqStep < 4) triggerFinale(); break;
+        case ' ': e.preventDefault(); actionAdvance(); break;
+        case 'r': case 'R': restartJourney(); break;
+        case 'm': case 'M': { const m = Music.toggleMute(); document.getElementById('mute-btn').innerText = m ? '🔇' : '🔊'; break; }
+    }
+});
+
+function revealEntry(noCamera) {
+    if (revealEntry._done) return; revealEntry._done = true;
+    document.getElementById('loading-inner').style.display = 'none';
+    document.getElementById('entry-block').style.display = 'flex';
+    if (noCamera) {
+        document.getElementById('entry-note').innerHTML =
+            '没有检测到摄像头 —— 没关系，进入后用下方按钮，或键盘 <b style="color:#ffe6a8">1 / 2 / 3 / 4</b>、空格、R，<br>同样能慢慢走完这段回忆。';
+    }
+}
+
+// 进入：解锁音频 + 开场轻语 + 星河缓缓成形
+document.getElementById('entry-btn').addEventListener('click', async () => {
+    const loading = document.getElementById('loading-screen');
+    loading.style.opacity = '0';
+    setTimeout(() => { loading.style.display = 'none'; }, 1000);
+
+    await Music.start();
+    setTimeout(() => initAI(), 1000);
+
+    // 开场轻语：别急，我们一起慢慢回到 2026。
+    const intro = document.getElementById('intro-line');
+    intro.classList.add('in');
+    setTimeout(() => {
+        intro.classList.remove('in');
+        started = true;   // 此后星河加速汇入、手势开始生效
+        updateStatus('握拳 ✊，把这些散落的光点轻轻收拢', '#e6c47e');
+    }, 6200);
+
+    // 开场前几秒，画面是很淡的深蓝星空，光点从四周缓缓汇入（started=false 时 lerp 很慢）
+});
+
+/* =========================================================
+   海报导出：保存这份 2026 回忆
+   ========================================================= */
+const Poster = {
+    open() {
+        document.getElementById('poster-modal').classList.add('show');
+        this.render();
+    },
+    close() { document.getElementById('poster-modal').classList.remove('show'); },
+
+    async render() {
+        const canvas = document.getElementById('poster-canvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;   // 1080 x 1920
+        try { await document.fonts.ready; } catch (e) {}
+        ctx.clearRect(0, 0, W, H);
+
+        // ---- 背景：晨光珍珠暖色竖向渐变 ----
+        const bg = ctx.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, '#FBDFC4'); bg.addColorStop(0.32, '#FFEDDC');
+        bg.addColorStop(0.68, '#FFF6E8'); bg.addColorStop(1, '#F8D9BD');
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+        // ---- 暖光晕（金 / 粉 / 蓝）----
+        this.halo(ctx, 540, 380, 380, 220, [[0, 'rgba(255,245,220,0.55)'], [0.4, 'rgba(244,213,172,0.22)'], [1, 'rgba(244,213,172,0)']]);
+        this.halo(ctx, 540, 980, 500, 640, [[0, 'rgba(252,213,192,0.40)'], [1, 'rgba(252,213,192,0)']]);
+        this.halo(ctx, 200, 1200, 240, 280, [[0, 'rgba(255,245,220,0.26)'], [1, 'rgba(255,245,220,0)']]);
+        this.halo(ctx, 880, 1280, 240, 290, [[0, 'rgba(214,229,240,0.30)'], [1, 'rgba(214,229,240,0)']]);
+        this.halo(ctx, 540, 1620, 360, 180, [[0, 'rgba(255,245,220,0.42)'], [1, 'rgba(255,245,220,0)']]);
+
+        // ---- 顶部装饰珍珠 ----
+        [[106, 86, 6, 'white'], [143, 86, 5, 'white'], [177, 86, 4.5, 'white'],
+         [913, 86, 4.5, 'white'], [947, 86, 5, 'white'], [986, 86, 6, 'white']]
+            .forEach(([x, y, r, k]) => this.drawPearl(ctx, x, y, r, k));
+
+        // ---- 顶部 学校 / 班级（暖棕）----
+        const school = (document.getElementById('p-school').value || '').trim();
+        ctx.textAlign = 'center';
+        if (school) {
+            const parts = school.split(/[·\/、\s]+/).filter(Boolean);
+            ctx.fillStyle = '#7A4A2B';
+            ctx.font = '600 34px "Noto Serif SC", "Microsoft YaHei", serif';
+            ctx.fillText(parts[0] || school, W / 2, 126);
+            if (parts[1]) {
+                ctx.fillStyle = '#9D6B45';
+                ctx.font = '500 28px "Noto Serif SC", "Microsoft YaHei", serif';
+                ctx.fillText(parts.slice(1).join(' · '), W / 2, 172);
+            }
+        }
+
+        // ---- 装饰珠链 + 两端爱心 ----
+        this.beadRow(ctx, 232, 226, 832, 226);
+
+        // ---- 主标题 2026（暖金渐变 + 柔光）----
+        ctx.save();
+        ctx.shadowColor = 'rgba(210,160,108,0.5)'; ctx.shadowBlur = 30;
+        const yg = ctx.createLinearGradient(W / 2 - 240, 0, W / 2 + 240, 0);
+        yg.addColorStop(0, '#9C6B3F'); yg.addColorStop(0.5, '#D2A06C'); yg.addColorStop(1, '#9C6B3F');
+        ctx.fillStyle = yg;
+        ctx.font = '700 150px Cinzel, Georgia, "Times New Roman", serif';
+        ctx.fillText('2026', W / 2, 372);
+        ctx.restore();
+
+        // ---- 副标题 ----
+        ctx.fillStyle = '#7A4A2B';
+        ctx.font = '38px "Ma Shan Zheng", "Noto Serif SC", serif';
+        ctx.fillText('毕  业  快  乐', W / 2, 452);
+        ctx.fillStyle = '#9D6B45';
+        ctx.font = '62px "Long Cang", "Noto Serif SC", cursive';
+        ctx.fillText('有你真好', W / 2, 540);
+
+        // ---- 装饰横线 ----
+        ctx.save();
+        ctx.globalAlpha = 0.55; ctx.strokeStyle = '#D4A878'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(W / 2 - 240, 588);
+        ctx.bezierCurveTo(W / 2 - 90, 572, W / 2 - 40, 570, W / 2, 570);
+        ctx.bezierCurveTo(W / 2 + 40, 570, W / 2 + 90, 572, W / 2 + 240, 588);
+        ctx.stroke();
+        ctx.restore();
+
+        // ---- 照片拼贴（散落的相片卡）----
+        await this.drawCollage(ctx, W, H);
+
+        // ---- 底部祝福卡 ----
+        let bless = (document.getElementById('p-bless').value || '').trim();
+        if (!bless) bless = '愿此去前程似锦，再相逢依旧如故。';
+        const sign = (document.getElementById('p-sign').value || '').trim() || '致敬 2026 · 致敬每一颗相遇的珍珠';
+
+        const boxX = 130, boxY = 1652, boxW = W - 260, boxH = 176;
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.strokeStyle = 'rgba(212,168,120,0.45)'; ctx.lineWidth = 1.4;
+        this.roundRect(ctx, boxX, boxY, boxW, boxH, 40); ctx.fill(); ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = '#7A4A2B';
+        ctx.font = '30px "Noto Serif SC", serif';
+        this.wrapText(ctx, bless, W / 2, boxY + 60, boxW - 90, 42);
+
+        ctx.fillStyle = '#9D6B45';
+        ctx.font = '22px "Noto Serif SC", serif';
+        ctx.fillText('— ' + sign + ' —', W / 2, boxY + 112);
+
+        ctx.fillStyle = '#B07A3F';
+        ctx.font = '20px "Noto Serif SC", serif';
+        const footLine = (school ? school + ' · ' : '') + '2026.06';
+        ctx.fillText(footLine, W / 2, boxY + 150);
+
+        // ---- 底部装饰珠链 ----
+        this.beadRow(ctx, 196, 1866, 868, 1866);
+    },
+
+    halo(ctx, cx, cy, rx, ry, stops) {
+        ctx.save();
+        ctx.translate(cx, cy); ctx.scale(rx / ry, 1);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, ry);
+        stops.forEach(([o, c]) => g.addColorStop(o, c));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0, 0, ry, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    },
+
+    drawPearl(ctx, x, y, r, kind) {
+        const palette = {
+            gold:  ['#FFFFFF', '#FFF4D8', '#E5C088'],
+            white: ['#FFFFFF', '#FBF1DF', '#DBC4A0'],
+            pink:  ['#FFFFFF', '#FBDDD0', '#E0A095'],
+            blue:  ['#FFFFFF', '#DDE9F1', '#A0B8CB']
+        };
+        const c = palette[kind] || palette.white;
+        const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r);
+        g.addColorStop(0, c[0]); g.addColorStop(0.55, c[1]); g.addColorStop(1, c[2]);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.beginPath(); ctx.arc(x - r * 0.3, y - r * 0.3, r * 0.26, 0, Math.PI * 2); ctx.fill();
+    },
+
+    drawHeart(ctx, x, y, s, filled) {
+        ctx.save(); ctx.translate(x, y); ctx.scale(s / 10, s / 10);
+        ctx.beginPath();
+        ctx.moveTo(0, 7);
+        ctx.bezierCurveTo(-7, 2, -10, -3, -7.5, -6);
+        ctx.bezierCurveTo(-5.5, -8.5, -2.5, -8, 0, -5);
+        ctx.bezierCurveTo(2.5, -8, 5.5, -8.5, 7.5, -6);
+        ctx.bezierCurveTo(10, -3, 7, 2, 0, 7);
+        ctx.closePath();
+        if (filled) { ctx.fillStyle = '#E89A9A'; ctx.fill(); }
+        else { ctx.strokeStyle = '#D88A8A'; ctx.lineWidth = 1.4; ctx.stroke(); }
+        ctx.restore();
+    },
+
+    // 一条珠链：两端爱心，中间金/白珍珠交替
+    beadRow(ctx, x1, y1, x2, y2) {
+        this.drawHeart(ctx, x1, y1, 11, true);
+        this.drawHeart(ctx, x2, y2, 11, true);
+        const n = Math.max(2, Math.round((x2 - x1) / 40));
+        for (let i = 1; i < n; i++) {
+            const x = x1 + ((x2 - x1) / n) * i;
+            this.drawPearl(ctx, x, (y1 + y2) / 2, i % 2 ? 6 : 5, i % 2 ? 'white' : 'gold');
+        }
+    },
+
+    async drawCollage(ctx, W, H) {
+        const urls = photoUrls.slice(0, 9);
+        if (urls.length === 0) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.45)';
+            ctx.strokeStyle = 'rgba(212,168,120,0.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([9, 9]);
+            this.roundRect(ctx, W / 2 - 280, 900, 560, 360, 28); ctx.fill(); ctx.stroke();
+            ctx.restore();
+            ctx.fillStyle = '#9D6B45'; ctx.font = '28px "Noto Serif SC", serif'; ctx.textAlign = 'center';
+            ctx.fillText('上传照片后，', W / 2, 1070);
+            ctx.fillText('这里会拼入属于你们的回忆 ♡', W / 2, 1112);
+            return;
+        }
+        // 散落的相片卡位（中心点、旋转角），按好看顺序排布
+        const slots = [
+            { x: 540, y: 1090, rot: -3 },
+            { x: 300, y: 822, rot: -7 },
+            { x: 782, y: 852, rot: 6 },
+            { x: 300, y: 1380, rot: 5 },
+            { x: 782, y: 1382, rot: -6 },
+            { x: 540, y: 808, rot: 3 },
+            { x: 540, y: 1392, rot: -4 },
+            { x: 286, y: 1098, rot: 6 },
+            { x: 794, y: 1100, rot: -5 }
+        ];
+        const cardW = 236, cardH = 248;
+        const imgs = await Promise.all(urls.map(u => new Promise(res => {
+            const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = u;
+        })));
+        imgs.forEach((im, i) => {
+            if (!im || !slots[i]) return;
+            const s = slots[i];
+            this.drawPhotoCard(ctx, im, s.x, s.y, cardW, cardH, s.rot);
+        });
+        // 拼贴附近的珍珠与爱心
+        this.drawPearl(ctx, 150, 700, 6, 'white');
+        this.drawPearl(ctx, 930, 690, 6, 'white');
+        this.drawPearl(ctx, 276, 582, 5, 'pink');
+        this.drawPearl(ctx, 813, 616, 5, 'pink');
+        this.drawPearl(ctx, 354, 1448, 5, 'gold');
+        this.drawPearl(ctx, 730, 1492, 5, 'gold');
+        this.drawHeart(ctx, 112, 1086, 16, true);
+        this.drawHeart(ctx, 982, 1128, 16, true);
+        this.drawHeart(ctx, 268, 716, 12, false);
+        this.drawHeart(ctx, 800, 740, 12, false);
+    },
+
+    drawPhotoCard(ctx, img, x, y, w, h, rotDeg) {
+        const rad = rotDeg * Math.PI / 180;
+        const pad = 13, bw = w + pad * 2, bh = h + pad * 2;
+        ctx.save();
+        ctx.translate(x, y); ctx.rotate(rad);
+        // 暖白相纸 + 暖投影
+        ctx.save();
+        ctx.shadowColor = 'rgba(139,94,60,0.28)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 14;
+        ctx.fillStyle = '#FFFAF0';
+        this.roundRect(ctx, -bw / 2, -bh / 2, bw, bh, 26); ctx.fill();
+        ctx.restore();
+        // 图片（cover 居中裁剪）
+        ctx.save();
+        this.roundRect(ctx, -w / 2, -h / 2, w, h, 22); ctx.clip();
+        const s = Math.max(w / img.width, h / img.height);
+        const dw = img.width * s, dh = img.height * s;
+        ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+        ctx.restore();
+        // 暖金描边
+        ctx.strokeStyle = 'rgba(212,168,120,0.85)'; ctx.lineWidth = 1.6;
+        this.roundRect(ctx, -w / 2, -h / 2, w, h, 22); ctx.stroke();
+        // 底部小金点
+        ctx.fillStyle = '#E5C088';
+        ctx.beginPath(); ctx.arc(0, bh / 2 - 12, 3.2, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    },
+
+    roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    },
+
+    wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+        const chars = text.split('');
+        let line = '', lines = [];
+        for (const ch of chars) {
+            if (ctx.measureText(line + ch).width > maxWidth && line) { lines.push(line); line = ch; }
+            else line += ch;
+        }
+        if (line) lines.push(line);
+        lines.forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
+    },
+
+    download() {
+        const canvas = document.getElementById('poster-canvas');
+        const link = document.createElement('a');
+        link.download = 'memory-2026.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+};
+
+document.getElementById('save-poster-btn').addEventListener('click', () => Poster.open());
+document.getElementById('restart-btn').addEventListener('click', () => restartJourney());
+document.getElementById('poster-close').addEventListener('click', () => Poster.close());
+document.getElementById('poster-refresh').addEventListener('click', () => Poster.render());
+document.getElementById('poster-download').addEventListener('click', () => Poster.download());
+document.getElementById('poster-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'poster-modal') Poster.close();
+});
+
+/* ---------------- 启动 ---------------- */
+applyBackendCopy();
+initThree();
+loadDefaultPhotos();
+animate();
+updateStatus('正在点亮记忆星河...', '#e6c47e');
+requestAnimationFrame(() => revealEntry(false));
+
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import json
 from json import JSONDecodeError
 from music_h_app.models import User
 from django.contrib.auth import authenticate, login, logout
+from .api.graduation_wall_view import build_graduation_wall_config
 
 
 def _read_json_body(request):
@@ -153,3 +154,10 @@ def saibo_page(request):
 
 def report_page(request):
     return render(request, 'music_h_app/report_page.html') 
+
+def graduation_wall_page(request):
+    return render(
+        request,
+        'music_h_app/graduation_wall.html',
+        {'graduation_wall_config': build_graduation_wall_config()},
+    )

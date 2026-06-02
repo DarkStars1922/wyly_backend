@@ -646,6 +646,136 @@
         margin-bottom: 30px;
       }
     }
+
+    .graduation-season-card {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+      gap: 34px;
+      align-items: center;
+      padding: 34px;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 214, 160, 0.18), transparent 30%),
+        radial-gradient(circle at 82% 24%, rgba(126, 166, 255, 0.18), transparent 34%),
+        linear-gradient(135deg, rgba(36, 42, 76, 0.86), rgba(18, 23, 46, 0.92));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      box-shadow: 0 16px 42px rgba(0, 0, 0, 0.32);
+    }
+
+    .graduation-season-card:before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent 22%, transparent 78%, rgba(162,155,254,0.08));
+      pointer-events: none;
+    }
+
+    .graduation-season-content,
+    .graduation-preview {
+      position: relative;
+      z-index: 1;
+    }
+
+    .graduation-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #ffe6a8;
+      font-size: 0.82rem;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .graduation-season-content h3 {
+      color: #fff;
+      font-size: clamp(1.55rem, 3vw, 2.2rem);
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .graduation-season-content p {
+      color: #d0d0ff;
+      font-size: 1.05rem;
+      line-height: 1.75;
+      margin-bottom: 18px;
+    }
+
+    .graduation-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .graduation-tags span {
+      color: #f7e8ff;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.86rem;
+    }
+
+    .graduation-preview {
+      min-height: 270px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      transform: rotate(-2deg);
+    }
+
+    .graduation-photo-tile {
+      min-height: 84px;
+      background-size: cover;
+      background-position: center;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 230, 168, 0.38);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    .graduation-photo-tile:nth-child(2) { transform: translateY(18px) rotate(3deg); }
+    .graduation-photo-tile:nth-child(3) { transform: translateY(6px) rotate(-4deg); }
+    .graduation-photo-tile:nth-child(4) { transform: translateY(-8px) rotate(4deg); }
+    .graduation-photo-tile:nth-child(5) { transform: translateY(14px) rotate(-2deg); }
+    .graduation-photo-tile:nth-child(6) { transform: translateY(-4px) rotate(3deg); }
+
+    .graduation-empty-tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 230, 168, 0.86);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px dashed rgba(255, 230, 168, 0.4);
+      border-radius: 12px;
+      min-height: 84px;
+    }
+
+    .graduation-empty-tile i {
+      margin: 0;
+    }
+
+    @media (max-width: 992px) {
+      .graduation-season-card {
+        grid-template-columns: 1fr;
+      }
+
+      .graduation-preview {
+        min-height: 220px;
+        transform: none;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .graduation-season-card {
+        padding: 24px;
+      }
+
+      .graduation-preview {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
   </style>
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="stylesheet" href="{% static 'css/xingxuanlvdong.css' %}">
@@ -671,6 +801,9 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#features">核心功能</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#graduation-season">毕业季</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#meditation">五音冥想</a>
@@ -728,6 +861,38 @@
 
   <!-- 主要内容区域 -->
   <div class="container" style="margin-top: 80px;">
+    <section id="graduation-season" class="content-section">
+      <div class="graduation-season-card">
+        <div class="graduation-season-content">
+          <div class="graduation-kicker">
+            <i class="fas fa-star"></i>
+            <span>{{ graduation_wall_config.copy.kicker|default:"CLASS OF 2026" }}</span>
+          </div>
+          <h3>{{ graduation_wall_config.copy.homepage_title|default:"毕业季限定照片墙" }}</h3>
+          <p>{{ graduation_wall_config.copy.homepage_description|default:"把合照、教室、操场和没说完的话放进同一片星河，生成一段可互动、可保存的毕业回忆。" }}</p>
+          <div class="graduation-tags">
+            <span><i class="fas fa-hand-paper mr-1"></i> 手势互动</span>
+            <span><i class="fas fa-images mr-1"></i> 照片星河</span>
+            <span><i class="fas fa-file-image mr-1"></i> 纪念海报</span>
+          </div>
+          <a href="{% url 'graduation_wall' %}" class="btn btn-primary btn-cta"
+            style="background: linear-gradient(135deg, #ffe6a8, #a29bfe); color: #171326; border: none;">
+            进入回忆墙
+            <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+
+        <div class="graduation-preview" aria-hidden="true">
+          {% for photo_url in graduation_wall_config.default_photos|slice:":6" %}
+            <div class="graduation-photo-tile" style="background-image: url('{{ photo_url }}');"></div>
+          {% empty %}
+            <div class="graduation-empty-tile"><i class="fas fa-image fa-2x"></i></div>
+            <div class="graduation-empty-tile"><i class="fas fa-camera-retro fa-2x"></i></div>
+            <div class="graduation-empty-tile"><i class="fas fa-graduation-cap fa-2x"></i></div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
 
     <!-- 核心功能介绍 -->
     <section id="features" class="content-section">

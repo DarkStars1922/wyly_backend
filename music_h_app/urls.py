@@ -13,6 +13,7 @@ from .api.home_view import (
 from .api.stu_view import StudentListCreateAPIView, StudentRetrieveUpdateDestroyAPIView
 from .api.music_generator_view import GenerateMusicView, ProgressView
 from .api.video_generator_view import GenerateVideoView
+from .api.graduation_wall_view import GraduationWallConfigAPIView
 
 urlpatterns = [
     path('', HomeAPIView.as_view(), name='home'),
@@ -49,4 +50,7 @@ urlpatterns = [
     path('saibo/', views.saibo_page, name='saibo'),
     # Healing report
     path('report_page/', views.report_page, name='report_page'),
+    # Graduation season memory wall
+    path('graduation-wall/', views.graduation_wall_page, name='graduation_wall'),
+    path('graduation-wall/config/', GraduationWallConfigAPIView.as_view(), name='graduation_wall_config'),
 ]

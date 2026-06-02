@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework import status
 
+from .graduation_wall_view import build_graduation_wall_config
 from ..prompt_optimizer import PromptOptimizer
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,11 @@ class HomeAPIView(APIView):
     template_name = 'music_h_app/index.html'
 
     def get(self, request):
-        return render(request, self.template_name)
+        return render(
+            request,
+            self.template_name,
+            {'graduation_wall_config': build_graduation_wall_config()},
+        )
     
 class LyricAPIView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
@@ -91,5 +96,4 @@ class ShowcaseView(APIView):
 
     def get(self, request):
         return render(request, self.template_name)
-
 

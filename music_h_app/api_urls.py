@@ -6,6 +6,7 @@ from .api.home_view import OptimizePromptView
 from .api.stu_view import StudentListCreateAPIView, StudentRetrieveUpdateDestroyAPIView
 from .api.music_generator_view import GenerateMusicView, ProgressView
 from .api.video_generator_view import GenerateVideoView
+from .api.graduation_wall_view import GraduationWallConfigAPIView
 
 urlpatterns = [
     path('register/', views.register_user, name='api-register'),
@@ -18,4 +19,5 @@ urlpatterns = [
     path('progress/<str:task_id>/', ProgressView.as_view(), name='api-progress'),
     path('expressions/', ExpressionAPIView.as_view(), name='api-expression'),
     path('optimize-prompt/', OptimizePromptView.as_view(), name='api-optimize-prompt'),
+    path('graduation-wall/config/', GraduationWallConfigAPIView.as_view(), name='api-graduation-wall-config'),
 ]
