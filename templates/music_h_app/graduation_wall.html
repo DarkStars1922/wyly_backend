@@ -177,8 +177,10 @@
             box-shadow: 0 0 16px rgba(230, 196, 126, 0.45); backface-visibility: visible;
         }
         #ring-hint {
-            position: absolute; bottom: 4vh; left: 0; width: 100%; text-align: center;
-            color: rgba(255,255,255,0.6); letter-spacing: 3px; font-size: 0.82rem; z-index: 7;
+            position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%);
+            width: min(760px, calc(100vw - 32px)); text-align: center;
+            color: rgba(255,255,255,0.66); letter-spacing: 2px; font-size: 0.82rem; z-index: 11;
+            line-height: 1.7; pointer-events: none; text-shadow: 0 2px 14px rgba(0,0,0,0.88);
         }
         #ring-hint .k { color: var(--gold-bright); }
 
@@ -305,13 +307,13 @@
         #control-bar {
             position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 12;
             display: flex; gap: 9px; align-items: center; flex-wrap: wrap; justify-content: center;
-            max-width: 92vw;
+            width: max-content; max-width: calc(100vw - 28px);
         }
         .ctrl-btn {
             pointer-events: auto; background: rgba(230,196,126,0.07); border: 1px solid rgba(230,196,126,0.38);
             color: var(--gold-soft); padding: 10px 17px; cursor: pointer; border-radius: 30px;
             font-size: 0.8rem; letter-spacing: 1px; transition: 0.28s; font-family: 'Noto Serif SC', sans-serif;
-            white-space: nowrap;
+            white-space: nowrap; min-height: 40px;
         }
         .ctrl-btn:hover { background: var(--gold); color: #1a1300; box-shadow: 0 0 22px rgba(230,196,126,0.45); }
         .ctrl-btn.icon { padding: 10px 14px; }
@@ -364,8 +366,6 @@
         .music-opt .mo-desc { font-size: 0.66rem; color: #8893ad; line-height: 1.5; letter-spacing: 0; }
         .music-opt.active { border-color: var(--gold); background: rgba(230,196,126,0.16); box-shadow: 0 0 20px rgba(230,196,126,0.25); }
         .music-opt.active .mo-title { color: var(--gold-bright); }
-        .music-opt.disabled { opacity: 0.42; cursor: not-allowed; filter: grayscale(0.3); }
-        .music-opt.disabled:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); }
 
         #entry-note { color: rgba(255,255,255,0.45); letter-spacing: 2px; font-size: 0.72rem; margin-bottom: 26px; max-width: 420px; line-height: 1.8; }
         #entry-btn {
@@ -440,12 +440,35 @@
         .poster-tip { color: #6b7693; font-size: 0.72rem; margin-top: 14px; letter-spacing: 1px; text-align: center; line-height: 1.6; }
 
         @media (max-width: 760px) {
-            #ui-layer { max-width: 70vw; bottom: 96px; left: 16px; }
+            #ui-layer { max-width: calc(100vw - 32px); bottom: 170px; left: 16px; }
             .guide { font-size: 0.78rem; padding: 14px 16px; }
-            #upload-zone { bottom: 96px; right: 16px; }
-            #control-bar { bottom: 18px; gap: 6px; }
-            .ctrl-btn { padding: 9px 12px; font-size: 0.74rem; }
+            #upload-zone {
+                left: 16px; right: 16px; bottom: 86px; text-align: center;
+            }
+            #upload-btn { width: 100%; max-width: 360px; padding: 10px 16px; }
+            #photo-count { letter-spacing: 1px; }
+            #ring-hint {
+                bottom: 142px; width: calc(100vw - 28px); font-size: 0.76rem;
+                letter-spacing: 1px; line-height: 1.6;
+            }
+            #control-bar {
+                bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+                width: calc(100vw - 20px); max-width: 430px;
+                display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px;
+            }
+            .ctrl-btn {
+                width: 100%; min-width: 0; min-height: 44px; padding: 8px 4px;
+                font-size: clamp(0.68rem, 2.9vw, 0.76rem); letter-spacing: 0;
+                display: inline-flex; align-items: center; justify-content: center;
+            }
+            .ctrl-btn.icon { padding: 8px 4px; }
             .ctrl-sep { display: none; }
+        }
+
+        @media (min-width: 761px) and (max-width: 980px) {
+            #ring-hint { bottom: 104px; width: calc(100vw - 40px); }
+            #control-bar { bottom: 26px; max-width: calc(100vw - 40px); }
+            .ctrl-btn { padding: 10px 15px; }
         }
     </style>
 
@@ -481,11 +504,7 @@
                     </div>
                     <div class="music-opt" data-music="gentle">
                         <div class="mo-title">温柔钢琴</div>
-                        <div class="mo-desc">原创氛围旋律<br>安静而温柔</div>
-                    </div>
-                    <div class="music-opt disabled" data-music="ai">
-                        <div class="mo-title">AI 即兴创作</div>
-                        <div class="mo-desc">暂未开放<br>敬请期待 ✦</div>
+                        <div class="mo-desc">在线温柔旋律<br>安静而温柔</div>
                     </div>
                     <div class="music-opt" data-music="upload">
                         <div class="mo-title">上传我的歌</div>
@@ -1368,144 +1387,55 @@ function applyBackendCopy() {
 }
 
 /* =========================================================
-   音乐引擎：起风了（在线音源）/ 温柔钢琴（原创氛围）/ 上传我的歌
+   音乐引擎：起风了（在线音源）/ 温柔钢琴（在线音源）/ 上传我的歌
    说明：默认播放《起风了》（使用用户提供的在线音频地址）；
-        亦可切换为本程序自创的温柔钢琴氛围，或上传自己的版本。
-        「AI 即兴创作」暂未开放。
+        亦可切换为温柔钢琴音源，或上传自己的版本。
    ========================================================= */
 const QIFENGLE_URL = 'https://videotourl.com/audio/1780296378482-5e4c6836-269f-4b84-998b-201485efaf8d.mp3';
-let toneLoadPromise = null;
-function loadTone() {
-    if (window.Tone) return Promise.resolve(window.Tone);
-    if (!toneLoadPromise) {
-        toneLoadPromise = new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js';
-            script.async = true;
-            script.onload = () => resolve(window.Tone);
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-    return toneLoadPromise;
-}
-
+const GENTLE_PIANO_URL = 'https://videotourl.com/audio/1780365198816-1028a9e5-5878-4b3e-9af1-dcfa66063678.mp3';
 const Music = {
-    ready: false, started: false, phase: 0, muted: false, bar: 0,
+    started: false, phase: 0, muted: false,
     mode: 'qifengle',              // qifengle | gentle | upload
-    streamUrl: QIFENGLE_URL,
-    streamAudio: null,
+    streamAudio: null, streamLabel: '',
     userAudio: null, userAudioFile: null,
-
-    // —— 原创和声进行（和弦走向本身不受版权限制）——
-    chords: [
-        { root: 'A2', notes: ['A3', 'C4', 'E4'] },
-        { root: 'F2', notes: ['F3', 'A3', 'C4'] },
-        { root: 'C2', notes: ['C3', 'E3', 'G3'] },
-        { root: 'G2', notes: ['G2', 'B3', 'D4'] },
-        { root: 'A2', notes: ['A3', 'C4', 'E4'] },
-        { root: 'F2', notes: ['F3', 'A3', 'C4'] },
-        { root: 'C2', notes: ['C3', 'E3', 'G3'] },
-        { root: 'G2', notes: ['G2', 'B3', 'D4'] }
-    ],
-    // —— 我原创的一段温柔旋律动机（这些音符为本程序自创，非任何既有歌曲）——
-    gentleMelody: [
-        ['E4', 'A4', 'C5', 'B4'],
-        ['A4', 'C5', 'F5', 'E5'],
-        ['G4', 'E4', 'G4', 'C5'],
-        ['D5', 'B4', 'G4', 'A4'],
-        ['C5', 'B4', 'A4', 'E4'],
-        ['F4', 'A4', 'C5', 'A4'],
-        ['E5', 'D5', 'C5', 'G4'],
-        ['A4', 'B4', 'D5', null]
-    ],
-    aiScale: ['C4', 'D4', 'E4', 'G4', 'A4', 'C5', 'D5', 'E5', 'G5'],
 
     selectMode(m) { this.mode = m; },
 
-    build() {
-        if (this.ready || !window.Tone) return;
-        const T = window.Tone;
-        this.reverb = new T.Reverb({ decay: 7, wet: 0.36 }).toDestination();
-        this.master = new T.Gain(0.0).connect(this.reverb);
-        // 铺底 pad
-        this.pad = new T.PolySynth(T.Synth, { maxPolyphony: 16, oscillator: { type: 'sine' }, envelope: { attack: 1.6, decay: 0.6, sustain: 0.8, release: 3.6 } }).connect(this.master);
-        this.pad.volume.value = -12;
-        // 贝斯
-        this.bass = new T.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.1, decay: 0.3, sustain: 0.6, release: 1.4 } }).connect(this.master);
-        this.bass.volume.value = -16;
-        // 钢琴感旋律（FM）
-        this.piano = new T.FMSynth({ harmonicity: 2.4, modulationIndex: 4, oscillator: { type: 'sine' }, envelope: { attack: 0.008, decay: 0.5, sustain: 0.1, release: 1.1 }, modulationEnvelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 0.4 } }).connect(this.master);
-        this.piano.volume.value = -12;
-        // AI 即兴用的钟琴 + 微光
-        this.bell = new T.FMSynth({ harmonicity: 2.2, modulationIndex: 6, oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 0.6 } }).connect(this.master);
-        this.bell.volume.value = -20;
-        this.sparkle = new T.PolySynth(T.Synth, { maxPolyphony: 12, oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.3, sustain: 0, release: 0.5 } }).connect(this.master);
-        this.sparkle.volume.value = -17;
-
-        T.Transport.bpm.value = 66;
-        this.loop = new T.Loop((t) => this.onBar(t), '1m').start(0);
-        this.ready = true;
-    },
-
-    onBar(time) {
-        if (this.mode !== 'gentle') return;          // 仅「温柔钢琴」使用合成器
-        const T = window.Tone;
-        const idx = this.bar % 8;
-        const chord = this.chords[idx];
-        this.pad.triggerAttackRelease(chord.notes, '1m', time, 0.42);
-        if (this.phase >= 1) this.bass.triggerAttackRelease(chord.root, '1m', time, 0.7);
-
-        const q = T.Time('4n').toSeconds();
-
-        // 前 1 小节只有 pad（前奏慢慢进入），之后旋律温柔流动
-        if (this.bar >= 1) {
-            const line = this.gentleMelody[idx];
-            for (let i = 0; i < 4; i++) {
-                const n = line[i];
-                if (n) this.piano.triggerAttackRelease(n, '4n', time + i * q, 0.55 + Math.random() * 0.12);
-            }
-        }
-        this.bar++;
-    },
-
     async start() {
         this.started = true;
-
-        // 《起风了》在线音源：在用户点击手势内直接播放，避免自动播放被拦截
         if (this.mode === 'qifengle') {
-            this.playStream(this.streamUrl);
+            this.playStream(QIFENGLE_URL, '《起风了》');
             return;
         }
-        // 上传的歌
+        if (this.mode === 'gentle') {
+            this.playStream(GENTLE_PIANO_URL, '温柔钢琴');
+            return;
+        }
         if (this.mode === 'upload') {
             if (this.userAudioFile) {
                 this.playUserAudio();
                 return;
             }
-            this.mode = 'gentle';   // 选了上传却没文件 → 回退到温柔钢琴
-        }
-        // 温柔钢琴（合成器）
-        const T = await loadTone().catch(() => null);
-        if (!T) {
-            updateStatus('音乐引擎加载失败，仍可继续浏览回忆墙', '#e6c47e');
+            this.mode = 'gentle';   // 选了上传却没文件 → 回退到温柔钢琴在线音源
+            this.playStream(GENTLE_PIANO_URL, '温柔钢琴');
             return;
         }
-        try { await T.start(); } catch (e) {}
-        this.build();
-        T.Transport.start();
-        this.master.gain.rampTo(0.82, 6);   // 前奏慢慢进入
     },
 
-    playStream(url) {
+    playStream(url, label = '音乐') {
+        if (this.userAudio) {
+            this.userAudio.pause();
+            this.userAudio.currentTime = 0;
+        }
         if (!this.streamAudio) this.streamAudio = new Audio();
         this.streamAudio.src = url;
+        this.streamLabel = label;
         this.streamAudio.loop = true;
         this.streamAudio.volume = 0;
         this.streamAudio.muted = this.muted;
         const p = this.streamAudio.play();
         if (p && p.catch) p.catch(() => {
-            try { updateStatus('🎵 若没有声音，点一下「🔊」或屏幕即可开启《起风了》', '#e6c47e'); } catch (e) {}
+            try { updateStatus(`🎵 若没有声音，点一下「🔊」或屏幕即可开启${label}`, '#e6c47e'); } catch (e) {}
         });
         let v = 0; const fade = setInterval(() => {
             v += 0.025; if (this.streamAudio) this.streamAudio.volume = Math.min(0.82, v);
@@ -1517,6 +1447,10 @@ const Music = {
 
     playUserAudio() {
         if (!this.userAudioFile) return;
+        if (this.streamAudio) {
+            this.streamAudio.pause();
+            this.streamAudio.currentTime = 0;
+        }
         if (!this.userAudio) this.userAudio = new Audio();
         this.userAudio.src = URL.createObjectURL(this.userAudioFile);
         this.userAudio.loop = true; this.userAudio.volume = 0;
@@ -1533,32 +1467,19 @@ const Music = {
 
     setPhase(p) {
         this.phase = Math.max(this.phase, p);
-        if (!this.ready || this.mode !== 'gentle') return;
-        if (this.phase >= 2) this.piano.volume.rampTo(-9, 2);
-        if (this.phase >= 3) this.pad.volume.rampTo(-9, 2);
     },
 
     finale() {
-        const T = window.Tone;
         this.phase = 4;
         // 在线/上传音源：终章时稍微提一点音量
         const media = this.activeMedia();
-        if (this.mode !== 'gentle' && media) {
+        if (media) {
             try { media.volume = Math.min(1, (media.volume || 0.7) + 0.12); } catch (e) {}
-            return;
         }
-        if (!this.ready || !T) return;
-        T.Transport.bpm.rampTo(72, 5);
-        this.master.gain.rampTo(0.98, 3);
-        const now = T.now();
-        const run = ['C4', 'E4', 'G4', 'C5', 'E5', 'G5', 'C6', 'E6'];
-        run.forEach((n, i) => this.sparkle.triggerAttackRelease(n, '8n', now + i * 0.12, 0.8));
-        this.piano.volume.rampTo(-6, 1);
     },
 
     toggleMute() {
         this.muted = !this.muted;
-        if (window.Tone) window.Tone.Destination.mute = this.muted;
         if (this.streamAudio) this.streamAudio.muted = this.muted;
         if (this.userAudio) this.userAudio.muted = this.muted;
         return this.muted;
@@ -1633,10 +1554,6 @@ document.getElementById('file-input').addEventListener('change', (e) => {
 // 音乐选择（进入屏）
 document.querySelectorAll('.music-opt').forEach(opt => {
     opt.addEventListener('click', () => {
-        if (opt.classList.contains('disabled')) {
-            updateStatus('「AI 即兴创作」暂未开放，敬请期待 ✦', '#8893ad');
-            return;
-        }
         document.querySelectorAll('.music-opt').forEach(o => o.classList.remove('active'));
         opt.classList.add('active');
         const m = opt.dataset.music;
