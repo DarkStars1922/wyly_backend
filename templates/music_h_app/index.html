@@ -477,13 +477,79 @@
       background: linear-gradient(135deg, rgba(85, 239, 196, 0.15), rgba(162, 155, 254, 0.15), rgba(253, 121, 168, 0.15));
       border: 1px solid rgba(255, 255, 255, 0.1);
       position: relative;
-      padding: 40px !important;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
+      padding: 0 !important;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
       animation: breathing-glow 4s infinite ease-in-out;
-      cursor: pointer;
+    }
+
+    .healing-option {
+      display: flex;
+      min-width: 0;
+      min-height: 360px;
+      padding: 40px;
+      color: inherit;
+      text-decoration: none !important;
+      transition: background 0.3s ease;
+    }
+
+    .healing-option:hover {
+      color: inherit;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .healing-option:focus-visible {
+      outline: 3px solid #a29bfe;
+      outline-offset: -4px;
+    }
+
+    .healing-option .btn-cta {
+      margin-top: 24px;
+    }
+
+    .healing-option + .healing-option {
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .healing-option-vr {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(145deg, rgba(85, 239, 196, 0.12), rgba(72, 219, 251, 0.08));
+    }
+
+    .healing-option-original {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(162, 155, 254, 0.08);
+    }
+
+    .healing-option-original .healing-wheel-container {
+      margin-bottom: 30px;
+    }
+
+    .healing-option-original .featured-info {
+      width: 100%;
+    }
+
+    .healing-option-original .visualizer {
+      justify-content: center;
+    }
+
+    .healing-option-icon {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     }
 
     @keyframes breathing-glow {
@@ -638,12 +704,18 @@
     /* 响应式微调 */
     @media (max-width: 768px) {
       .featured-card {
-        flex-direction: column;
-        text-align: center;
+        grid-template-columns: 1fr;
+        grid-auto-rows: 1fr;
       }
 
-      .healing-wheel-container {
-        margin-bottom: 30px;
+      .healing-option {
+        min-height: 320px;
+        padding: 32px 24px;
+      }
+
+      .healing-option + .healing-option {
+        border-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
       }
     }
 
@@ -730,7 +802,8 @@
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container">
       <a class="navbar-brand" href="#">
-        <img src="{% static 'images/logo.jpg' %}" alt="星璇律动 Logo" style="max-height: 40px; margin-right: 10px;">
+        <img src="{% static 'images/starpulse-logo-20260923-transparent.png' %}" alt="星璇律动 Logo"
+          style="width: clamp(112px, 24vw, 144px); height: auto; max-width: 100%; object-fit: contain; margin-right: 10px;">
         星璇律动
       </a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
@@ -834,42 +907,57 @@
       <p class="text-center lead-text">一站式创意表达平台，融合AI技术与艺术创作</p>
 
       <div class="row">
-        <!-- 智慧疗愈大卡片 -->
+        <!-- 双模式疗愈入口 -->
         <div class="col-12 mb-4">
-          <div class="feature-card featured-card" onclick="window.location.href='{% url 'mindfulness' %}'">
-            <div class="healing-wheel-container">
-              <div class="healing-wheel">
-                <div class="wheel-dot dot-1"><span>宫</span><small>脾</small></div>
-                <div class="wheel-dot dot-2"><span>商</span><small>肺</small></div>
-                <div class="wheel-dot dot-3"><span>角</span><small>肝</small></div>
-                <div class="wheel-dot dot-4"><span>徵</span><small>心</small></div>
-                <div class="wheel-dot dot-5"><span>羽</span><small>肾</small></div>
+          <div class="feature-card featured-card">
+            <a class="healing-option healing-option-vr" href="/vr/" aria-label="进入 VR 疗愈">
+              <div class="healing-option-icon">
+                <i class="fas fa-vr-cardboard fa-3x" style="color: #48dbfb; filter: drop-shadow(0 0 10px #48dbfb);"></i>
               </div>
-              <div style="position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align: center;">
-                <i class="fas fa-lightbulb fa-3x" style="color: #f368e0; filter: drop-shadow(0 0 10px #f368e0);"></i>
-              </div>
-            </div>
-
-            <div class="featured-info px-md-5 flex-grow-1">
-              <h3 style="color: #fff; font-weight: 700; letter-spacing: 2px;">✨智慧疗愈✨</h3>
-              <p style="font-size: 1.1rem; color: #d0d0ff; margin: 15px 0;">
-                基于中医五音疗法的音乐疗愈版块。AI实时生成调理波形，在互动中感受音乐的能量，精准疗愈身心状态。</p>
-              <div class="visualizer">
-                <div class="bar" style="animation-delay: 0.1s"></div>
-                <div class="bar" style="animation-delay: 0.3s"></div>
-                <div class="bar" style="animation-delay: 0.2s"></div>
-                <div class="bar" style="animation-delay: 0.5s"></div>
-                <div class="bar" style="animation-delay: 0.4s"></div>
-                <span class="ml-3 small" style="color: #a29bfe; line-height: 30px;">AI疗愈已就绪... </span>
-              </div>
-            </div>
-
-            <div class="text-center">
-              <a href="{% url 'mindfulness' %}" class="btn btn-primary btn-cta"
-                style="background: linear-gradient(135deg, #f368e0, #a29bfe); border: none; padding: 15px 40px;">
+              <h3 style="color: #fff; font-weight: 700; letter-spacing: 2px;">✨VR疗愈✨</h3>
+              <p style="font-size: 1.1rem; color: #d0f7ff; margin: 15px 0;">
+                进入沉浸式音乐疗愈空间，在虚拟体验中放松身心、感受声音与画面的能量。</p>
+              <span class="btn btn-primary btn-cta"
+                style="background: linear-gradient(135deg, #48dbfb, #1dd1a1); border: none; padding: 15px 40px;">
                 立即体验
-              </a>
-            </div>
+              </span>
+            </a>
+
+            <a class="healing-option healing-option-original" href="/mindfulness/" aria-label="进入智慧疗愈">
+              <div class="healing-wheel-container">
+                <div class="healing-wheel">
+                  <div class="wheel-dot dot-1"><span>宫</span><small>脾</small></div>
+                  <div class="wheel-dot dot-2"><span>商</span><small>肺</small></div>
+                  <div class="wheel-dot dot-3"><span>角</span><small>肝</small></div>
+                  <div class="wheel-dot dot-4"><span>徵</span><small>心</small></div>
+                  <div class="wheel-dot dot-5"><span>羽</span><small>肾</small></div>
+                </div>
+                <div style="position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align: center;">
+                  <i class="fas fa-lightbulb fa-3x" style="color: #f368e0; filter: drop-shadow(0 0 10px #f368e0);"></i>
+                </div>
+              </div>
+
+              <div class="featured-info">
+                <h3 style="color: #fff; font-weight: 700; letter-spacing: 2px;">✨智慧疗愈✨</h3>
+                <p style="font-size: 1.1rem; color: #d0d0ff; margin: 15px 0;">
+                  基于中医五音疗法的音乐疗愈版块。AI实时生成调理波形，在互动中感受音乐的能量，精准疗愈身心状态。</p>
+                <div class="visualizer">
+                  <div class="bar" style="animation-delay: 0.1s"></div>
+                  <div class="bar" style="animation-delay: 0.3s"></div>
+                  <div class="bar" style="animation-delay: 0.2s"></div>
+                  <div class="bar" style="animation-delay: 0.5s"></div>
+                  <div class="bar" style="animation-delay: 0.4s"></div>
+                  <span class="ml-3 small" style="color: #a29bfe; line-height: 30px;">AI疗愈已就绪... </span>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <span class="btn btn-primary btn-cta"
+                  style="background: linear-gradient(135deg, #f368e0, #a29bfe); border: none; padding: 15px 40px;">
+                  立即体验
+                </span>
+              </div>
+            </a>
           </div>
         </div>
         <div class="col-md-4 mb-4">

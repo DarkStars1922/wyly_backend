@@ -18,10 +18,13 @@ from django.conf import settings
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.urls import path, include
+from vr_healing.views import vr_index
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('music_h_app.api_urls')),
+    path('api/vr/', include('vr_healing.urls')),
+    path('vr/', vr_index, name='vr-index'),
     path('', include('music_h_app.urls')),
 ]
 

@@ -40,6 +40,11 @@ ALLOWED_HOSTS = [
     '121.36.20.83',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://sdustarpulse.top',
+    'https://www.sdustarpulse.top',
+]
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -52,6 +57,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'music_h_app',
+    'vr_healing',
 ]
 
 MIDDLEWARE = [
