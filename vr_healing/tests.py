@@ -87,8 +87,8 @@ class VRApiTests(TestCase):
         self.submit_assessment(session_id, "before", [4] * 20)
         plan = self.submit_plan(session_id)
         self.assertEqual(plan["sourceType"], "questionnaire")
-        self.assertEqual(plan["algorithm"], "stai-questionnaire-catalog-v1")
-        self.assertTrue(plan["videoId"].startswith("vr-video-"))
+        self.assertEqual(plan["algorithm"], "stai-catalog-vector-v2")
+        self.assertRegex(plan["videoId"], r"^(2_9|2_10|2_25|2_27|2_29|5_11|5_13|5_16|5_17|6_5|6_7|6_13)$")
         self.assertTrue(plan["videoUrl"].startswith("/static/vr/"))
         self.assertNotIn("sampleId", plan)
 
@@ -97,6 +97,37 @@ class VRApiTests(TestCase):
             {"event": "start", "duration": 120, "videoId": "arbitrary"},
         )
         self.assertEqual(mismatch.status_code, 400)
+
+    def test_recommendation_matrix_uses_preferences_and_distinct_playable_files(self):
+        combinations = [
+            (goal, tone, soundscape)
+            for goal in ("relax", "sleep", "focus", "energy")
+            for tone in ("gong", "jue", "zhi", "yu")
+            for soundscape in ("rain", "waves", "fire")
+        ]
+        video_ids = set()
+        video_urls = set()
+        for goal, tone, soundscape in combinations:
+            session_id = self.create_session()
+            self.submit_assessment(session_id, "before", [1] * 20)
+            response = self.post(
+                f"/api/vr/sessions/{session_id}/recommendation/",
+                {
+                    "goal": goal,
+                    "instrument": "chinese",
+                    "tone": tone,
+                    "soundscape": soundscape,
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            plan = response.json()
+            video_ids.add(plan["videoId"])
+            video_urls.add(plan["videoUrl"])
+            self.assertTrue(plan["videoUrl"].startswith("/static/vr/assets/video/library/"))
+            self.assertEqual(plan["tone"], tone)
+            self.assertEqual(plan["soundscape"], soundscape)
+        self.assertGreaterEqual(len(video_ids), 6)
+        self.assertEqual(len(video_ids), len(video_urls))
 
     def test_device_api_is_disabled_without_key(self):
         session_id = self.create_session()

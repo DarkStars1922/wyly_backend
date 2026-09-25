@@ -178,10 +178,12 @@ def _session_json(session):
         "id": str(session.id),
         "companion": session.companion,
         "consent": session.consent,
+        "preferences": session.preferences,
         "before": session.before,
         "after": session.after,
         "plan": session.plan,
         "elapsedSeconds": session.elapsed_seconds,
+        "durationSeconds": session.duration_seconds,
         "status": session.status,
         "analysis": _analysis_json(session),
     }
@@ -194,6 +196,8 @@ def _report_json(session):
         "after": session.after,
         "plan": session.plan,
         "elapsedSeconds": session.elapsed_seconds,
+        "durationSeconds": session.duration_seconds,
+        "status": session.status,
         "analysis": _analysis_json(session),
     }
 
@@ -363,6 +367,22 @@ def _scene_from_video(item):
     return item.get("scene") if item.get("scene") in SCENES else "forest"
 
 
+def _catalog_values(value):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    return value if isinstance(value, (list, tuple, set)) else []
+
+
+def _catalog_number(value, default=0.0):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return default
+    return max(0.0, min(1.0, value))
+
+
 def _catalog_item(item):
     if not isinstance(item, dict):
         return None
@@ -379,16 +399,28 @@ def _catalog_item(item):
         url = None
     if not video_id or not url:
         return None
-    tags = item.get("tags") or item.get("contentKeywords") or []
-    if isinstance(tags, str):
-        tags = [tags]
+    tags = (
+        _catalog_values(item.get("tags"))
+        + _catalog_values(item.get("contentKeywords"))
+        + _catalog_values(item.get("moodKeywords"))
+        + _catalog_values(item.get("functionTag"))
+        + _catalog_values(item.get("sceneCategory"))
+    )
+    vector = item.get("vector") if isinstance(item.get("vector"), dict) else {}
+    safety = item.get("safetyFlags") if isinstance(item.get("safetyFlags"), dict) else {}
+    normalized_relative = str(relative).replace("\\", "/").lstrip("/") if relative else ""
     return {
         "videoId": str(video_id),
         "title": str(item.get("title") or item.get("name") or video_id),
         "scene": _scene_from_video(item),
         "url": url,
+        "mediaKey": normalized_relative.lower() or str(raw_url or url).lower(),
+        "sceneCategory": str(item.get("sceneCategory") or item.get("scene") or ""),
         "functionTag": str(item.get("functionTag") or item.get("function_tag") or "慢节奏"),
         "tags": [str(tag).lower() for tag in tags if tag],
+        "moodKeywords": [str(tag).lower() for tag in _catalog_values(item.get("moodKeywords")) if tag],
+        "vector": {str(key): _catalog_number(value) for key, value in vector.items()},
+        "safetyFlags": {str(key): bool(value) for key, value in safety.items()},
     }
 
 
@@ -408,8 +440,8 @@ def _video_catalog():
     seen = set()
     for item in candidates:
         normalized = _catalog_item(item)
-        if normalized and normalized["videoId"] not in seen:
-            seen.add(normalized["videoId"])
+        if normalized and normalized["mediaKey"] not in seen:
+            seen.add(normalized["mediaKey"])
             result.append(normalized)
     return result
 
@@ -460,30 +492,87 @@ def _make_plan(session, payload):
     if scene is not None and scene not in SCENES:
         raise ApiProblem("scene 不是有效选项。", code="invalid_scene")
     score = int(session.before["questionnaire"]["score"])
-    target_scene = scene or _preferred_scene(goal, score)
+    target_scene = scene
     videos = _video_catalog()
     if not videos:
         raise ApiProblem("当前没有可播放的 VR 视频素材。", status=503, code="media_unavailable")
 
+    stress = max(0.0, min(1.0, (score - 20) / 60))
+    goal_profile = {
+        "relax": {"valence": 0.66, "relaxation": 0.84, "arousal": 0.18, "safety": 0.92, "rhythm": 0.16, "function": 0.12},
+        "sleep": {"valence": 0.55, "relaxation": 0.94, "arousal": 0.10, "safety": 0.96, "rhythm": 0.10, "function": 0.08},
+        "focus": {"valence": 0.56, "relaxation": 0.58, "arousal": 0.38, "safety": 0.84, "rhythm": 0.28, "function": 0.52},
+        "energy": {"valence": 0.78, "relaxation": 0.42, "arousal": 0.58, "safety": 0.80, "rhythm": 0.38, "function": 0.72},
+    }[goal].copy()
+    goal_profile["relaxation"] = min(1.0, goal_profile["relaxation"] + stress * 0.08)
+    goal_profile["arousal"] = max(0.05, goal_profile["arousal"] - stress * 0.10)
+    goal_profile["safety"] = min(1.0, goal_profile["safety"] + stress * 0.06)
+    function_targets = {
+        "relax": {"安抚", "舒缓", "放松"},
+        "sleep": {"安抚", "舒缓", "助眠"},
+        "focus": {"正念", "专注"},
+        "energy": {"提振", "活跃", "正念"},
+    }[goal]
+    tone_preferences = {
+        "gong": (0.50, {"山", "云", "开阔"}),
+        "shang": (0.38, {"天空", "雪", "专注", "清冷"}),
+        "jue": (0.20, {"自然", "荷", "青山", "云雾", "生机"}),
+        "zhi": (0.62, {"日出", "日落", "明亮", "温暖", "希望"}),
+        "yu": (0.12, {"海", "水", "荷塘", "湿地", "柔和"}),
+    }
+    tone_arousal, tone_keywords = tone_preferences[tone]
+    soundscape_keywords = {
+        "rain": {"云雾", "荷塘", "柔和", "静谧", "舒缓"},
+        "waves": {"海岸", "湿地", "开阔", "水"},
+        "fire": {"温暖", "日落", "山峦", "晚霞"},
+        "stream": {"荷", "自然", "清新", "云", "水"},
+    }[soundscape]
+
     def rank(video):
-        tags = set(video["tags"])
-        scene_match = 1.0 if video["scene"] == target_scene else 0.0
-        goal_match = 1.0 if goal in tags else 0.0
-        instrument_match = 1.0 if instrument in tags else 0.5
-        stress_match = 1.0 if score >= 45 and video["scene"] in {"ocean", "forest"} else 0.6
-        return 0.55 * scene_match + 0.2 * goal_match + 0.15 * instrument_match + 0.1 * stress_match
+        vector = video["vector"]
+        value = (
+            0.18 * (1 - abs(vector.get("dim1_valence", 0.5) - goal_profile["valence"]))
+            + 0.22 * (1 - abs(vector.get("dim2_relaxation_inducibility", 0.5) - goal_profile["relaxation"]))
+            + 0.16 * (1 - abs(vector.get("dim3_arousal", 0.5) - goal_profile["arousal"]))
+            + 0.18 * (1 - abs(vector.get("dim4_safety", 0.5) - goal_profile["safety"]))
+            + 0.10 * (1 - abs(vector.get("dim5_visual_rhythm", 0.5) - goal_profile["rhythm"]))
+            + 0.10 * (1 - abs(vector.get("dim6_function", 0.5) - goal_profile["function"]))
+        )
+        tags = set(video["tags"]) | set(video["moodKeywords"])
+        function_match = 1.0 if video["functionTag"] in function_targets else 0.0
+        tone_match = len(tags & {keyword.lower() for keyword in tone_keywords}) / max(1, len(tone_keywords))
+        tone_arousal_match = 1 - abs(vector.get("dim3_arousal", 0.5) - tone_arousal)
+        soundscape_match = len(tags & {keyword.lower() for keyword in soundscape_keywords}) / max(1, len(soundscape_keywords))
+        # The catalog has no audio metadata, so instrument only nudges the visual style.
+        instrument_match = 1.0 if (instrument == "chinese" and video["sceneCategory"] not in {"城市建设"}) else 0.0
+        scene_match = 1.0 if target_scene and video["scene"] == target_scene else 0.0
+        safety = video["safetyFlags"]
+        safety_penalty = 0.35 if any(safety.get(key) for key in ("contains_flashing", "contains_dark_threatening_elements", "contains_people")) else 0.0
+        transition_penalty = 0.10 if safety.get("contains_sudden_transition") and goal in {"sleep", "relax"} else 0.0
+        return (
+            value
+            + 0.12 * function_match
+            + 0.08 * tone_match
+            + 0.08 * tone_arousal_match
+            + 0.10 * soundscape_match
+            + 0.02 * instrument_match
+            + 0.12 * scene_match
+            - safety_penalty
+            - transition_penalty
+        )
 
     video = max(videos, key=lambda item: (rank(item), item["videoId"]))
-    recommendation_score = round(rank(video), 3)
+    recommendation_score = round(max(0.0, min(1.0, rank(video))), 3)
     music = "five-tone" if instrument == "chinese" else "piano"
+    goal_label = {"relax": "减压", "sleep": "助眠", "focus": "专注", "energy": "提振"}[goal]
     reason = (
-        f"围绕“{goal}”和你选择的{('中国乐器' if instrument == 'chinese' else '西洋乐器')}，"
+        f"围绕“{goal_label}”和你选择的{('中国乐器' if instrument == 'chinese' else '西洋乐器')}，"
         f"从{video['title']}的连续自然节律开始。"
     )
     reasons = [
-        f"目标偏好匹配：{goal}。",
-        f"场景偏好匹配：{video['scene']}。",
-        f"已按当前 STAI-S 分数 {score} 与声音偏好完成排序。",
+        f"目标偏好匹配：{goal_label}。",
+        f"素材特征匹配：{video['functionTag']}、{video['sceneCategory']}。",
+        f"已按当前 STAI-S 分数 {score}、五音和声音场景完成排序。",
     ]
     plan = {
         "goal": goal,
@@ -498,7 +587,7 @@ def _make_plan(session, payload):
         "videoId": video["videoId"],
         "videoUrl": video["url"],
         "sourceType": "questionnaire",
-        "algorithm": "stai-questionnaire-catalog-v1",
+        "algorithm": "stai-catalog-vector-v2",
         "recommendationScore": recommendation_score,
         "functionTag": video["functionTag"],
     }
@@ -516,27 +605,35 @@ def _make_plan(session, payload):
 
 
 def _ai_endpoint():
-    configured = _configured("VR_AI_BASE_URL") or ""
-    value = configured.strip().rstrip("/") if configured else "https://api.minimaxi.com/v1/text/chatcompletion_v2"
-    if value.endswith("/chatcompletion_v2"):
-        return value
-    if value.endswith("/v1"):
-        return value + "/text/chatcompletion_v2"
-    return value + "/v1/text/chatcompletion_v2"
+    configured = _configured("VR_AI_BASE_URL") or "https://api.deepseek.com/chat/completions"
+    endpoint = configured.strip().rstrip("/")
+    if endpoint.endswith("/chat/completions"):
+        return endpoint
+    if endpoint.endswith("/v1"):
+        return endpoint + "/chat/completions"
+    return endpoint + "/chat/completions"
 
 
 def _ai_key():
-    return _configured("VR_AI_API_KEY") or _configured("MINIMAX_API_KEY")
+    return _configured("VR_AI_API_KEY")
 
 
 def _analysis_prompt(session):
     before = session.before or {}
     after = session.after or {}
+
+    def present(values):
+        return {
+            key: value
+            for key, value in (values or {}).items()
+            if value is not None
+        }
+
     data = {
         "beforeQuestionnaireScore": before.get("questionnaire", {}).get("score"),
         "afterQuestionnaireScore": after.get("questionnaire", {}).get("score"),
-        "beforeBasic": before.get("basic", {}),
-        "afterBasic": after.get("basic", {}),
+        "beforeBasic": present(before.get("basic")),
+        "afterBasic": present(after.get("basic")),
         "goal": (session.plan or {}).get("goal"),
         "instrument": (session.plan or {}).get("instrument"),
         "tone": (session.plan or {}).get("tone"),
@@ -550,14 +647,25 @@ def _strip_thinking(text):
 
 
 def _call_ai(session):
+    revision = session.analysis_revision
+
+    def save_result(**values):
+        updated = VRSession.objects.filter(
+            pk=session.pk,
+            analysis_revision=revision,
+        ).update(**values)
+        session.refresh_from_db()
+        return updated
+
     key = _ai_key()
-    model = _configured("VR_AI_MODEL") or "MiniMax-M2.5"
+    model = _configured("VR_AI_MODEL") or "deepseek-chat"
     if not key:
-        session.analysis_status = "unavailable"
-        session.analysis_text = None
-        session.analysis_model = None
-        session.analysis_generated_at = None
-        session.save()
+        save_result(
+            analysis_status="unavailable",
+            analysis_text=None,
+            analysis_model=None,
+            analysis_generated_at=None,
+        )
         return
     payload = {
         "model": model,
@@ -567,8 +675,8 @@ def _call_ai(session):
                 "content": (
                     "你是 VR 放松体验的记录助手。用简洁、事实性的中文回答，最多 120 字。"
                     "这是非医疗体验记录，不做诊断、不做风险分级，不把问卷分数解释成疾病。"
-                    "只描述提供的数据和体验前后是否存在可见的问卷变化；缺失的设备指标必须明确说未采集，"
-                    "绝不补写或推断心率、脑电、情绪或设备数据。不要输出思考过程或 XML 标签。"
+                    "只描述提供的数据和体验前后是否存在可见的变化；没有提供的设备指标不要提及，也不要补写或推断。"
+                    "重点给出简洁、温和、适合展示的体验反馈。不要输出思考过程或 XML 标签。"
                 ),
             },
             {"role": "user", "content": _analysis_prompt(session)},
@@ -595,17 +703,20 @@ def _call_ai(session):
         if not content:
             raise RuntimeError("empty upstream response")
     except Exception:
-        session.analysis_status = "failed"
-        session.analysis_text = None
-        session.analysis_model = None
-        session.analysis_generated_at = None
-        session.save()
+        save_result(
+            analysis_status="failed",
+            analysis_text=None,
+            analysis_model=None,
+            analysis_generated_at=None,
+        )
         return
-    session.analysis_status = "ready"
-    session.analysis_text = content
-    session.analysis_model = model
-    session.analysis_generated_at = timezone.now()
-    session.save()
+    save_result(
+        analysis_status="ready",
+        analysis_text=content,
+        analysis_model=model,
+        analysis_generated_at=timezone.now(),
+    )
+
 
 
 @require_GET
@@ -768,6 +879,18 @@ def analysis(request, session_id):
         session = _owned_session(request, session_id)
         if not session.before or not session.after:
             raise ApiProblem("前测和后测都完成后才能生成报告。", code="assessments_required")
+        body = _json_body(request)
+        if body.get("retry") is True and session.analysis_status in {"failed", "unavailable"}:
+            _invalidate_analysis(session)
+            session.save(update_fields=(
+                "analysis_revision",
+                "analysis_status",
+                "analysis_text",
+                "analysis_model",
+                "analysis_generated_at",
+                "updated_at",
+            ))
+            session.refresh_from_db()
         if session.analysis_status == "pending":
             _call_ai(session)
         return JsonResponse(_report_json(session))
