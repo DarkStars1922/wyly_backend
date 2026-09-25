@@ -17,6 +17,8 @@
             --text-secondary: #b0b0b0;
             --accent-primary: #2e49b6;
             --accent-secondary: #8a63d2;
+            --link-color: #93c5fd;
+            --link-hover: #dbeafe;
             --input-bg: #2a2a2a;
             --input-border: #3a3a3a;
             --input-text: #f0f0f0;
@@ -313,14 +315,49 @@
         }
 
         .terms-link {
-            color: var(--accent-primary);
-            text-decoration: none;
+            color: var(--link-color);
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
             transition: all 0.3s;
         }
 
         .terms-link:hover {
+            color: var(--link-hover);
+        }
+
+        .terms-link:focus-visible {
+            outline: 3px solid rgba(219, 234, 254, 0.75);
+            outline-offset: 3px;
+        }
+
+        .login-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            padding: 12px 16px;
+            border: 1px solid rgba(147, 197, 253, 0.6);
+            border-radius: 10px;
+            background: rgba(147, 197, 253, 0.1);
+            color: var(--link-color);
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.5;
             text-decoration: underline;
-            color: #6c8dfa;
+            text-underline-offset: 3px;
+            transition: all 0.3s;
+        }
+
+        .login-link:hover {
+            color: var(--link-hover);
+            border-color: var(--link-hover);
+            background: rgba(147, 197, 253, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .login-link:focus-visible {
+            outline: 3px solid rgba(219, 234, 254, 0.75);
+            outline-offset: 3px;
         }
 
         @keyframes fadeInUp {
@@ -545,6 +582,10 @@
                     <button type="submit" class="btn btn-primary mt-4">
                         <i class="fas fa-user-plus me-2"></i> 注册
                     </button>
+
+                    <a href="{% url 'login_page' %}" class="login-link">
+                        <i class="fas fa-sign-in-alt me-2"></i> 已有账户？立即登录
+                    </a>
                 </form>
             </div>
         </div>

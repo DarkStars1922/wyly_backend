@@ -16,6 +16,8 @@
             --text-secondary: #b0b0b0;
             --accent-primary: #2e49b6;
             --accent-secondary: #8a63d2;
+            --link-color: #93c5fd;
+            --link-hover: #dbeafe;
             --input-bg: #2a2a2a;
             --input-border: #3a3a3a;
             --input-text: #f0f0f0;
@@ -338,15 +340,30 @@
         .register-link {
             display: block;
             text-align: center;
-            margin-top: 20px;
-            color: var(--accent-primary);
-            font-weight: 500;
+            margin-top: 24px;
+            padding: 12px 16px;
+            border: 1px solid rgba(147, 197, 253, 0.6);
+            border-radius: 10px;
+            background: rgba(147, 197, 253, 0.1);
+            color: var(--link-color);
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.5;
+            text-decoration: underline;
+            text-underline-offset: 3px;
             transition: all 0.3s;
         }
 
         .register-link:hover {
-            color: #6c8dfa;
-            transform: translateY(-2px);
+            color: var(--link-hover);
+            border-color: var(--link-hover);
+            background: rgba(147, 197, 253, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .register-link:focus-visible {
+            outline: 3px solid rgba(219, 234, 254, 0.75);
+            outline-offset: 3px;
         }
 
         @keyframes fadeInUp {
@@ -421,7 +438,6 @@
         }
     </style>
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <link rel="stylesheet" href="/static/css/site-mobile.css?v=20260507-mobile2">
 </head>
 
